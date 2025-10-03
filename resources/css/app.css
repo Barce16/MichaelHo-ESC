@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.font-libre {
+    font-family: "Libre Caslon Display", serif;
+}
+
+.font-style-script {
+    font-family: "Style Script", cursive;
+    font-weight: 200;
+}
