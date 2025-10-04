@@ -1,1 +1,0 @@
-<img src="{{ asset('images/mh.png') }}" alt="Michael Ho Logo" {{ $attributes->class([]) }} />

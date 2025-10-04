@@ -1,1 +1,0 @@
-<img src="{{ asset('images/favicon.png') }}" alt="Michael Ho Logo" {{ $attributes->merge(['class' => 'h-auto']) }} />
