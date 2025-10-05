@@ -23,36 +23,36 @@ class ReportController extends Controller
 
     public function eventsReport(Request $request)
     {
-        try {
-            $dateFrom = $request->date('from') ?? now()->startOfMonth();
-            $dateTo = $request->date('to') ?? now()->endOfMonth();
+        $dateFrom = $request->date('from') ?? now()->startOfMonth();
+        $dateTo = $request->date('to') ?? now()->endOfMonth();
 
-            $events = Event::with(['customer', 'package', 'billing'])
-                ->whereBetween('event_date', [$dateFrom, $dateTo])
-                ->orderBy('event_date')
-                ->get();
+        $events = Event::with(['customer', 'package', 'billing'])
+            ->whereBetween('event_date', [$dateFrom, $dateTo])
+            ->orderBy('event_date')
+            ->get();
 
-            $stats = [
-                'total_events' => $events->count(),
-                'by_status' => $events->groupBy('status')->map->count(),
-                'total_revenue' => $events->sum(fn($e) => $e->billing?->total_amount ?? 0),
-            ];
+        $stats = [
+            'total_events' => $events->count(),
+            'by_status' => $events->groupBy('status')->map->count(),
+            'total_revenue' => $events->sum(fn($e) => $e->billing?->total_amount ?? 0),
+        ];
 
-            // Handle export requests
-            if ($request->has('export')) {
-                if ($request->export === 'pdf') {
-                    return $this->exportEventsPdf($events, $stats, $dateFrom, $dateTo);
-                }
-                if ($request->export === 'csv') {
-                    return Excel::download(new EventsReportExport($events), 'events-report-' . now()->format('Y-m-d') . '.csv');
-                }
+        // Handle export requests
+        if ($request->has('export')) {
+            if ($request->export === 'pdf') {
+                return $this->exportEventsPdf($events, $stats, $dateFrom, $dateTo);
             }
-
-            return view('admin.reports.events', compact('events', 'stats', 'dateFrom', 'dateTo'));
-        } catch (\Exception $e) {
-            dd($e->getMessage(), $e->getFile(), $e->getLine());
+            if ($request->export === 'csv') {
+                return Excel::download(
+                    new EventsReportExport($events, $dateFrom, $dateTo, $stats['total_revenue']),
+                    'events-report-' . now()->format('Y-m-d') . '.csv'
+                );
+            }
         }
+
+        return view('admin.reports.events', compact('events', 'stats', 'dateFrom', 'dateTo'));
     }
+
     private function exportEventsPdf($events, $stats, $dateFrom, $dateTo)
     {
         $pdf = Pdf::loadView('admin.reports.events-pdf', [
@@ -60,7 +60,8 @@ class ReportController extends Controller
             'stats' => $stats,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
-        ]);
+        ])->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', true);
 
         return $pdf->download('events-report-' . now()->format('Y-m-d') . '.pdf');
     }
@@ -88,7 +89,10 @@ class ReportController extends Controller
                 return $this->exportRevenuePdf($payments, $stats, $dateFrom, $dateTo);
             }
             if ($request->export === 'csv') {
-                return Excel::download(new RevenueReportExport($payments), 'revenue-report-' . now()->format('Y-m-d') . '.csv');
+                return Excel::download(
+                    new RevenueReportExport($payments, $dateFrom, $dateTo, $stats['total_amount']),
+                    'revenue-report-' . now()->format('Y-m-d') . '.csv'
+                );
             }
         }
 
@@ -102,7 +106,8 @@ class ReportController extends Controller
             'stats' => $stats,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
-        ]);
+        ])->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', true);
 
         return $pdf->download('revenue-report-' . now()->format('Y-m-d') . '.pdf');
     }
@@ -133,7 +138,10 @@ class ReportController extends Controller
                 return $this->exportCustomersPdf($customers, $stats, $dateFrom, $dateTo);
             }
             if ($request->export === 'csv') {
-                return Excel::download(new CustomersReportExport($customers), 'customers-report-' . now()->format('Y-m-d') . '.csv');
+                return Excel::download(
+                    new CustomersReportExport($customers, $dateFrom, $dateTo, $stats['total_revenue']),
+                    'customers-report-' . now()->format('Y-m-d') . '.csv'
+                );
             }
         }
 
