@@ -8,7 +8,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PublicBookingController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\PayrollController;
-use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\Customer\BillingPageController;
 use App\Http\Controllers\Customer\PaymentController;
 use App\Http\Controllers\Customer\EventController as CustomerEventController;
@@ -16,8 +15,8 @@ use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\CustomerPaymentController;
 use App\Http\Controllers\Admin\AdminEventController;
 use App\Http\Controllers\Admin\PackageController;
-use App\Http\Controllers\Admin\VendorController;
 use App\Http\Controllers\Admin\InclusionController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Staff\ScheduleController;
 use App\Http\Middleware\CheckAdmin;
 use App\Http\Middleware\EnsureCustomer;
@@ -171,17 +170,12 @@ Route::middleware('auth')->group(function () {
             });
 
             // ---- Report ----
+
             Route::prefix('reports')->name('reports.')->group(function () {
-                Route::get('/', [ReportsController::class, 'index'])->name('index');
-
-                // Event reports
-                Route::get('/event/generate', [ReportsController::class, 'generateEventReport'])->name('event.generate');
-
-                // Customer reports
-                Route::get('/customer/generate', [ReportsController::class, 'generateCustomerReport'])->name('customer.generate');
-
-                // Staff reports
-                Route::get('/staff/generate', [ReportsController::class, 'generateStaffReport'])->name('staff.generate');
+                Route::get('/', [ReportController::class, 'index'])->name('index');
+                Route::get('/events', [ReportController::class, 'eventsReport'])->name('events');
+                Route::get('/revenue', [ReportController::class, 'revenueReport'])->name('revenue');
+                Route::get('/customers', [ReportController::class, 'customersReport'])->name('customers');
             });
         });
 
