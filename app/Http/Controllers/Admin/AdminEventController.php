@@ -215,41 +215,6 @@ class AdminEventController extends Controller
         return back()->with('success', 'Event confirmed and scheduled.');
     }
 
-    public function assignStaffPage(Event $event)
-    {
-        $event->load(['staffs']);
-
-        $assignedStaffIds = $event->staffs->pluck('id')->toArray();
-        $availableStaff = Staff::whereNotIn('id', $assignedStaffIds)->get();
-
-        return view('admin.events.assign-staff', [
-            'event' => $event,
-            'availableStaff' => $availableStaff,
-            'assignedStaff' => $event->staffs,
-        ]);
-    }
-
-
-    public function assignStaff(Request $request, Event $event)
-    {
-        $request->validate([
-            'staff_ids' => 'array|nullable',
-            'staff_ids.*' => 'exists:staffs,id',
-            'removed_staff_ids' => 'array|nullable',
-            'removed_staff_ids.*' => 'exists:staffs,id',
-        ]);
-
-        if ($request->has('staff_ids')) {
-            $event->staffs()->syncWithoutDetaching($request->staff_ids);
-        }
-
-        if ($request->has('removed_staff_ids')) {
-            $event->staffs()->detach($request->removed_staff_ids);
-        }
-
-        return redirect()->route('admin.events.assignStaffPage', $event)->with('success', 'Staff updated successfully');
-    }
-
     public function approvePayment(Request $request, $eventId)
     {
         $event = Event::findOrFail($eventId);
@@ -287,6 +252,51 @@ class AdminEventController extends Controller
         $meeting->save();
     }
 
+    public function assignStaffPage(Event $event)
+    {
+        $event->load(['staffs']);
+
+        $assignedStaffIds = $event->staffs->pluck('id')->toArray();
+        $availableStaff = Staff::whereNotIn('id', $assignedStaffIds)->get();
+
+        return view('admin.events.assign-staff', [
+            'event' => $event,
+            'availableStaff' => $availableStaff,
+            'assignedStaff' => $event->staffs,
+        ]);
+    }
+
+    public function assignStaff(Request $request, Event $event)
+    {
+        $request->validate([
+            'staff' => 'array|nullable',
+            'staff.*.role' => 'required_with:staff|string|max:255',
+            'staff.*.rate' => 'required_with:staff|numeric|min:0',
+            'removed_staff_ids' => 'array|nullable',
+            'removed_staff_ids.*' => 'exists:staffs,id',
+        ]);
+
+        // Add staff with role and rate
+        if ($request->has('staff')) {
+            foreach ($request->staff as $staffId => $data) {
+                $event->staffs()->syncWithoutDetaching([
+                    $staffId => [
+                        'assignment_role' => $data['role'],
+                        'pay_rate' => $data['rate'],
+                        'pay_status' => 'pending'
+                    ]
+                ]);
+            }
+        }
+
+        // Remove staff
+        if ($request->has('removed_staff_ids')) {
+            $event->staffs()->detach($request->removed_staff_ids);
+        }
+
+        return redirect()->route('admin.events.assignStaffPage', $event)
+            ->with('success', 'Staff assignment updated successfully');
+    }
 
     public function updateStaff(Request $request, Event $event)
     {
@@ -324,22 +334,7 @@ class AdminEventController extends Controller
         return view('admin.events.staffs', compact('event', 'staffs', 'availableStaff'));
     }
 
-    public function addStaff(Request $request, Event $event)
-    {
-        $data = $request->validate([
-            'staff_id' => 'required|exists:staffs,id',
-            'role' => 'required|string|max:255',
-            'pay_rate' => 'required|numeric',
-        ]);
 
-        $event->staffs()->attach($data['staff_id'], [
-            'assignment_role' => $data['role'],
-            'pay_rate' => $data['pay_rate'],
-            'pay_status' => 'pending',
-        ]);
-
-        return back()->with('success', 'Staff added to the event.');
-    }
 
     // Remove staff from event
     public function removeStaff(Event $event, Staff $staff)

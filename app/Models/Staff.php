@@ -24,6 +24,8 @@ class Staff extends Model
     }
     public function events()
     {
-        return $this->belongsToMany(Event::class, 'event_staff', 'staff_id', 'event_id')->withPivot(['assignment_role', 'pay_rate', 'pay_status'])->withTimestamps();
+        return $this->belongsToMany(Event::class, 'event_staff')
+            ->withPivot(['assignment_role', 'pay_rate', 'pay_status'])
+            ->withTimestamps();
     }
 }

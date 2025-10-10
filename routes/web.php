@@ -7,7 +7,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PublicBookingController;
 use App\Http\Controllers\StaffController;
-use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Customer\BillingPageController;
 use App\Http\Controllers\Customer\PaymentController;
 use App\Http\Controllers\Customer\EventController as CustomerEventController;
@@ -17,7 +17,7 @@ use App\Http\Controllers\Admin\AdminEventController;
 use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\InclusionController;
 use App\Http\Controllers\Admin\ReportController;
-use App\Http\Controllers\Staff\ScheduleController;
+use App\Http\Controllers\Staff\ScheduleController as StaffScheduleController;
 use App\Http\Middleware\CheckAdmin;
 use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsureStaff;
@@ -86,10 +86,9 @@ Route::middleware('auth')->group(function () {
         ->prefix('staff')
         ->name('staff.')
         ->group(function () {
-            Route::get('schedule', [ScheduleController::class, 'index'])
-                ->name('schedule.index');
-            Route::get('schedule/{event}', [ScheduleController::class, 'show'])
-                ->name('schedule.show');
+            Route::get('/schedules', [StaffScheduleController::class, 'index'])->name('schedules.index');
+            Route::get('/schedules/{event}', [StaffScheduleController::class, 'show'])->name('schedules.show');
+            Route::get('/earnings', [StaffScheduleController::class, 'earnings'])->name('earnings');
         });
 
     // ========== ADMIN AREA ==========
@@ -113,8 +112,8 @@ Route::middleware('auth')->group(function () {
                 ->name('events.status');
 
             // Staff assignment update
-            Route::get('events/{event}/assign-staff', [AdminEventController::class, 'assignStaffPage'])->name('admin.events.assignStaffPage');
-            Route::put('events/{event}/assign-staff', [AdminEventController::class, 'assignStaff'])->name('admin.events.assignStaff');
+            Route::get('events/{event}/assign-staff', [AdminEventController::class, 'assignStaffPage'])->name('events.assignStaffPage');
+            Route::post('events/{event}/assign-staff', [AdminEventController::class, 'assignStaff'])->name('events.assignStaff');
 
 
             Route::put('events/{event}/staff', [AdminEventController::class, 'updateStaff'])
@@ -130,10 +129,7 @@ Route::middleware('auth')->group(function () {
                 ->name('events.reject');
             Route::post('events/{event}/confirm', [AdminEventController::class, 'confirm'])
                 ->name('events.confirm');
-            Route::put('events/{event}/staff', [AdminEventController::class, 'assignStaff'])
-                ->name('events.staff.assign');
-            Route::post('/event/{event}/addStaff', [AdminEventController::class, 'addStaff'])->name('events.addStaff');
-            Route::delete('/admin/events/{event}/removeStaff/{staff}', [AdminEventController::class, 'removeStaff'])->name('admin.events.removeStaff');
+
 
             // -- PAYMENTS
             Route::get('/events/{event}/payment/verify', [AdminPaymentController::class, 'verifyPayment'])
@@ -163,10 +159,9 @@ Route::middleware('auth')->group(function () {
             // ---- Payroll ----
             Route::prefix('payroll')->name('payroll.')->group(function () {
                 Route::get('/', [PayrollController::class, 'index'])->name('index');
-                Route::get('/lines/{eventId}', [PayrollController::class, 'lines'])->name('lines');
-                Route::patch('/mark', [PayrollController::class, 'mark'])->name('mark');
-                Route::get('/view-staffs/{eventId}', [PayrollController::class, 'viewStaffs'])->name('viewStaffs');
-                Route::post('/mark-paid/{eventId}/{staffId}', [PayrollController::class, 'markAsPaid'])->name('markAsPaid');
+                Route::get('/event/{event}', [PayrollController::class, 'viewStaffs'])->name('viewStaffs');
+                Route::post('/event/{event}/staff/{staff}/mark-paid', [PayrollController::class, 'markAsPaid'])->name('markAsPaid');
+                Route::post('/event/{event}/staff/{staff}/mark-pending', [PayrollController::class, 'markAsPending'])->name('markAsPending');
             });
 
             // ---- Report ----
@@ -176,6 +171,12 @@ Route::middleware('auth')->group(function () {
                 Route::get('/events', [ReportController::class, 'eventsReport'])->name('events');
                 Route::get('/revenue', [ReportController::class, 'revenueReport'])->name('revenue');
                 Route::get('/customers', [ReportController::class, 'customersReport'])->name('customers');
+                Route::get('/customer-spending', [ReportController::class, 'customerSpending'])->name('customer-spending');
+                Route::get('/package-usage', [ReportController::class, 'packageUsage'])->name('package-usage');
+                Route::get('/payment-method', [ReportController::class, 'paymentMethod'])->name('payment-method');
+                Route::get('/event-status', [ReportController::class, 'eventStatus'])->name('event-status');
+                Route::get('/remaining-balances', [ReportController::class, 'remainingBalances'])->name('remaining-balances');
+                Route::get('/system-summary', [ReportController::class, 'systemSummary'])->name('system-summary');
             });
         });
 

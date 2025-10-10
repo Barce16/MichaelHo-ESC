@@ -25,7 +25,7 @@
                 </a>
 
                 {{-- Revenue Report Card --}}
-                <a href="{{ route(name: 'admin.reports.revenue') }}"
+                <a href="{{ route('admin.reports.revenue') }}"
                     class="block bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-green-400 hover:shadow-lg transition-all p-8">
                     <div class="flex items-start gap-4">
                         <div class="w-16 h-16 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -54,6 +54,108 @@
                         <div>
                             <h3 class="text-xl font-bold text-gray-900 mb-2">Customers Report</h3>
                             <p class="text-gray-600 text-sm">View customer list with booking history and revenue</p>
+                        </div>
+                    </div>
+                </a>
+
+                {{-- 🧾 Customer Spending Report --}}
+                <a href="{{ route('admin.reports.customer-spending') }}"
+                    class="block bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-amber-400 hover:shadow-lg transition-all p-8">
+                    <div class="flex items-start gap-4">
+                        <div class="w-16 h-16 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">Customer Spending</h3>
+                            <p class="text-gray-600 text-sm">Analyze total spending per customer over time</p>
+                        </div>
+                    </div>
+                </a>
+
+                {{-- 📦 Package Usage Report --}}
+                <a href="{{ route('admin.reports.package-usage') }}"
+                    class="block bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all p-8">
+                    <div class="flex items-start gap-4">
+                        <div class="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0H4" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">Package Usage</h3>
+                            <p class="text-gray-600 text-sm">Check how often and which packages are used</p>
+                        </div>
+                    </div>
+                </a>
+
+                {{-- 💳 Payment Method Report --}}
+                <a href="{{ route('admin.reports.payment-method') }}"
+                    class="block bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-cyan-400 hover:shadow-lg transition-all p-8">
+                    <div class="flex items-start gap-4">
+                        <div class="w-16 h-16 bg-cyan-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <svg class="w-8 h-8 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 8h18M3 12h18m-2 4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">Payment Method</h3>
+                            <p class="text-gray-600 text-sm">Breakdown of revenue by payment channels</p>
+                        </div>
+                    </div>
+                </a>
+
+                {{-- 📊 Event Status Report --}}
+                <a href="{{ route('admin.reports.event-status') }}"
+                    class="block bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-pink-400 hover:shadow-lg transition-all p-8">
+                    <div class="flex items-start gap-4">
+                        <div class="w-16 h-16 bg-pink-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <svg class="w-8 h-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m2 6H7a2 2 0 01-2-2V8a2 2 0 012-2h2l2-2h2l2 2h2a2 2 0 012 2v8a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">Event Status</h3>
+                            <p class="text-gray-600 text-sm">Monitor active, pending, and completed events</p>
+                        </div>
+                    </div>
+                </a>
+
+                {{-- 💰 Remaining Balances Report --}}
+                <a href="{{ route('admin.reports.remaining-balances') }}"
+                    class="block bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-red-400 hover:shadow-lg transition-all p-8">
+                    <div class="flex items-start gap-4">
+                        <div class="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">Remaining Balances</h3>
+                            <p class="text-gray-600 text-sm">Track unpaid amounts and outstanding balances</p>
+                        </div>
+                    </div>
+                </a>
+
+                {{-- 🧮 System Summary Report --}}
+                <a href="{{ route('admin.reports.system-summary') }}"
+                    class="block bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-gray-400 hover:shadow-lg transition-all p-8">
+                    <div class="flex items-start gap-4">
+                        <div class="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 4a1 1 0 011-1h4a1 1 0 011 1v16H4a1 1 0 01-1-1V4zm7 0a1 1 0 011-1h4a1 1 0 011 1v16h-6V4zm7 0a1 1 0 011-1h4a1 1 0 011 1v16h-6V4z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">System Summary</h3>
+                            <p class="text-gray-600 text-sm">Overview of total events, revenue, and users</p>
                         </div>
                     </div>
                 </a>

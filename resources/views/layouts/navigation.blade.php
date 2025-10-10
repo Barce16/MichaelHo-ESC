@@ -62,9 +62,13 @@
                     @endif
 
                     {{-- STAFF (no Staff list, just Events + Schedule) --}}
-                    @if ($user->user_type === 'staff')
-                    <x-nav-link :href="route('staff.schedule.index')" :active="request()->routeIs('staff.schedule.*')">
-                        {{ __('Schedule') }}
+                    @if(Auth::user()->user_type === 'staff')
+                    <x-nav-link :href="route('staff.schedules.index')"
+                        :active="request()->routeIs('staff.schedules.*')">
+                        {{ __('My Schedule') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('staff.earnings')" :active="request()->routeIs('staff.earnings')">
+                        {{ __('Earnings') }}
                     </x-nav-link>
                     @endif
                     @endauth
@@ -171,9 +175,12 @@
             <x-responsive-nav-link :href="route('admin.events.index')" :active="request()->routeIs('admin.events.*')">
                 {{ __('Events') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('staff.schedule.index')"
+            <x-responsive-nav-link :href="route('staff.schedules.index')"
                 :active="request()->routeIs('staff.schedule.*')">
                 {{ __('Schedule') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('staff.earnings')" :active="request()->routeIs('staff.earnings.*')">
+                {{ __('Earnings') }}
             </x-responsive-nav-link>
             @endif
             @endauth
