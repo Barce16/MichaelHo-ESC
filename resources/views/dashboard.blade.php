@@ -185,7 +185,7 @@
 
             {{-- Quick Stats --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-gradient-to-br from-gray-900 to-black text-white shadow-sm rounded-lg p-6">
+                <div class="bg-gray-900 hover:bg-black transition text-white shadow-sm rounded-lg p-6">
                     <div class="flex items-center justify-between">
                         <div>
                             <div class="text-xs font-semibold text-gray-300 uppercase tracking-wide">Upcoming Events
