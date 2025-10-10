@@ -60,24 +60,15 @@
                         </div>
                         <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
                             <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                                <svg version="1.0" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
-                                    xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 64 64" fill="none"
-                                    class="w-6 h-6 text-gray-600">
-                                    <g id="SVGRepo_iconCarrier">
-                                        <path fill="none" stroke="currentColor" stroke-width="2.88"
-                                            stroke-miterlimit="10" d="M53.92,10.081c12.107,12.105,12.107,31.732,0,43.838 
-                c-12.106,12.108-31.734,12.108-43.839,0c-12.107-12.105-12.107-31.732,0-43.838
-                C22.186-2.027,41.813-2.027,53.92,10.081z">
-                                        </path>
-                                        <line fill="none" stroke="currentColor" stroke-width="2.88"
-                                            stroke-miterlimit="10" x1="24" y1="48" x2="24" y2="16"></line>
-                                        <path fill="none" stroke="currentColor" stroke-width="2.88"
-                                            stroke-miterlimit="10" d="M24,17h7c0,0,11-1,11,9s-11,9-11,9h-7"></path>
-                                        <line fill="none" stroke="currentColor" stroke-width="2.88"
-                                            stroke-miterlimit="10" x1="19" y1="24" x2="47" y2="24"></line>
-                                        <line fill="none" stroke="currentColor" stroke-width="2.88"
-                                            stroke-miterlimit="10" x1="19" y1="28" x2="47" y2="28"></line>
-                                    </g>
+                                <svg class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 36 36"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z">
+                                    </path>
+                                    <path d="M14.18,19.7h5.19a4.28,4.28,0,0,0,3.5-1.9H14.18Z"></path>
+                                    <path d="M19.37,10.51H14.18V12h8.37A4.21,4.21,0,0,0,19.37,10.51Z"></path>
+                                    <path
+                                        d="M17.67,2a16,16,0,1,0,16,16A16,16,0,0,0,17.67,2Zm10.5,15.8H25.7a6.87,6.87,0,0,1-6.33,4.4H14.18v6.54a1.25,1.25,0,1,1-2.5,0V17.8H8.76a.9.9,0,1,1,0-1.8h2.92V13.8H8.76a.9.9,0,1,1,0-1.8h2.92V9.26A1.25,1.25,0,0,1,12.93,8h6.44a6.84,6.84,0,0,1,6.15,4h2.65a.9.9,0,0,1,0,1.8H26.09a6.91,6.91,0,0,1,.12,1.3,6.8,6.8,0,0,1-.06.9h2a.9.9,0,0,1,0,1.8Z">
+                                    </path>
                                 </svg>
                             </div>
 
