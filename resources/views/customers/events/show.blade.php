@@ -194,136 +194,339 @@
                 @endif
 
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <div class="text-gray-600 text-sm">Date</div>
-                        <div class="font-medium">
-                            {{ \Illuminate\Support\Carbon::parse($event->event_date)->format('Y-m-d') }}
-                        </div>
+                @php
+                $status = strtolower($event->status ?? 'unknown');
+                $statusClasses = match($status) {
+                'requested' => 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+                'approved' => 'bg-amber-100 text-amber-800 border border-amber-200',
+                'meeting' => 'bg-blue-100 text-blue-800 border border-blue-200',
+                'completed' => 'bg-green-100 text-green-800 border border-green-200',
+                'cancelled', 'canceled' => 'bg-rose-100 text-rose-800 border border-rose-200',
+                default => 'bg-gray-100 text-gray-800 border border-gray-200',
+                };
+
+                $date = \Illuminate\Support\Carbon::parse($event->event_date);
+                @endphp
+
+                <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- Date --}}
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <dt class="text-xs uppercase tracking-wide text-gray-500">Date</dt>
+                        <dd class="mt-1 font-medium text-gray-900">
+                            {{ $date->format('M d, Y') }}
+                            <span class="ml-2 text-xs text-gray-500">({{ $date->format('D') }})</span>
+                        </dd>
                     </div>
-                    <div>
-                        <div class="text-gray-600 text-sm">Status</div>
-                        <div>
-                            <span class="px-2 py-1 rounded text-xs bg-gray-100 text-gray-800">
+
+                    {{-- Status --}}
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <dt class="text-xs uppercase tracking-wide text-gray-500">Status</dt>
+                        <dd class="mt-1">
+                            <span
+                                class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold {{ $statusClasses }}">
+                                {{-- tiny dot --}}
+                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-current"></span>
                                 {{ ucfirst($event->status) }}
                             </span>
-                        </div>
+                        </dd>
                     </div>
-                    <div>
-                        <div class="text-gray-600 text-sm">Package</div>
-                        <div class="font-medium">{{ $event->package?->name ?? '—' }}</div>
+
+                    {{-- Package --}}
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <dt class="text-xs uppercase tracking-wide text-gray-500">Package</dt>
+                        <dd class="mt-1 font-medium text-gray-900">
+                            {{ $event->package?->name ?? '—' }}
+                        </dd>
+                        @if(!empty($event->package?->short_description))
+                        <dd class="mt-0.5 text-xs text-gray-500">{{ $event->package->short_description }}</dd>
+                        @endif
                     </div>
-                    <div>
-                        <div class="text-gray-600 text-sm">Venue</div>
-                        <div class="font-medium">{{ $event->venue ?: '—' }}</div>
+
+                    {{-- Venue --}}
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <dt class="text-xs uppercase tracking-wide text-gray-500">Venue</dt>
+                        <dd class="mt-1 font-medium text-gray-900">
+                            {{ $event->venue ?: '—' }}
+                        </dd>
                     </div>
-                    <div>
-                        <div class="text-gray-600 text-sm">Theme</div>
-                        <div class="font-medium">{{ $event->theme ?: '—' }}</div>
+
+                    {{-- Theme --}}
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <dt class="text-xs uppercase tracking-wide text-gray-500">Theme</dt>
+                        <dd class="mt-1">
+                            @if(!empty($event->theme))
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                                {{ $event->theme }}
+                            </span>
+                            @else
+                            <span class="text-gray-500">—</span>
+                            @endif
+                        </dd>
                     </div>
-                    <div>
-                        <span class="text-gray-600 font-semibold">Guests:</span>
-                        <div class="mt-1 text-gray-700 whitespace-pre-line text-sm">{{ $event->guests ?? 'Not specified'
-                            }}
-                        </div>
+
+                    {{-- Guests --}}
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <dt class="text-xs uppercase tracking-wide text-gray-500">Guests</dt>
+                        <dd class="mt-1 text-gray-700 whitespace-pre-line text-sm">
+                            {{ $event->guests ?? 'Not specified' }}
+                        </dd>
                     </div>
-                    <div class="md:col-span-2">
-                        <div class="text-gray-600 text-sm">Notes</div>
-                        <div class="font-medium whitespace-pre-line">{{ $event->notes ?: '—' }}</div>
+
+                    {{-- Notes (full width on md) --}}
+                    <div class="md:col-span-2 rounded-lg border border-gray-200 bg-white p-4">
+                        <dt class="text-xs uppercase tracking-wide text-gray-500">Notes</dt>
+                        <dd class="mt-1 font-medium text-gray-900 whitespace-pre-line">
+                            {{ $event->notes ?: '—' }}
+                        </dd>
                     </div>
-                </div>
+                </dl>
+
             </div>
 
-            {{-- Package Details --}}
+            {{-- ======================== PACKAGE DETAILS ======================== --}}
             @php
             $pkg = $event->package;
-            $sty = is_array($pkg?->event_styling) ? $pkg->event_styling : [];
+            $sty = is_array($pkg?->event_styling) ? array_values(array_filter($pkg->event_styling, fn($v) =>
+            trim((string)$v) !== '')) : [];
+            $coordPrice = (float)($pkg->coordination_price ?? 25000);
+            $stylePrice = (float)($pkg->event_styling_price ?? 55000);
+            $pkgSubtotal = $coordPrice + $stylePrice;
             @endphp
-            <div class="bg-white rounded-lg shadow-sm p-6">
-                <h3 class="font-semibold text-lg">Package Details</h3>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 7h18M3 12h18M7 17h10" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg text-gray-900">Package Details</h3>
+                            @if($pkg?->name)
+                            <span
+                                class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        d="M5 12h14M5 6h14M5 18h7" />
+                                </svg>
+                                {{ $pkg->name }}
+                            </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    @if($pkg)
+                    <div class="text-right shrink-0">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Package Subtotal</div>
+                        <div class="text-2xl font-bold text-gray-900">
+                            <span class="text-emerald-600">₱</span>{{ number_format($pkgSubtotal, 2) }}
+                        </div>
+                        <div class="text-xs text-gray-500">Coordination + Styling</div>
+                    </div>
+                    @endif
+                </div>
 
                 @if($pkg)
+                {{-- Description (collapsible when long) --}}
                 @if(!empty($pkg->description))
-                <div class="mt-2">
-                    <div class="text-gray-600 text-sm">Description</div>
-                    <div class="text-gray-800 whitespace-pre-line">{{ $pkg->description }}</div>
+                @php $isLong = mb_strlen($pkg->description) > 180; @endphp
+                <div class="mt-4">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Description</div>
+
+                    @if($isLong)
+                    <details class="group mt-1 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                        <summary class="list-none cursor-pointer select-none flex items-center justify-between">
+                            <span class="text-gray-700">Preview</span>
+                            <svg class="w-4 h-4 text-gray-500 transition-transform group-open:rotate-180" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                    d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </summary>
+                        <div class="mt-2 text-gray-800 whitespace-pre-line">{{ $pkg->description }}</div>
+                    </details>
+                    @else
+                    <div
+                        class="mt-1 rounded-lg border border-gray-200 bg-gray-50 p-4 text-gray-800 whitespace-pre-line">
+                        {{ $pkg->description }}
+                    </div>
+                    @endif
                 </div>
                 @endif
 
+                {{-- Feature tiles --}}
                 <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="rounded border bg-gray-50 p-3">
-                        <div class="text-xs uppercase tracking-wide text-gray-500">Coordination</div>
-                        <div class="mt-1 text-sm text-gray-800 whitespace-pre-line">
-                            {{ $pkg->coordination ?: '—' }}
-                        </div>
-                        <div class="mt-2 font-semibold">
-                            ₱{{ number_format($pkg->coordination_price ?? 25000, 2) }}
+                    {{-- Coordination --}}
+                    <div class="rounded-lg border border-gray-200 bg-white p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Coordination
+                                </div>
+                                <div class="mt-1 text-sm text-gray-800 whitespace-pre-line">
+                                    {{ $pkg->coordination ?: '—' }}
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <div class="text-sm text-gray-500">Price</div>
+                                <div class="text-lg font-semibold text-gray-900">
+                                    <span class="text-emerald-600">₱</span>{{ number_format($coordPrice, 2) }}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="rounded border bg-gray-50 p-3">
-                        <div class="text-xs uppercase tracking-wide text-gray-500">Event Styling</div>
-                        @if(empty($sty))
-                        <div class="mt-1 text-sm text-gray-500">—</div>
-                        @else
-                        <ul class="mt-1 text-sm text-gray-800 list-disc pl-5 space-y-0.5">
-                            @foreach($sty as $item)
-                            @if(trim($item) !== '')
-                            <li>{{ $item }}</li>
-                            @endif
-                            @endforeach
-                        </ul>
-                        @endif
-                        <div class="mt-2 font-semibold">
-                            ₱{{ number_format($pkg->event_styling_price ?? 55000, 2) }}
+                    {{-- Event Styling --}}
+                    <div class="rounded-lg border border-gray-200 bg-white p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Event Styling
+                                </div>
+
+                                @if(empty($sty))
+                                <div class="mt-1 text-sm text-gray-500">—</div>
+                                @else
+                                <ul class="mt-2 text-sm text-gray-800 space-y-1">
+                                    @foreach($sty as $item)
+                                    @if(trim($item) !== '')
+                                    <li class="flex items-start gap-2">
+                                        <svg class="w-4 h-4 mt-0.5 text-gray-500 shrink-0" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span class="break-words">{{ $item }}</span>
+                                    </li>
+                                    @endif
+                                    @endforeach
+                                </ul>
+                                @endif
+                            </div>
+
+                            <div class="text-right shrink-0">
+                                <div class="text-sm text-gray-500">Price</div>
+                                <div class="text-lg font-semibold text-gray-900">
+                                    <span class="text-emerald-600">₱</span>{{ number_format($stylePrice, 2) }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                {{-- Helper note --}}
+                <div class="mt-4 flex items-start gap-2 text-xs text-gray-500">
+                    <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            d="M13 16h-1v-4h-1m1-4h.01M12 19a7 7 0 110-14 7 7 0 010 14z" />
+                    </svg>
+                    <span>Package Subtotal is for Coordination + Styling only. Full estimate includes selected
+                        inclusions below.</span>
+                </div>
                 @else
-                <div class="text-gray-500 mt-2">No package information.</div>
+                <div class="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <div class="text-sm text-gray-500">No package information.</div>
+                </div>
                 @endif
             </div>
 
-            {{-- Selected Inclusions for this Event --}}
+
+            {{-- ======================== SELECTED INCLUSIONS ======================== --}}
             @php
             $incs = $event->inclusions ?? collect();
             $incSubtotal = $incs->sum(fn($i) => (float)($i->pivot->price_snapshot ?? $i->price ?? 0));
+            $grand = $incSubtotal + ($pkg ? $coordPrice : 0) + ($pkg ? $stylePrice : 0);
             @endphp
-            <div class="bg-white rounded-lg shadow-sm p-6">
-                <h3 class="font-semibold text-lg">Selected Inclusions</h3>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                aria-hidden="true">
+                                <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                    d="M3 7h18M3 12h18M3 17h18" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg text-gray-900">Selected Inclusions</h3>
+                            <div class="text-sm text-gray-600">
+                                @if($incs->isEmpty())
+                                No inclusions selected
+                                @else
+                                {{ $incs->count() }} item{{ $incs->count() > 1 ? 's' : '' }}
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-right shrink-0">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Inclusions Subtotal
+                        </div>
+                        <div class="text-2xl font-bold text-gray-900">
+                            <span class="text-emerald-600">₱</span>{{ number_format($incSubtotal, 2) }}
+                        </div>
+                    </div>
+                </div>
 
                 @if($incs->isEmpty())
-                <div class="text-gray-500">No inclusions selected.</div>
+                <div class="mt-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+                    <div
+                        class="mx-auto w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-200">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-600">No inclusions selected for this event.</p>
+                </div>
                 @else
-                <ul class="mt-3 space-y-2">
+                <ul class="mt-4 divide-y divide-gray-200 rounded-lg border border-gray-200 overflow-hidden">
                     @foreach($incs as $inc)
                     @php
                     $price = $inc->pivot->price_snapshot ?? $inc->price;
                     $notes = trim((string)($inc->notes ?? ''));
                     $lines = $notes !== '' ? preg_split('/\r\n|\r|\n/', $notes) : [];
                     @endphp
-                    <li class="rounded border p-3 bg-white">
-                        <div class="flex items-start justify-between gap-3">
+
+                    <li class="bg-white p-4 hover:bg-gray-50 transition">
+                        <div class="flex items-start justify-between gap-4">
                             <div class="min-w-0">
-                                <div class="font-medium text-gray-900">
-                                    {{ $inc->name }}
+                                <div class="flex items-center gap-2">
+                                    <div class="font-medium text-gray-900">{{ $inc->name }}</div>
                                     @if($inc->category)
-                                    <span class="ml-2 text-xs text-gray-500">• {{ $inc->category }}</span>
+                                    <span
+                                        class="inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                                        {{ $inc->category }}
+                                    </span>
                                     @endif
                                 </div>
+
                                 @if(!empty($lines))
-                                <ul class="mt-1 text-xs text-gray-700 list-disc pl-5 space-y-0.5">
+                                <ul class="mt-2 text-xs text-gray-700 space-y-1">
                                     @foreach($lines as $line)
                                     @if(trim($line) !== '')
-                                    <li>{{ $line }}</li>
+                                    <li class="flex items-start gap-2">
+                                        <svg class="w-3.5 h-3.5 mt-0.5 text-gray-400 shrink-0" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                d="M5 12h14" />
+                                        </svg>
+                                        <span class="break-words">{{ $line }}</span>
+                                    </li>
                                     @endif
                                     @endforeach
                                 </ul>
                                 @endif
                             </div>
+
                             @if(!is_null($price))
-                            <div class="shrink-0 text-sm font-semibold">
-                                ₱{{ number_format($price, 2) }}
+                            <div class="shrink-0 text-right">
+                                <div class="text-xs text-gray-500">Price</div>
+                                <div class="text-sm font-semibold text-gray-900">
+                                    <span class="text-emerald-600">₱</span>{{ number_format($price, 2) }}
+                                </div>
                             </div>
                             @endif
                         </div>
@@ -331,36 +534,58 @@
                     @endforeach
                 </ul>
 
-                <div class="mt-4 rounded border bg-gray-50 p-3 text-sm text-gray-800">
+                {{-- Totals panel --}}
+                <div class="mt-4 rounded-lg border bg-gray-50 p-4 text-sm text-gray-800">
                     <div class="flex items-center justify-between">
                         <span>Inclusions Subtotal</span>
-                        <span class="font-semibold">₱{{ number_format($incSubtotal, 2) }}</span>
+                        <span class="font-semibold">
+                            <span class="text-emerald-600">₱</span>{{ number_format($incSubtotal, 2) }}
+                        </span>
                     </div>
+
                     @if($pkg)
                     <div class="flex items-center justify-between mt-1">
                         <span>Coordination</span>
-                        <span class="font-semibold">₱{{ number_format($pkg->coordination_price ?? 25000, 2) }}</span>
+                        <span class="font-semibold">
+                            <span class="text-emerald-600">₱</span>{{ number_format($coordPrice, 2) }}
+                        </span>
                     </div>
                     <div class="flex items-center justify-between mt-1">
                         <span>Event Styling</span>
-                        <span class="font-semibold">₱{{ number_format($pkg->event_styling_price ?? 55000, 2) }}</span>
+                        <span class="font-semibold">
+                            <span class="text-emerald-600">₱</span>{{ number_format($stylePrice, 2) }}
+                        </span>
                     </div>
-                    <div class="flex items-center justify-between mt-2 border-t pt-2">
-                        <span>Estimated Total</span>
-                        @php
-                        $grand = $incSubtotal + (float)($pkg->coordination_price ?? 25000) +
-                        (float)($pkg->event_styling_price ?? 55000);
-                        @endphp
-                        <span class="font-bold text-2xl">₱{{ number_format($grand, 2) }}</span>
+                    <div class="flex items-center justify-between mt-3 border-t pt-3">
+                        <span class="font-medium">Estimated Total</span>
+                        <span class="font-extrabold text-2xl text-gray-900">
+                            <span class="text-emerald-600">₱</span>{{ number_format($grand, 2) }}
+                        </span>
                     </div>
                     @endif
+
+                    <div class="mt-2 text-xs text-gray-500 flex items-start gap-2">
+                        <svg class="w-4 h-4 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 8v4m0 4h.01M21 12A9 9 0 113 12a9 9 0 0118 0z" />
+                        </svg>
+                        <span>These figures are estimates based on current selections and package components.</span>
+                    </div>
                 </div>
                 @endif
             </div>
 
-            <div>
-                <a href="{{ route('customer.events.index') }}" class="underline">Back to events</a>
+            {{-- ======================== BACK LINK ======================== --}}
+            <div class="flex items-center">
+                <a href="{{ route('customer.events.index') }}"
+                    class="inline-flex items-center gap-2 text-gray-700 hover:text-gray-900 font-medium">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back to events
+                </a>
             </div>
+
         </div>
     </div>
 </x-app-layout>

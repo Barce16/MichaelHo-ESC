@@ -246,7 +246,7 @@
                         <span class="text-sm font-semibold">My Events</span>
                     </a>
 
-                    <a href="{{ route('customer.billings.index') }}"
+                    <a href="{{ route('customer.billings') }}"
                         class="flex flex-col items-center justify-center gap-2 p-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
