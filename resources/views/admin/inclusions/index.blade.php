@@ -137,10 +137,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($inclusions as $i)
             @php
-            // Get inclusion image - adjust based on your actual image relationship
-            $inclusionImage = $i->image ?? $i->images->first() ?? null;
-            $imageUrl = $inclusionImage->url ?? "https://picsum.photos/seed/inclusion-{$i->id}/400/300";
-            $imageAlt = $inclusionImage->alt ?? $i->name;
+            $imageUrl = $i->image_url; // Uses the accessor
+            $imageAlt = $i->name;
             @endphp
             <div
                 class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition group">

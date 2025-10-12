@@ -40,4 +40,14 @@ class Inclusion extends Model
             ->withPivot(['price'])
             ->withTimestamps();
     }
+
+
+    public function getImageUrlAttribute(): string
+    {
+        if ($this->image) {
+            return asset('storage/' . $this->image);
+        }
+
+        return "https://ui-avatars.com/api/?name=" . urlencode($this->name) . "&size=400&background=8B5CF6&color=FFFFFF";
+    }
 }

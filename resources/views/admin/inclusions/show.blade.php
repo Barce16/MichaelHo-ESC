@@ -1,12 +1,4 @@
 <x-admin.layouts.management>
-    @php
-    // Get inclusion images - adjust based on your actual image relationship
-    $images = $inclusion->images ?? collect();
-    $fallbackImage = "https://picsum.photos/seed/inclusion-{$inclusion->id}/800/600";
-    $mainImage = $images->first()->url ?? $fallbackImage;
-    $mainImageAlt = $images->first()->alt ?? $inclusion->name;
-    @endphp
-
     <div class="space-y-6">
         {{-- Header --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -52,40 +44,35 @@
             </div>
         </div>
 
-        {{-- Image Gallery --}}
+        {{-- Image Display --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                Service Images
+                Image
             </h4>
 
-            @if($images->count() > 1)
-            {{-- Multiple images grid --}}
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                @foreach($images as $img)
-                <figure class="rounded-xl overflow-hidden shadow-sm relative group">
-                    <div class="relative w-full aspect-[4/3]">
-                        <img src="{{ $img->url }}" alt="{{ $img->alt ?? $inclusion->name }}"
-                            class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            loading="lazy">
-                    </div>
-                </figure>
-                @endforeach
-            </div>
-            @else
-            {{-- Single image hero --}}
+            @if($inclusion->image)
             <figure class="rounded-xl overflow-hidden shadow-sm relative group">
                 <div class="relative w-full aspect-[16/9]">
-                    <img src="{{ $mainImage }}" alt="{{ $mainImageAlt }}"
+                    <img src="{{ $inclusion->image_url }}" alt="{{ $inclusion->name }}"
                         class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy">
                 </div>
                 <figcaption class="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent">
                 </figcaption>
             </figure>
+            @else
+            <div class="text-center py-16 bg-slate-50 rounded-xl border-2 border-dashed border-gray-300">
+                <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p class="text-gray-500 font-medium">No image uploaded</p>
+                <p class="text-gray-400 text-sm mt-1">Add an image to showcase this service</p>
+            </div>
             @endif
         </div>
 
