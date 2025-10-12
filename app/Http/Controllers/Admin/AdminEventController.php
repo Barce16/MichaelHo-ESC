@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Notifications\EventApprovedNotification;
 use App\Notifications\EventRejectedNotification;
-use App\Services\EventSmsNotifier; // Add this
+use App\Services\EventSmsNotifier;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;

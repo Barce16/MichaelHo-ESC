@@ -116,9 +116,18 @@
 
                     <div class="bg-violet-50 rounded-lg p-4">
                         <dt class="flex items-center gap-2 text-sm font-medium text-violet-700 mb-2">
-                            <svg class="w-4 h-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <svg fill="currentColor" viewBox="0 0 24 24" id="phillippine-peso" data-name="Flat Line"
+                                xmlns="http://www.w3.org/2000/svg" class="icon flat-line w-4 h-4 text-violet-500">
+                                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                                <g id="SVGRepo_iconCarrier">
+                                    <path id="primary" d="M11,15H8V3h3a6,6,0,0,1,6,6h0A6,6,0,0,1,11,15ZM8,3V21"
+                                        style="fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2;">
+                                    </path>
+                                    <path id="primary-2" data-name="primary" d="M4,7H20M4,11H20"
+                                        style="fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2;">
+                                    </path>
+                                </g>
                             </svg>
                             Price
                         </dt>

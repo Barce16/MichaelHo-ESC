@@ -16,33 +16,34 @@
     {{-- Expose package data for Alpine --}}
     <script>
         window.__pkgData = {
-        @foreach($packages as $p)
-            {{ $p->id }}: @js([
-                'id'   => $p->id,
-                'name' => $p->name,
-                'type' => $p->type,
-                'coordination' => $p->coordination,
-                'coordination_price' => $p->coordination_price ?? 25000,
-                'event_styling' => is_array($p->event_styling) ? array_values($p->event_styling) : [],
-                'event_styling_price' => $p->event_styling_price ?? 55000,
-                'inclusions' => $p->inclusions->map(fn($i) => $i->id),
-            ]),
-        @endforeach
-        };
+    @foreach($packages as $p)
+        {{ $p->id }}: @js([
+            'id'   => $p->id,
+            'name' => $p->name,
+            'type' => $p->type,
+            'coordination' => $p->coordination,
+            'coordination_price' => $p->coordination_price ?? 25000,
+            'event_styling' => is_array($p->event_styling) ? array_values($p->event_styling) : [],
+            'event_styling_price' => $p->event_styling_price ?? 55000,
+            'inclusions' => $p->inclusions->map(fn($i) => $i->id),
+        ]),
+    @endforeach
+    };
 
-        window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $categoryName) {
-            return [
-                'category' => $categoryName,
-                'items' => $categoryInclusions->map(fn($i) => [
-                    'id' => $i->id,
-                    'name' => $i->name,
-                    'price' => $i->price,
-                    'notes' => $i->notes,
-                    'image' => $i->image,
-                    'category' => $i->category,
-                ])->values()
-            ];
-        })->values());
+    window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $categoryName) {
+        return [
+            'category' => $categoryName,
+            'items' => $categoryInclusions->map(fn($i) => [
+                'id' => $i->id,
+                'name' => $i->name,
+                'price' => $i->price,
+                'notes' => $i->notes,
+                'image' => $i->image,
+                'category' => $i->category,
+                'package_type' => $i->package_type,
+            ])->values()
+        ];
+    })->values());
     </script>
 
     @php
@@ -486,80 +487,115 @@
 
     <script>
         function editEventForm(){
-        const initialPkg = Number(@json(old('package_id', $event->package_id)) || 0);
-        const oldSelections = @json(old('inclusions', [])) || [];
-        const eventSelections = @json($event->inclusions->pluck('id')->toArray());
+    const initialPkg = Number(@json(old('package_id', $event->package_id)) || 0);
+    const oldSelections = @json(old('inclusions', [])) || [];
+    const eventSelections = @json($event->inclusions->pluck('id')->toArray());
 
-        return {
-            selectedPackage: initialPkg,
-            pkg: null,
-            selectedIncs: new Set(),
-            packageInclusions: [],
-            categories: [],
+    return {
+        selectedPackage: initialPkg,
+        pkg: null,
+        selectedIncs: new Set(),
+        packageInclusions: [],
+        categories: [],
+        allCategories: [], // Store all categories
 
-            fmt(n){
-                return Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            },
+        fmt(n){
+            return Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        },
 
-            loadPackage(id){
-                const p = window.__pkgData[id] || null;
-                this.pkg = p;
-                this.packageInclusions = p ? (p.inclusions || []) : [];
-                this.selectedIncs = new Set();
-                this.categories = window.__allInclusions || [];
+        loadPackage(id){
+            const p = window.__pkgData[id] || null;
+            this.pkg = p;
+            this.packageInclusions = p ? (p.inclusions || []) : [];
+            this.selectedIncs = new Set();
+            this.allCategories = window.__allInclusions || [];
+            
+            // Filter inclusions based on package type
+            if (p && p.type) {
+                this.categories = this.allCategories.map(cat => {
+                    return {
+                        category: cat.category,
+                        items: cat.items.filter(item => {
+                            // Show if package_type matches OR package_type is null (available for all)
+                            return item.package_type === p.type || item.package_type === null;
+                        })
+                    };
+                }).filter(cat => cat.items.length > 0); // Remove empty categories
+            } else {
+                // If no package type, show all inclusions
+                this.categories = this.allCategories;
+            }
 
-                // Restore old selections if validation failed
-                if (Array.isArray(oldSelections) && oldSelections.length > 0) {
-                    oldSelections.forEach(id => this.selectedIncs.add(Number(id)));
-                } 
-                // Otherwise restore event's current selections
-                else if (Array.isArray(eventSelections) && eventSelections.length > 0 && Number(@json($event->package_id)) === Number(id)) {
-                    eventSelections.forEach(id => this.selectedIncs.add(Number(id)));
-                }
-                // Or pre-select package inclusions
-                else if (p && this.categories.length) {
-                    this.categories.forEach(cat => {
-                        cat.items.forEach(item => {
-                            if (this.packageInclusions.includes(item.id)) {
-                                this.selectedIncs.add(item.id);
-                            }
-                        });
-                    });
-                }
-            },
-
-            toggleInclusion(id){
-                id = Number(id);
-                if (this.selectedIncs.has(id)) {
-                    this.selectedIncs.delete(id);
-                } else {
-                    this.selectedIncs.add(id);
-                }
-            },
-
-            inclusionsSubtotal(){
-                let total = 0;
-                this.selectedIncs.forEach(incId => {
-                    this.categories.forEach(cat => {
-                        const item = cat.items.find(i => i.id === incId);
-                        if (item) total += Number(item.price || 0);
+            // Restore old selections if validation failed
+            if (Array.isArray(oldSelections) && oldSelections.length > 0) {
+                oldSelections.forEach(id => {
+                    const idNum = Number(id);
+                    // Only restore if the inclusion is visible for this package
+                    const isVisible = this.categories.some(cat => 
+                        cat.items.some(item => item.id === idNum)
+                    );
+                    if (isVisible) {
+                        this.selectedIncs.add(idNum);
+                    }
+                });
+            } 
+            // Otherwise restore event's current selections
+            else if (Array.isArray(eventSelections) && eventSelections.length > 0 && Number(@json($event->package_id)) === Number(id)) {
+                eventSelections.forEach(id => {
+                    const idNum = Number(id);
+                    // Only restore if the inclusion is visible for this package
+                    const isVisible = this.categories.some(cat => 
+                        cat.items.some(item => item.id === idNum)
+                    );
+                    if (isVisible) {
+                        this.selectedIncs.add(idNum);
+                    }
+                });
+            }
+            // Or pre-select package inclusions
+            else if (p && this.categories.length) {
+                this.categories.forEach(cat => {
+                    cat.items.forEach(item => {
+                        if (this.packageInclusions.includes(item.id)) {
+                            this.selectedIncs.add(item.id);
+                        }
                     });
                 });
-                return total;
-            },
+            }
+        },
 
-            grandTotal(){
-                const coord = Number(this.pkg ? this.pkg.coordination_price : 0);
-                const styl  = Number(this.pkg ? this.pkg.event_styling_price : 0);
-                return this.inclusionsSubtotal() + coord + styl;
-            },
+        toggleInclusion(id){
+            id = Number(id);
+            if (this.selectedIncs.has(id)) {
+                this.selectedIncs.delete(id);
+            } else {
+                this.selectedIncs.add(id);
+            }
+        },
 
-            init(){
-                if (this.selectedPackage) {
-                    this.loadPackage(this.selectedPackage);
-                }
+        inclusionsSubtotal(){
+            let total = 0;
+            this.selectedIncs.forEach(incId => {
+                this.categories.forEach(cat => {
+                    const item = cat.items.find(i => i.id === incId);
+                    if (item) total += Number(item.price || 0);
+                });
+            });
+            return total;
+        },
+
+        grandTotal(){
+            const coord = Number(this.pkg ? this.pkg.coordination_price : 0);
+            const styl  = Number(this.pkg ? this.pkg.event_styling_price : 0);
+            return this.inclusionsSubtotal() + coord + styl;
+        },
+
+        init(){
+            if (this.selectedPackage) {
+                this.loadPackage(this.selectedPackage);
             }
         }
     }
+}
     </script>
 </x-app-layout>

@@ -37,7 +37,6 @@ class EventController extends Controller
             }])
             ->get();
 
-        // Get all active inclusions grouped by category
         $allInclusions = Inclusion::where('is_active', true)
             ->get()
             ->groupBy('category');

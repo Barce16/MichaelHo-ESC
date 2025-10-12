@@ -13,14 +13,21 @@ class PublicBookingController extends Controller
 {
     public function show(Package $package)
     {
-        $package->load(['inclusions', 'images']);
 
-        // Get all active inclusions grouped by category
+        $package->load(['inclusions' => function ($query) {
+            $query->where('is_active', true);
+        }]);
+
+
         $allInclusions = Inclusion::where('is_active', true)
+            ->where(function ($query) use ($package) {
+                $query->where('package_type', $package->type)
+                    ->orWhereNull('package_type');
+            })
             ->orderBy('category')
             ->orderBy('name')
             ->get()
-            ->groupBy(fn($inc) => $inc->category ? $inc->category->value : 'Other');
+            ->groupBy('category');
 
         return view('booking.create', compact('package', 'allInclusions'));
     }

@@ -39,6 +39,15 @@ class Package extends Model
         return $this->hasMany(PackageImage::class)->orderBy('sort');
     }
 
+    public static function getDistinctTypes()
+    {
+        return self::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->distinct()
+            ->orderBy('type')
+            ->pluck('type');
+    }
+
     protected $casts = [
         'is_active'     => 'boolean',
         'event_styling' => 'array',

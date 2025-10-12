@@ -93,6 +93,34 @@
                             <x-input-error :messages="$errors->get('category')" class="mt-2" />
                         </div>
 
+                        {{-- Package Type --}}
+                        <div class="mb-4">
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                                Package Type
+                                <span class="text-gray-400 font-normal text-xs">(Optional)</span>
+                            </label>
+                            <select name="package_type" id="package_type"
+                                class="px-4 py-3 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">All Package Types</option>
+                                @foreach($packageTypes as $type)
+                                <option value="{{ $type }}" {{ old('package_type')==$type ? 'selected' : '' }}>
+                                    {{ $type }}
+                                </option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">
+                                Leave blank to make this inclusion available for all package types
+                            </p>
+                            @error('package_type')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         {{-- Price --}}
                         <div>
                             <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">

@@ -63,6 +63,9 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 Route::get('/api/availability', [AvailabilityController::class, 'getMonthAvailability'])
     ->name('api.availability');
 
+Route::get('/inclusions/by-package-type', [InclusionController::class, 'getByPackageType'])
+    ->name('inclusions.by-package-type');
+
 Route::get('/test-sms', function (App\Services\SmsService $sms) {
     $result = $sms->send('+639152796976', 'Hello from Michael Ho Events! This is a test message.');
     return $result ? 'SMS sent to your phone!' : 'SMS failed! Check logs.';
