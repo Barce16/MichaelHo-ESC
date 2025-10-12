@@ -5,7 +5,7 @@
                 <h2 class="font-semibold text-xl text-gray-800">Payroll Details</h2>
                 <p class="text-sm text-gray-600 mt-1">{{ $event->name }}</p>
             </div>
-            <a href="{{ route('admin.payroll.index') }}" class="text-sm text-gray-600 hover:text-gray-900 font-medium">
+            <a href="{{ route('admin.payroll.index') }}" class="text-sm text-gray-600 hover:text-slate-700 font-medium">
                 ← Back to Payroll
             </a>
         </div>
@@ -21,7 +21,7 @@
             @endif
 
             {{-- Event Information --}}
-            <div class="bg-gradient-to-r from-gray-900 to-black rounded-lg shadow-sm p-6 text-white">
+            <div class="bg-gradient-to-r from-slate-700 to-gray-800 rounded-lg shadow-sm p-6 text-white">
                 <h3 class="text-lg font-semibold mb-4">Event Information</h3>
                 <div class="grid md:grid-cols-4 gap-6">
                     <div>
@@ -45,13 +45,13 @@
 
             {{-- Payroll Summary --}}
             <div class="grid md:grid-cols-3 gap-4">
-                <div class="bg-white rounded-lg shadow-sm border-2 border-gray-900 p-6">
+                <div class="bg-white rounded-lg shadow-sm border-2 border-slate-700 p-6">
                     <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Total Payroll</div>
-                    <div class="text-3xl font-bold text-gray-900">₱{{ number_format($totalPayroll, 2) }}</div>
+                    <div class="text-3xl font-bold text-slate-700">₱{{ number_format($totalPayroll, 2) }}</div>
                 </div>
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Paid Amount</div>
-                    <div class="text-3xl font-bold text-gray-900">₱{{ number_format($paidAmount, 2) }}</div>
+                    <div class="text-3xl font-bold text-slate-700">₱{{ number_format($paidAmount, 2) }}</div>
                 </div>
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Pending Amount</div>
@@ -62,7 +62,7 @@
             {{-- Staff List --}}
             <div class="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h3 class="text-lg font-semibold text-gray-900">Staff Assignments ({{ $event->staffs->count() }})
+                    <h3 class="text-lg font-semibold text-slate-700">Staff Assignments ({{ $event->staffs->count() }})
                     </h3>
                 </div>
 
@@ -72,11 +72,11 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-4 flex-1">
                                 <div
-                                    class="w-14 h-14 bg-gray-900 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                                    class="w-14 h-14 bg-slate-700 rounded-full flex items-center justify-center text-white font-bold text-xl">
                                     {{ substr($staff->name, 0, 1) }}
                                 </div>
                                 <div class="flex-1">
-                                    <div class="font-semibold text-gray-900 text-lg">{{ $staff->name }}</div>
+                                    <div class="font-semibold text-slate-700 text-lg">{{ $staff->name }}</div>
                                     <div class="text-sm text-gray-600 mt-1">{{ $staff->pivot->assignment_role }}</div>
                                     <div class="text-xs text-gray-500 mt-1">{{ $staff->position ?? 'Staff' }}</div>
                                 </div>
@@ -85,13 +85,13 @@
                             <div class="flex items-center gap-6">
                                 <div class="text-right">
                                     <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Pay Rate</div>
-                                    <div class="text-2xl font-bold text-gray-900">₱{{
+                                    <div class="text-2xl font-bold text-slate-700">₱{{
                                         number_format($staff->pivot->pay_rate, 2) }}</div>
                                 </div>
 
                                 <div class="flex flex-col gap-2">
                                     @if($staff->pivot->pay_status === 'paid')
-                                    <div class="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg">
+                                    <div class="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M5 13l4 4L19 7" />
@@ -115,7 +115,7 @@
                                         action="{{ route('admin.payroll.markAsPaid', [$event, $staff]) }}">
                                         @csrf
                                         <button type="submit"
-                                            class="w-full px-4 py-2 bg-gray-900 text-white font-medium rounded-lg hover:bg-black transition">
+                                            class="w-full px-4 py-2 bg-slate-700 text-white font-medium rounded-lg hover:bg-gray-800 transition">
                                             Mark as Paid
                                         </button>
                                     </form>

@@ -72,9 +72,39 @@ class AdminController extends Controller
 
     public function managementIndex()
     {
-
-        $totalEvents    = Event::count();
+        $totalEvents = Event::count();
         $totalCustomers = Customer::count();
-        return view('admin.management.index', compact('totalEvents', 'totalCustomers'));
+
+        // Package statistics
+        $totalPackages = \App\Models\Package::count();
+        $activePackages = \App\Models\Package::where('is_active', true)->count();
+
+        // Inclusion statistics
+        $totalInclusions = \App\Models\Inclusion::count();
+        $availableInclusions = \App\Models\Inclusion::where('is_active', true)->count();
+
+        // Recent packages (top 4 active ones)
+        $recentPackages = \App\Models\Package::where('is_active', true)
+            ->latest()
+            ->take(4)
+            ->get();
+
+        // Popular inclusions (most used, top 6)
+        $popularInclusions = \App\Models\Inclusion::withCount('events')
+            ->where('is_active', true)
+            ->orderByDesc('events_count')
+            ->take(6)
+            ->get();
+
+        return view('admin.management.index', compact(
+            'totalEvents',
+            'totalCustomers',
+            'totalPackages',
+            'activePackages',
+            'totalInclusions',
+            'availableInclusions',
+            'recentPackages',
+            'popularInclusions'
+        ));
     }
 }

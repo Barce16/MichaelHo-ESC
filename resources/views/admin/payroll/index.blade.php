@@ -23,7 +23,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Events</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['total_events'] }}</p>
+                            <p class="text-3xl font-bold text-slate-700 mt-2">{{ $stats['total_events'] }}</p>
                         </div>
                         <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -38,7 +38,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pending Payroll</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['pending_payroll'] }}</p>
+                            <p class="text-3xl font-bold text-slate-700 mt-2">{{ $stats['pending_payroll'] }}</p>
                         </div>
                         <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,7 +53,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pending Amount</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-2">₱{{
+                            <p class="text-2xl font-bold text-slate-700 mt-2">₱{{
                                 number_format($stats['total_pending_amount'], 2) }}</p>
                         </div>
                         <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -72,7 +72,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gradient-to-br from-gray-900 to-black rounded-lg shadow-sm p-6 text-white">
+                <div class="bg-gradient-to-br from-slate-700 to-gray-600 rounded-lg shadow-sm p-6 text-white">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-xs font-semibold text-gray-300 uppercase tracking-wide">Total Paid</p>
@@ -94,18 +94,18 @@
                     <div class="flex-1 min-w-[200px]">
                         <input type="text" name="search" value="{{ $search }}"
                             placeholder="Search by event or customer name..."
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-700 focus:border-slate-700">
                     </div>
                     <div>
                         <select name="status"
-                            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900">
+                            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-700 focus:border-slate-700">
                             <option value="all" {{ $status==='all' ? 'selected' : '' }}>All Status</option>
                             <option value="scheduled" {{ $status==='scheduled' ? 'selected' : '' }}>Scheduled</option>
                             <option value="completed" {{ $status==='completed' ? 'selected' : '' }}>Completed</option>
                         </select>
                     </div>
                     <button type="submit"
-                        class="px-6 py-2 bg-gray-900 text-white font-medium rounded-lg hover:bg-black transition">
+                        class="px-6 py-2 bg-slate-700 text-white font-medium rounded-lg hover:bg-gray-600 transition">
                         Filter
                     </button>
                     @if($search || $status !== 'all')
@@ -121,7 +121,7 @@
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead class="bg-gray-900 text-white">
+                        <thead class="bg-slate-700 text-white">
                             <tr>
                                 <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">Event
                                 </th>
@@ -148,7 +148,7 @@
                             @endphp
                             <tr class="hover:bg-gray-50 transition">
                                 <td class="px-6 py-4">
-                                    <div class="font-medium text-gray-900">{{ $event->name }}</div>
+                                    <div class="font-medium text-slate-700">{{ $event->name }}</div>
                                     <div class="text-sm text-gray-500">{{ $event->package->name ?? '-' }}</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700">
@@ -163,13 +163,13 @@
                                         {{ $totalStaff }} Staff
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-right font-semibold text-gray-900">
+                                <td class="px-6 py-4 text-right font-semibold text-slate-700">
                                     ₱{{ number_format($totalPayroll, 2) }}
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     @if($allPaid)
                                     <span
-                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">
+                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-700 text-white">
                                         ✓ Paid
                                     </span>
                                     @else
@@ -181,7 +181,7 @@
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <a href="{{ route('admin.payroll.viewStaffs', $event) }}"
-                                        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-black transition">
+                                        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-gray-600 transition">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
