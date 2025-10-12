@@ -13,12 +13,21 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Notifications\EventApprovedNotification;
 use App\Notifications\EventRejectedNotification;
+use App\Services\EventSmsNotifier; // Add this
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
 class AdminEventController extends Controller
 {
+    protected $smsNotifier;
+
+    public function __construct(EventSmsNotifier $smsNotifier)
+    {
+        $this->smsNotifier = $smsNotifier;
+    }
+
     public function index(Request $request)
     {
         $q         = (string) $request->query('q', '');
@@ -53,7 +62,6 @@ class AdminEventController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-
         return view(
             'admin.events.index',
             compact('events', 'packages', 'q', 'status', 'packageId', 'dateFrom', 'dateTo')
@@ -87,16 +95,19 @@ class AdminEventController extends Controller
         ]);
     }
 
-
     public function updateStatus(Request $request, Event $event)
     {
         $data = $request->validate([
             'status' => ['required', 'in:requested,approved,scheduled,completed,cancelled'],
         ]);
 
+        $oldStatus = $event->status;
         $event->update(['status' => $data['status']]);
 
-        return back()->with('success', 'Event status updated.');
+        // Send SMS notification for status change
+        $this->smsNotifier->notifyStatusChange($event, $oldStatus, $data['status']);
+
+        return back()->with('success', 'Event status updated and customer notified via SMS.');
     }
 
     public function approve(Request $request, Event $event)
@@ -121,12 +132,11 @@ class AdminEventController extends Controller
             ]);
         } else {
             $billing->downpayment_amount = $data['downpayment_amount'];
-            $billing->total_amount = $grandTotal; // Make sure to update total
+            $billing->total_amount = $grandTotal;
             $billing->status = 'pending';
             $billing->save();
         }
 
-        // Refresh billing to get latest data
         $billing->refresh();
 
         // Create user account if customer doesn't have one
@@ -166,17 +176,41 @@ class AdminEventController extends Controller
         $event->save();
 
         // Send email notification
+        $emailSent = false;
         if ($password && $user) {
             try {
-                // Pass the refreshed billing data
                 $user->notify(new EventApprovedNotification($event, $username, $password, $billing));
+                $emailSent = true;
             } catch (\Exception $e) {
-                return back()->with('warning', 'Event approved but failed to send email notification. Please contact the customer manually.');
+                Log::error('Failed to send approval email: ' . $e->getMessage());
             }
         }
 
-        return back()->with('success', 'Event approved! ' . ($password ? 'Account credentials sent to customer via email.' : 'Customer notified via email.'));
+        // Send SMS notification
+        $smsSent = false;
+        try {
+            $smsSent = $this->smsNotifier->notifyEventApproved($event);
+        } catch (\Exception $e) {
+            Log::error('Failed to send approval SMS: ' . $e->getMessage());
+        }
+
+        $message = 'Event approved!';
+        if ($password) {
+            $message .= ' Account credentials sent to customer.';
+        }
+        if ($emailSent && $smsSent) {
+            $message .= ' (Email & SMS sent)';
+        } elseif ($emailSent) {
+            $message .= ' (Email sent, SMS failed)';
+        } elseif ($smsSent) {
+            $message .= ' (SMS sent, Email failed)';
+        } else {
+            $message .= ' (Failed to send notifications - please contact customer manually)';
+        }
+
+        return back()->with('success', $message);
     }
+
     public function reject(Request $request, Event $event)
     {
         $data = $request->validate([
@@ -188,18 +222,38 @@ class AdminEventController extends Controller
             'rejection_reason' => $data['rejection_reason'],
         ]);
 
-        // Send rejection email to customer
         $customer = $event->customer;
 
+        // Send email notification
+        $emailSent = false;
         try {
-            // Send to customer's email directly (no user account needed)
             Notification::route('mail', $customer->email)
                 ->notify(new EventRejectedNotification($event, $data['rejection_reason']));
+            $emailSent = true;
         } catch (\Exception $e) {
-            return back()->with('warning', 'Event rejected but failed to send email notification. Please contact the customer manually.');
+            Log::error('Failed to send rejection email: ' . $e->getMessage());
         }
 
-        return back()->with('success', 'Event rejected and notification sent to customer.');
+        // Send SMS notification
+        $smsSent = false;
+        try {
+            $smsSent = $this->smsNotifier->notifyEventRejected($event, $data['rejection_reason']);
+        } catch (\Exception $e) {
+            Log::error('Failed to send rejection SMS: ' . $e->getMessage());
+        }
+
+        $message = 'Event rejected.';
+        if ($emailSent && $smsSent) {
+            $message .= ' Customer notified via email & SMS.';
+        } elseif ($emailSent) {
+            $message .= ' Customer notified via email (SMS failed).';
+        } elseif ($smsSent) {
+            $message .= ' Customer notified via SMS (Email failed).';
+        } else {
+            $message .= ' Failed to send notifications - please contact customer manually.';
+        }
+
+        return back()->with($emailSent || $smsSent ? 'success' : 'warning', $message);
     }
 
     public function confirm(Request $request, Event $event)
@@ -208,17 +262,24 @@ class AdminEventController extends Controller
             'confirmation_reason' => ['nullable', 'string', 'max:1000'],
         ]);
 
+        $oldStatus = $event->status;
         $event->update([
             'status' => 'scheduled',
         ]);
 
-        return back()->with('success', 'Event confirmed and scheduled.');
+        // Send SMS notification
+        try {
+            $this->smsNotifier->notifyStatusChange($event, $oldStatus, 'scheduled');
+        } catch (\Exception $e) {
+            Log::error('Failed to send confirmation SMS: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Event confirmed and scheduled. Customer notified.');
     }
 
     public function approvePayment(Request $request, $eventId)
     {
         $event = Event::findOrFail($eventId);
-
         $billing = $event->billing;
 
         $payment = new Payment();
@@ -239,7 +300,15 @@ class AdminEventController extends Controller
 
         $this->scheduleMeeting($event);
 
-        return redirect()->route('admin.events.show', $event)->with('success', 'Payment approved and meeting scheduled.');
+        // Send SMS notification for payment confirmation
+        try {
+            $this->smsNotifier->notifyPaymentConfirmed($payment);
+        } catch (\Exception $e) {
+            Log::error('Failed to send payment confirmation SMS: ' . $e->getMessage());
+        }
+
+        return redirect()->route('admin.events.show', $event)
+            ->with('success', 'Payment approved, meeting scheduled, and customer notified via SMS.');
     }
 
     public function scheduleMeeting(Event $event)
@@ -316,13 +385,13 @@ class AdminEventController extends Controller
         return back()->with('success', 'Event deleted.');
     }
 
-
     public function guests(Event $event)
     {
         $guests = $event->guests;
 
         return view('admin.events.guests', compact('event', 'guests'));
     }
+
     public function staffs(Event $event)
     {
         $staffs = $event->staffs;
@@ -334,9 +403,6 @@ class AdminEventController extends Controller
         return view('admin.events.staffs', compact('event', 'staffs', 'availableStaff'));
     }
 
-
-
-    // Remove staff from event
     public function removeStaff(Event $event, Staff $staff)
     {
         $event->staffs()->detach($staff->id);

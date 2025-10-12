@@ -1,6 +1,16 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800">Request New Event</h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-gray-800">Request New Event</h2>
+            <a href="{{ route('customer.events.index') }}"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Events
+            </a>
+        </div>
     </x-slot>
 
     <script>
@@ -9,283 +19,532 @@
         {{ $p->id }}: @js([
           'id'                   => $p->id,
           'name'                 => $p->name,
-          'type'          => $p->type,
+          'type'                 => $p->type,
           'coordination'         => $p->coordination,
           'coordination_price'   => $p->coordination_price ?? 25000,
           'event_styling'        => is_array($p->event_styling) ? array_values($p->event_styling) : [],
           'event_styling_price'  => $p->event_styling_price ?? 55000,
-          'inclusions'           => $p->inclusions->map(fn($i) => [
-            'id'    => $i->id,
-            'name'  => $i->name,
-            'price' => $i->price,
-            'notes' => $i->notes,
-          ])->values(),
+          'inclusions'           => $p->inclusions->map(fn($i) => $i->id),
         ]),
       @endforeach
     };
+
+    window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $categoryName) {
+        return [
+            'category' => $categoryName,
+            'items' => $categoryInclusions->map(fn($i) => [
+                'id' => $i->id,
+                'name' => $i->name,
+                'price' => $i->price,
+                'notes' => $i->notes,
+                'image' => $i->image,
+                'category' => $i->category,
+            ])->values()
+        ];
+    })->values());
     </script>
 
     <div class="py-6" x-data="eventForm()" x-init="init()">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white shadow-sm rounded-lg p-6">
-                <form method="POST" action="{{ route('customer.events.store') }}">
-                    @csrf
+        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="md:col-span-2">
-                            <x-input-label for="name" value="Event Name" />
-                            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
-                                value="{{ old('name') }}" required />
-                            <x-input-error :messages="$errors->get('name')" class="mt-2" />
-                        </div>
+            <form method="POST" action="{{ route('customer.events.store') }}" class="space-y-6">
+                @csrf
 
-                        <div>
-                            <x-input-label for="event_date" value="Event Date" />
-                            <x-text-input id="event_date" name="event_date" type="date" class="mt-1 block w-full"
-                                value="{{ old('event_date') }}" required />
-                            <x-input-error :messages="$errors->get('event_date')" class="mt-2" />
-                        </div>
+                {{-- Event Information Card --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="bg-gradient-to-r from-violet-50 to-purple-50 border-b border-gray-200 px-6 py-4">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Event Information
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">Tell us about your special event</p>
+                    </div>
 
-                        <div>
-                            <x-input-label for="package_id" value="Package" />
-                            <select id="package_id" name="package_id" class="mt-1 w-full border rounded px-3 py-2"
-                                x-model.number="selectedPackage" @change="loadPackage(selectedPackage)">
-                                <option value="">-- Choose Package --</option>
-                                @foreach($packages as $p)
-                                <option value="{{ $p->id }}">{{ $p->name }}</option>
-                                @endforeach
-                            </select>
-                            <x-input-error :messages="$errors->get('package_id')" class="mt-2" />
-                        </div>
-
-                        {{-- Package Details + Selectable Inclusions --}}
-                        <template x-if="pkg">
+                    <div class="p-6 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {{-- Event Name --}}
                             <div class="md:col-span-2">
-                                <div class="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div>
-                                            <div class="text-lg font-semibold mb-2" x-text="pkg ? pkg.name : ''"></div>
-                                            <div class="text-gray-700 text-xl font-medium">
-                                                Estimated Total:
-                                                ₱<span x-text="fmt(grandTotal())" class="font-bold"></span>
-                                            </div>
+                                <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                    </svg>
+                                    Event Name <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="text" name="name" id="name" required value="{{ old('name') }}"
+                                    class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
+                                    placeholder="e.g., Sarah's 18th Birthday">
+                                @error('name')
+                                <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            {{-- Event Date --}}
+                            <div>
+                                <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    Event Date <span class="text-rose-500">*</span>
+                                </label>
+                                <x-calendar-picker name="event_date" :value="old('event_date')" required />
+                                @error('event_date')
+                                <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            {{-- Package Selection --}}
+                            <div>
+                                <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                    Package <span class="text-rose-500">*</span>
+                                </label>
+                                <select name="package_id" id="package_id" required
+                                    class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
+                                    x-model.number="selectedPackage" @change="loadPackage(selectedPackage)">
+                                    <option value="">Select a package</option>
+                                    @foreach($packages as $p)
+                                    <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('package_id')
+                                <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            {{-- Venue --}}
+                            <div>
+                                <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    Venue
+                                </label>
+                                <input type="text" name="venue" id="venue" value="{{ old('venue') }}"
+                                    class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
+                                    placeholder="Event location">
+                                @error('venue')
+                                <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            {{-- Theme --}}
+                            <div>
+                                <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                                    </svg>
+                                    Theme
+                                </label>
+                                <input type="text" name="theme" id="theme" value="{{ old('theme') }}"
+                                    class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
+                                    placeholder="e.g., Garden, Vintage, Modern">
+                                @error('theme')
+                                <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Package Details --}}
+                <template x-if="pkg">
+                    <div class="space-y-6">
+                        {{-- Package Overview --}}
+                        <div
+                            class="bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <h3 class="text-2xl font-bold mb-2" x-text="pkg.name"></h3>
+                                    <p class="text-violet-100 text-sm" x-text="pkg.type"></p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm text-violet-100">Estimated Total</div>
+                                    <div class="text-3xl font-bold">₱<span x-text="fmt(grandTotal())"></span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Package Services --}}
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div class="bg-gradient-to-r from-sky-50 to-blue-50 border-b border-gray-200 px-6 py-4">
+                                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-sky-500" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Included Services
+                                </h3>
+                            </div>
+
+                            <div class="p-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {{-- Coordination --}}
+                                    <div
+                                        class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-200">
+                                        <div class="flex items-start justify-between gap-3 mb-2">
+                                            <h4 class="font-semibold text-blue-900">Coordination</h4>
+                                            <span class="text-lg font-bold text-blue-600">₱<span
+                                                    x-text="fmt(pkg.coordination_price)"></span></span>
                                         </div>
-                                        <span
-                                            class="px-2 py-1 text-xs rounded bg-emerald-100 text-emerald-800">Selected</span>
+                                        <p class="text-sm text-blue-800" x-text="pkg.coordination"></p>
                                     </div>
 
-                                    <template x-if="pkg && pkg.type">
-                                        <p class="text-sm text-gray-600 mt-2" x-text="pkg.type"></p>
-                                    </template>
-
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-                                        {{-- Inclusions with checkboxes --}}
-                                        <div>
-                                            <div class="text-xs uppercase tracking-wide text-gray-500 mb-1">Inclusions
-                                            </div>
-
-                                            <template x-if="!pkg || !pkg.inclusions || pkg.inclusions.length === 0">
-                                                <div class="text-sm text-gray-500">—</div>
-                                            </template>
-
-                                            <div class="space-y-2"
-                                                x-show="pkg && pkg.inclusions && pkg.inclusions.length">
-                                                <template x-for="inc in (pkg ? (pkg.inclusions || []) : [])"
-                                                    :key="inc.id">
-                                                    <label
-                                                        class="flex items-start justify-between gap-3 border rounded px-3 py-2 bg-white">
-                                                        <div class="flex-1 min-w-0">
-                                                            <div class="font-medium" x-text="inc.name"></div>
-                                                            <template x-if="(inc.notes || '').trim() !== ''">
-                                                                <ul class="mt-1 text-xs text-gray-600 list-disc pl-4">
-                                                                    <template
-                                                                        x-for="line in (inc.notes || '').split(/\r\n|\r|\n/).slice(0,3)"
-                                                                        :key="line">
-                                                                        <li x-text="line"></li>
-                                                                    </template>
-                                                                </ul>
-                                                            </template>
-                                                        </div>
-                                                        <div class="shrink-0 text-right">
-                                                            <div class="text-sm font-semibold">₱<span
-                                                                    x-text="fmt(inc.price || 0)"></span></div>
-                                                            <input type="checkbox" class="mt-1 rounded border-gray-300"
-                                                                :checked="selectedIncs.has(inc.id)"
-                                                                @change="toggleInclusion(inc.id)">
-                                                            <template x-if="selectedIncs.has(inc.id)">
-                                                                <input type="hidden" name="inclusions[]"
-                                                                    :value="inc.id">
-                                                            </template>
-                                                        </div>
-                                                    </label>
-                                                </template>
-                                            </div>
-
-                                            <x-input-error :messages="$errors->get('inclusions')" class="mt-2" />
-                                            <x-input-error :messages="$errors->get('inclusions.*')" class="mt-1" />
+                                    {{-- Event Styling --}}
+                                    <div
+                                        class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+                                        <div class="flex items-start justify-between gap-3 mb-2">
+                                            <h4 class="font-semibold text-purple-900">Event Styling</h4>
+                                            <span class="text-lg font-bold text-purple-600">₱<span
+                                                    x-text="fmt(pkg.event_styling_price)"></span></span>
                                         </div>
-
-                                        {{-- Coordination / Styling and subtotals --}}
-                                        <div class="space-y-3">
-                                            <div class="rounded border bg-white p-3">
-                                                <div class="text-xs uppercase tracking-wide text-gray-500">Coordination
-                                                </div>
-                                                <div class="mt-1 text-sm text-gray-700"
-                                                    x-text="pkg ? (pkg.coordination || '—') : ''"></div>
-                                                <div class="mt-1 font-semibold">
-                                                    ₱<span x-text="fmt(pkg ? pkg.coordination_price : 0)"></span>
-                                                </div>
-                                            </div>
-
-                                            <div class="rounded border bg-white p-3">
-                                                <div class="text-xs uppercase tracking-wide text-gray-500">Event Styling
-                                                </div>
-                                                <template x-if="pkg && pkg.event_styling && pkg.event_styling.length">
-                                                    <ul class="mt-1 text-sm text-gray-700 list-disc pl-5 space-y-0.5">
-                                                        <template x-for="item in (pkg ? (pkg.event_styling || []) : [])"
-                                                            :key="item">
-                                                            <li x-text="item"></li>
-                                                        </template>
-                                                    </ul>
+                                        <template x-if="pkg.event_styling && pkg.event_styling.length">
+                                            <ul class="text-sm text-purple-800 space-y-1">
+                                                <template x-for="item in pkg.event_styling" :key="item">
+                                                    <li class="flex items-start gap-1">
+                                                        <svg class="w-4 h-4 mt-0.5 text-purple-500 flex-shrink-0"
+                                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                        <span x-text="item"></span>
+                                                    </li>
                                                 </template>
-                                                <template
-                                                    x-if="!(pkg && pkg.event_styling && pkg.event_styling.length)">
-                                                    <div class="mt-1 text-sm text-gray-500">—</div>
-                                                </template>
-                                                <div class="mt-1 font-semibold">
-                                                    ₱<span x-text="fmt(pkg ? pkg.event_styling_price : 0)"></span>
-                                                </div>
-                                            </div>
-
-                                            <div class="rounded border bg-white p-3">
-                                                <div class="text-sm text-gray-700 flex items-center justify-between">
-                                                    <span>Inclusions Subtotal</span>
-                                                    <span class="font-semibold">₱<span
-                                                            x-text="fmt(inclusionsSubtotal())"></span></span>
-                                                </div>
-                                                <div
-                                                    class="mt-1 text-sm text-gray-700 flex items-center justify-between">
-                                                    <span>Estimated Total</span>
-                                                    <span class="font-semibold">₱<span
-                                                            x-text="fmt(grandTotal())"></span></span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                            </ul>
+                                        </template>
                                     </div>
                                 </div>
                             </div>
-                        </template>
-
-                        {{-- Venue / Theme / Budget / Notes --}}
-                        <div>
-                            <x-input-label for="venue" value="Venue" />
-                            <x-text-input id="venue" name="venue" type="text" class="mt-1 block w-full"
-                                value="{{ old('venue') }}" />
-                            <x-input-error :messages="$errors->get('venue')" class="mt-2" />
                         </div>
 
-                        <div>
-                            <x-input-label for="theme" value="Theme" />
-                            <x-text-input id="theme" name="theme" type="text" class="mt-1 block w-full"
-                                value="{{ old('theme') }}" />
-                            <x-input-error :messages="$errors->get('theme')" class="mt-2" />
-                        </div>
-
-                        <div class="md:col-span-2 relative">
-                            <x-input-label for="budget" value="Budget" />
-                            <div class="absolute left-2 top-1/2">
-                                <span class="text-lg text-emerald-700">₱</span>
+                        {{-- Inclusions by Category --}}
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-gray-200 px-6 py-4">
+                                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                    </svg>
+                                    Select Your Inclusions
+                                </h3>
+                                <p class="text-sm text-gray-500 mt-1">Choose the services you'd like to add to your
+                                    package</p>
                             </div>
-                            <x-text-input id="budget" name="budget" type="number" step="0.01" min="0"
-                                class="mt-1 block w-full pl-7" value="{{ old('budget') }}" />
-                            <x-input-error :messages="$errors->get('budget')" class="mt-2" />
-                        </div>
 
-                        <div class="md:col-span-2">
-                            <label for="guests" class="block text-sm font-medium text-gray-700">Guest
-                                List/Details</label>
-                            <textarea name="guests" id="guests" rows="4"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                placeholder="Enter guest names, count, or special requirements...">{{ old('guests') }}</textarea>
-                            @error('guests')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            <div class="p-6 space-y-8">
+                                <template x-for="category in categories" :key="category.category">
+                                    <div>
+                                        <h4
+                                            class="text-md font-semibold text-gray-800 mb-4 pb-2 border-b flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                            </svg>
+                                            <span x-text="category.category"></span>
+                                        </h4>
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <template x-for="inc in category.items" :key="inc.id">
+                                                <div @click="toggleInclusion(inc.id)"
+                                                    class="group cursor-pointer bg-white border-2 rounded-xl p-4 transition-all duration-200 hover:shadow-md flex gap-4"
+                                                    :class="selectedIncs.has(inc.id) ? 'border-emerald-500 bg-emerald-50/50 shadow-sm' : 'border-gray-200 hover:border-gray-300'">
+
+                                                    {{-- Checkbox --}}
+                                                    <div class="flex-shrink-0 pt-1">
+                                                        <div class="w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-200"
+                                                            :class="selectedIncs.has(inc.id) ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-gray-300 group-hover:border-gray-400'">
+                                                            <svg class="w-4 h-4 text-white transition-all duration-200"
+                                                                :class="selectedIncs.has(inc.id) ? 'opacity-100 scale-100' : 'opacity-0 scale-50'"
+                                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="3" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Image --}}
+                                                    <template x-if="inc.image">
+                                                        <div
+                                                            class="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                                                            <img :src="`/storage/${inc.image}`" :alt="inc.name"
+                                                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 pointer-events-none">
+                                                        </div>
+                                                    </template>
+
+                                                    {{-- Content --}}
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="flex items-start justify-between gap-2 mb-1">
+                                                            <h5 class="font-semibold text-gray-900" x-text="inc.name">
+                                                            </h5>
+                                                            <span
+                                                                class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
+                                                                :class="selectedIncs.has(inc.id) ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-700'">
+                                                                ₱<span x-text="fmt(inc.price)"></span>
+                                                            </span>
+                                                        </div>
+
+                                                        <template x-if="inc.notes && inc.notes.trim()">
+                                                            <p class="text-xs text-gray-600 line-clamp-2 mb-2"
+                                                                x-text="inc.notes"></p>
+                                                        </template>
+
+                                                        <template x-if="packageInclusions.includes(inc.id)">
+                                                            <span
+                                                                class="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                                    viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2" d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                                In Package
+                                                            </span>
+                                                        </template>
+                                                    </div>
+
+                                                    {{-- Hidden checkbox input --}}
+                                                    <input type="checkbox" class="sr-only pointer-events-none"
+                                                        name="inclusions[]" :value="inc.id"
+                                                        :checked="selectedIncs.has(inc.id)">
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                {{-- Summary --}}
+                                <div
+                                    class="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div>
+                                            <span class="text-emerald-100 text-sm">Selected Inclusions</span>
+                                            <div class="flex items-center gap-2 mt-1">
+                                                <span class="text-2xl font-bold" x-text="selectedIncs.size"></span>
+                                                <span class="text-emerald-100">item<span
+                                                        x-show="selectedIncs.size !== 1">s</span></span>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-emerald-100 text-sm block">Subtotal</span>
+                                            <span class="text-2xl font-bold">₱<span
+                                                    x-text="fmt(inclusionsSubtotal())"></span></span>
+                                        </div>
+                                    </div>
+                                    <div class="border-t border-white/20 pt-3 flex items-center justify-between">
+                                        <span class="text-lg font-semibold">Grand Total</span>
+                                        <span class="text-3xl font-bold">₱<span
+                                                x-text="fmt(grandTotal())"></span></span>
+                                    </div>
+                                </div>
+
+                                @error('inclusions')
+                                <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Additional Details --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-gray-200 px-6 py-4">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                            </svg>
+                            Additional Details
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">Help us plan your perfect event</p>
+                    </div>
+
+                    <div class="p-6 space-y-4">
+                        {{-- Budget --}}
+                        <div>
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 36 36">
+                                    <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z">
+                                    </path>
+                                    <path d="M14.18,19.7h5.19a4.28,4.28,0,0,0,3.5-1.9H14.18Z"></path>
+                                    <path d="M19.37,10.51H14.18V12h8.37A4.21,4.21,0,0,0,19.37,10.51Z"></path>
+                                    <path
+                                        d="M17.67,2a16,16,0,1,0,16,16A16,16,0,0,0,17.67,2Zm10.5,15.8H25.7a6.87,6.87,0,0,1-6.33,4.4H14.18v6.54a1.25,1.25,0,1,1-2.5,0V17.8H8.76a.9.9,0,1,1,0-1.8h2.92V13.8H8.76a.9.9,0,1,1,0-1.8h2.92V9.26A1.25,1.25,0,0,1,12.93,8h6.44a6.84,6.84,0,0,1,6.15,4h2.65a.9.9,0,0,1,0,1.8H26.09a6.91,6.91,0,0,1,.12,1.3,6.8,6.8,0,0,1-.06.9h2a.9.9,0,0,1,0,1.8Z">
+                                    </path>
+                                </svg>
+                                Budget (Optional)
+                            </label>
+                            <div class="relative">
+                                <span
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
+                                <input type="number" name="budget" id="budget" step="0.01" min="0"
+                                    value="{{ old('budget') }}"
+                                    class="block w-full pl-10 pr-4 py-3 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition"
+                                    placeholder="0.00">
+                            </div>
+                            @error('budget')
+                            <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        <div class="md:col-span-2">
-                            <x-input-label for="notes" value="Notes" />
-                            <textarea id="notes" name="notes" rows="3"
-                                class="mt-1 w-full border rounded px-3 py-2">{{ old('notes') }}</textarea>
-                            <x-input-error :messages="$errors->get('notes')" class="mt-2" />
+                        {{-- Guests --}}
+                        <div>
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                Guest Details
+                            </label>
+                            <textarea name="guests" id="guests" rows="4"
+                                class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition resize-none"
+                                placeholder="Guest count, names, or special requirements...">{{ old('guests') }}</textarea>
+                            @error('guests')
+                            <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                            @enderror
                         </div>
 
+                        {{-- Notes --}}
+                        <div>
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                Additional Notes
+                            </label>
+                            <textarea name="notes" id="notes" rows="3"
+                                class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition resize-none"
+                                placeholder="Any special requests or requirements...">{{ old('notes') }}</textarea>
+                            @error('notes')
+                            <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
+                </div>
 
-                    <div class="mt-6 flex justify-end gap-2">
-                        <a href="{{ route('customer.events.index') }}" class="px-4 py-2 border rounded">Cancel</a>
-                        <button class="px-4 py-2 bg-gray-800 text-white rounded">Submit Request</button>
-                    </div>
-                </form>
-            </div>
+                {{-- Action Buttons --}}
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="{{ route('customer.events.index') }}"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Cancel
+                    </a>
+                    <button type="submit"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold rounded-lg hover:from-violet-600 hover:to-purple-700 transition shadow-md hover:shadow-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Submit Event Request
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
+    <style>
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+
     <script>
         function eventForm(){
-      const initialPkg   = Number(@json(old('package_id', request('package_id'))) || 0);
-      const oldSelected  = new Set((@json(old('inclusions', [])) || []).map(Number));
+  const initialPkg = Number(@json(old('package_id', request('package_id'))) || 0);
+  const oldSelections = @json(old('inclusions', [])) || [];
 
-      return {
-        selectedPackage: initialPkg,
-        pkg: null,
-        selectedIncs: new Set(),
+  return {
+    selectedPackage: initialPkg,
+    pkg: null,
+    selectedIncs: new Set(),
+    packageInclusions: [],
+    categories: [],
 
-        fmt(n){
-          return Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        },
+    fmt(n){
+      return Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    },
 
-        loadPackage(id){
-          const p = window.__pkgData[id] || null;
-          this.pkg = p;
-          this.selectedIncs.clear();
+    loadPackage(id){
+      const p = window.__pkgData[id] || null;
+      this.pkg = p;
+      this.packageInclusions = p ? (p.inclusions || []) : [];
+      this.selectedIncs = new Set();
+      this.categories = window.__allInclusions || [];
 
-          if (p && Array.isArray(p.inclusions)) {
-            // Use old selections if they belong to the currently selected package
-            if (oldSelected.size > 0 && Number(@json(old('package_id', request('package_id')))) === Number(id)) {
-              p.inclusions.forEach(i => { if (oldSelected.has(Number(i.id))) this.selectedIncs.add(Number(i.id)); });
-            } else {
-              // Default: all inclusions selected
-              p.inclusions.forEach(i => this.selectedIncs.add(Number(i.id)));
+      // Pre-select items that are in the package
+      if (p && this.categories.length) {
+        this.categories.forEach(cat => {
+          cat.items.forEach(item => {
+            if (this.packageInclusions.includes(item.id)) {
+              this.selectedIncs.add(item.id);
             }
-          }
-        },
+          });
+        });
+      }
 
-        toggleInclusion(id){
-          id = Number(id);
-          if (this.selectedIncs.has(id)) this.selectedIncs.delete(id);
-          else this.selectedIncs.add(id);
-        },
+      // Restore old selections if any
+      if (Array.isArray(oldSelections) && oldSelections.length > 0) {
+        oldSelections.forEach(id => this.selectedIncs.add(Number(id)));
+      }
+    },
 
-        inclusionsSubtotal(){
-          if (!this.pkg || !this.pkg.inclusions) return 0;
-          return this.pkg.inclusions.reduce((sum, i) => {
-            if (this.selectedIncs.has(Number(i.id))) sum += Number(i.price || 0);
-            return sum;
-          }, 0);
-        },
+    toggleInclusion(id){
+      id = Number(id);
+      if (this.selectedIncs.has(id)) {
+        this.selectedIncs.delete(id);
+      } else {
+        this.selectedIncs.add(id);
+      }
+    },
 
-        grandTotal(){
-          const coord = Number(this.pkg ? this.pkg.coordination_price : 0);
-          const styl  = Number(this.pkg ? this.pkg.event_styling_price : 0);
-          return this.inclusionsSubtotal() + coord + styl;
-        },
+    inclusionsSubtotal(){
+      let total = 0;
+      this.selectedIncs.forEach(incId => {
+        this.categories.forEach(cat => {
+          const item = cat.items.find(i => i.id === incId);
+          if (item) total += Number(item.price || 0);
+        });
+      });
+      return total;
+    },
 
-        init(){
-          if (this.selectedPackage) {
-            this.loadPackage(this.selectedPackage);
-          }
-        }
+    grandTotal(){
+      const coord = Number(this.pkg ? this.pkg.coordination_price : 0);
+      const styl  = Number(this.pkg ? this.pkg.event_styling_price : 0);
+      return this.inclusionsSubtotal() + coord + styl;
+    },
+
+    init(){
+      if (this.selectedPackage) {
+        this.loadPackage(this.selectedPackage);
       }
     }
+  }
+}
     </script>
 </x-app-layout>

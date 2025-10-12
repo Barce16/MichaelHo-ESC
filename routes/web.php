@@ -1,6 +1,6 @@
 <?php
 
-
+use App\Http\Controllers\AvailabilityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CustomerController;
@@ -59,6 +59,14 @@ Route::post('/book/{package}', [PublicBookingController::class, 'store'])->name(
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+Route::get('/api/availability', [AvailabilityController::class, 'getMonthAvailability'])
+    ->name('api.availability');
+
+Route::get('/test-sms', function (App\Services\SmsService $sms) {
+    $result = $sms->send('+639152796976', 'Hello from Michael Ho Events! This is a test message.');
+    return $result ? 'SMS sent to your phone!' : 'SMS failed! Check logs.';
+})->middleware('auth');
 
 Route::middleware('auth')->group(function () {
     // Profile
