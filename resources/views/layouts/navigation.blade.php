@@ -22,8 +22,8 @@
                         :active="request()->routeIs('customer.events.*')">
                         {{ __('My Events') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('customer.payment-history')"
-                        :active="request()->routeIs('customer.payment-history')">
+                    <x-nav-link :href="route('customer.payments.index')"
+                        :active="request()->routeIs('customer.payments.index')">
                         {{ __('Payment History') }}
                     </x-nav-link>
                     <x-nav-link :href="route('customer.billings')" :active="request()->routeIs('customer.billings')">
@@ -137,8 +137,8 @@
                 :active="request()->routeIs('customer.events.*')">
                 {{ __('My Events') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('customer.payment-history')"
-                :active="request()->routeIs('customer.payment-history')">
+            <x-responsive-nav-link :href="route('customer.payments.index')"
+                :active="request()->routeIs('customer.payments.index')">
                 {{ __(key: 'Payment History') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('customer.billings')" :active="request()->routeIs('customer.billings')">

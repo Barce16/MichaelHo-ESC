@@ -3,25 +3,29 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
-use App\Models\Customer;
-use Illuminate\Http\Request;
+use App\Models\Event;
+use Illuminate\Support\Facades\Auth;
+
 
 class BillingPageController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $customer = $request->user()->customer;
+        $customer = Auth::user()->customer;
 
         if (!$customer) {
-            return redirect()->route('home')->with('error', 'Customer not found.');
+            abort(403, 'Unauthorized access');
         }
 
-        $eventsWithBillings = $customer->events()
-            ->whereHas('billing', function ($query) {
-                $query->where('downpayment_amount', 0)
-                    ->where('total_amount', '>', 0);
-            })
-            ->with('billing')
+        // Get all events with billings for this customer
+        $eventsWithBillings = Event::where('customer_id', $customer->id)
+            ->whereHas('billing')
+            ->with([
+                'billing.payments' => function ($query) {
+                    $query->orderBy('created_at', 'desc');
+                }
+            ])
+            ->orderBy('event_date', 'desc')
             ->get();
 
         return view('customers.billings', compact('eventsWithBillings'));

@@ -66,10 +66,6 @@ Route::get('/api/availability', [AvailabilityController::class, 'getMonthAvailab
 Route::get('/inclusions/by-package-type', [InclusionController::class, 'getByPackageType'])
     ->name('inclusions.by-package-type');
 
-Route::get('/test-sms', function (App\Services\SmsService $sms) {
-    $result = $sms->send('+639152796976', 'Hello from Michael Ho Events! This is a test message.');
-    return $result ? 'SMS sent to your phone!' : 'SMS failed! Check logs.';
-})->middleware('auth');
 
 Route::middleware('auth')->group(function () {
     // Profile
@@ -83,12 +79,33 @@ Route::middleware('auth')->group(function () {
         ->prefix('customer')
         ->name('customer.')
         ->group(function () {
+            // Events
             Route::resource('events', CustomerEventController::class);
-            Route::get('customer/events/{event}/payment', [PaymentController::class, 'create'])->name('payments.create');
-            Route::post('customer/events/{event}/payment', [PaymentController::class, 'store'])->name('payments.store');
-            Route::get('/payments', [PaymentController::class, 'index'])->name('payment-history');
-            Route::get('/billings', [BillingPageController::class, 'index'])->name('billings');
-            Route::get('/payments/create/{event}', [PaymentController::class, 'create'])->name('payments.create');
+
+            // Payment routes
+            // Generic create route (auto-detects payment type)
+            Route::get('/events/{event}/payments/create', [PaymentController::class, 'create'])
+                ->name('payments.create');
+
+            // Specific payment type routes
+            Route::get('/events/{event}/pay-intro', [PaymentController::class, 'createIntro'])
+                ->name('payments.createIntro');
+            Route::get('/events/{event}/pay-downpayment', [PaymentController::class, 'createDownpayment'])
+                ->name('payments.createDownpayment');
+
+            // Store payment
+            Route::post('/events/{event}/payments', [PaymentController::class, 'store'])
+                ->name('payments.store');
+
+            // Payment history
+            Route::get('/payments', [PaymentController::class, 'index'])
+                ->name('payments.index');
+            Route::get('/payments/{payment}', [PaymentController::class, 'show'])
+                ->name('payments.show');
+
+            // Billings
+            Route::get('/billings', [BillingPageController::class, 'index'])
+                ->name('billings');
         });
 
     // ========== STAFF AREA ==========
@@ -118,36 +135,48 @@ Route::middleware('auth')->group(function () {
             // Events
             Route::resource('events', AdminEventController::class)->only(['index', 'show', 'update', 'destroy']);
 
-            // Generic status update (keep this)
-            Route::patch('events/{event}/status', [AdminEventController::class, 'updateStatus'])
-                ->name('events.status');
+            Route::post('/events/{event}/complete-meeting', [AdminEventController::class, 'completeMeeting'])
+                ->name('events.completeMeeting');
 
-            // Staff assignment update
-            Route::get('events/{event}/assign-staff', [AdminEventController::class, 'assignStaffPage'])->name('events.assignStaffPage');
-            Route::post('events/{event}/assign-staff', [AdminEventController::class, 'assignStaff'])->name('events.assignStaff');
-
-
-            Route::put('events/{event}/staff', [AdminEventController::class, 'updateStaff'])
-                ->name('events.staff.update');
-
-            Route::get('/event/{event}/guests', [AdminEventController::class, 'guests'])->name('event.guests');
-            Route::get('/event/{event}/staffs', [AdminEventController::class, 'staffs'])->name('event.staffs');
-
-            // Special cases
+            // Event approval flow
             Route::post('events/{event}/approve', [AdminEventController::class, 'approve'])
                 ->name('events.approve');
             Route::post('events/{event}/reject', [AdminEventController::class, 'reject'])
                 ->name('events.reject');
-            Route::post('events/{event}/confirm', [AdminEventController::class, 'confirm'])
-                ->name('events.confirm');
 
+            // Introductory payment verification
+            Route::post('events/{event}/approve-intro-payment', [AdminEventController::class, 'approveIntroPayment'])
+                ->name('events.approveIntroPayment');
+            Route::post('events/{event}/reject-intro-payment', [AdminEventController::class, 'rejectIntroPayment'])
+                ->name('events.rejectIntroPayment');
 
-            // -- PAYMENTS
-            Route::get('/events/{event}/payment/verify', [AdminPaymentController::class, 'verifyPayment'])
-                ->name('payment.verification');
-            Route::post('/events/{event}/approve-payment', [AdminPaymentController::class, 'approvePayment'])->name(name: 'eventPayments.approve');
-            Route::post('/events/{event}/reject-payment', [AdminPaymentController::class, 'rejectPayment'])->name('eventPayments.reject');
+            // Downpayment flow
+            Route::post('events/{event}/request-downpayment', [AdminEventController::class, 'requestDownpayment'])
+                ->name('events.requestDownpayment');
+            Route::post('events/{event}/approve-downpayment', [AdminEventController::class, 'approveDownpayment'])
+                ->name('events.approveDownpayment');
+            Route::post('events/{event}/reject-downpayment', [AdminEventController::class, 'rejectDownpayment'])
+                ->name('events.rejectDownpayment');
 
+            // Staff assignment
+            Route::get('events/{event}/assign-staff', [AdminEventController::class, 'assignStaffPage'])
+                ->name('events.assignStaffPage');
+            Route::post('events/{event}/assign-staff', [AdminEventController::class, 'assignStaff'])
+                ->name('events.assignStaff');
+            Route::put('events/{event}/staff', [AdminEventController::class, 'updateStaff'])
+                ->name('events.staff.update');
+
+            // Event guests & staffs view
+            Route::get('/event/{event}/guests', [AdminEventController::class, 'guests'])
+                ->name('event.guests');
+            Route::get('/event/{event}/staffs', [AdminEventController::class, 'staffs'])
+                ->name('event.staffs');
+
+            // Generic status update (for manual overrides if needed)
+            Route::patch('events/{event}/status', [AdminEventController::class, 'updateStatus'])
+                ->name('events.status');
+
+            // Payment list (all payments from all events)
             Route::get('payments', [CustomerPaymentController::class, 'index'])->name('payments.index');
             Route::post('payments/{paymentId}/approve', [CustomerPaymentController::class, 'approve'])->name('payments.approve');
             Route::post('payments/{paymentId}/reject', [CustomerPaymentController::class, 'reject'])->name('payments.reject');
@@ -176,7 +205,6 @@ Route::middleware('auth')->group(function () {
             });
 
             // ---- Report ----
-
             Route::prefix('reports')->name('reports.')->group(function () {
                 Route::get('/', [ReportController::class, 'index'])->name('index');
                 Route::get('/events', [ReportController::class, 'eventsReport'])->name('events');

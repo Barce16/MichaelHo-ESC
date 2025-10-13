@@ -166,7 +166,8 @@
                         <select name="status"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-200 focus:border-slate-400">
                             <option value="">All Status</option>
-                            @foreach(['requested','approved','scheduled','completed','cancelled'] as $s)
+                            @foreach(['requested','approved','request_meeting','meeting','scheduled','ongoing','completed']
+                            as $s)
                             <option value="{{ $s }}" @selected(request('status')===$s)>{{ ucfirst($s) }}</option>
                             @endforeach
                         </select>

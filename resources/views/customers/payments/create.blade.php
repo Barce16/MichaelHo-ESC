@@ -1,7 +1,16 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800">Submit Payment</h2>
+            <h2 class="font-semibold text-xl text-gray-800">
+                Submit
+                @if($paymentType === 'introductory')
+                Introductory Payment
+                @elseif($paymentType === 'downpayment')
+                Downpayment
+                @else
+                Balance Payment
+                @endif
+            </h2>
             <a href="{{ route('customer.events.show', $event) }}"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -17,7 +26,23 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             {{-- Event Summary Card --}}
-            <div class="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl shadow-lg p-8 text-white">
+            @php
+            $headerColor = match($paymentType) {
+            'introductory' => 'from-orange-500 to-red-600',
+            'downpayment' => 'from-violet-500 to-purple-600',
+            'balance' => 'from-emerald-500 to-teal-600',
+            default => 'from-gray-500 to-slate-600',
+            };
+
+            $paymentLabel = match($paymentType) {
+            'introductory' => 'Introductory Payment',
+            'downpayment' => 'Downpayment',
+            'balance' => 'Balance Payment',
+            default => 'Payment',
+            };
+            @endphp
+
+            <div class="bg-gradient-to-r {{ $headerColor }} rounded-xl shadow-lg p-8 text-white">
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
                         <div class="flex items-center gap-2 mb-2">
@@ -25,21 +50,69 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span class="text-sm font-semibold text-emerald-100 uppercase tracking-wide">Event
-                                Payment</span>
+                            <span class="text-sm font-semibold opacity-90 uppercase tracking-wide">
+                                {{ $paymentLabel }}
+                            </span>
                         </div>
                         <h3 class="text-2xl font-bold mb-1">{{ $event->name }}</h3>
-                        <p class="text-emerald-100">{{ \Carbon\Carbon::parse($event->event_date)->format('F d, Y') }}
-                        </p>
+                        <p class="opacity-90">{{ \Carbon\Carbon::parse($event->event_date)->format('F d, Y') }}</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm text-emerald-100 mb-1">Amount Due</p>
-                        <p class="text-4xl font-bold">
-                            ₱{{ number_format($event->billing->downpayment_amount ?? 0, 2) }}
-                        </p>
+                        <p class="text-sm opacity-90 mb-1">{{ $paymentType === 'balance' ? 'Remaining Balance' : 'Amount
+                            Due' }}</p>
+                        <p class="text-4xl font-bold">₱{{ number_format($amount, 2) }}</p>
                     </div>
                 </div>
             </div>
+
+            {{-- Payment Instructions --}}
+            @if($paymentType === 'introductory')
+            <div class="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4">
+                <div class="flex gap-3">
+                    <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div class="text-sm text-blue-900">
+                        <p class="font-semibold mb-1">About Introductory Payment</p>
+                        <p>This ₱15,000 payment secures your event booking and allows us to schedule your planning
+                            meeting. This amount will be deducted from your total downpayment later.</p>
+                    </div>
+                </div>
+            </div>
+            @elseif($paymentType === 'downpayment')
+            <div class="bg-violet-50 border-l-4 border-violet-500 rounded-lg p-4">
+                <div class="flex gap-3">
+                    <svg class="w-5 h-5 text-violet-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div class="text-sm text-violet-900">
+                        <p class="font-semibold mb-1">About Downpayment</p>
+                        <p>The ₱15,000 introductory payment has been deducted from your downpayment. You only need to
+                            pay ₱{{ number_format($amount, 2) }} now to complete your downpayment and schedule your
+                            event.</p>
+                    </div>
+                </div>
+            </div>
+            @elseif($paymentType === 'balance')
+            <div class="bg-emerald-50 border-l-4 border-emerald-500 rounded-lg p-4">
+                <div class="flex gap-3">
+                    <svg class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div class="text-sm text-emerald-900">
+                        <p class="font-semibold mb-1">Balance Payment</p>
+                        <p>You can pay any amount towards your remaining balance of ₱{{ number_format($amount, 2) }}.
+                            Enter the amount you wish to pay below (minimum ₱100).</p>
+                    </div>
+                </div>
+            </div>
+            @endif
 
             {{-- Payment Form --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -58,6 +131,7 @@
                 <form method="POST" action="{{ route('customer.payments.store', $event) }}"
                     enctype="multipart/form-data" class="p-6">
                     @csrf
+                    <input type="hidden" name="payment_type" value="{{ $paymentType }}">
 
                     <div class="space-y-6">
                         {{-- Payment Amount --}}
@@ -72,16 +146,24 @@
                                         d="M17.67,2a16,16,0,1,0,16,16A16,16,0,0,0,17.67,2Zm10.5,15.8H25.7a6.87,6.87,0,0,1-6.33,4.4H14.18v6.54a1.25,1.25,0,1,1-2.5,0V17.8H8.76a.9.9,0,1,1,0-1.8h2.92V13.8H8.76a.9.9,0,1,1,0-1.8h2.92V9.26A1.25,1.25,0,0,1,12.93,8h6.44a6.84,6.84,0,0,1,6.15,4h2.65a.9.9,0,0,1,0,1.8H26.09a6.91,6.91,0,0,1,.12,1.3,6.8,6.8,0,0,1-.06.9h2a.9.9,0,0,1,0,1.8Z">
                                     </path>
                                 </svg>
-                                Amount Paid <span class="text-rose-500">*</span>
+                                Payment Amount <span class="text-rose-500">*</span>
                             </label>
                             <div class="relative">
                                 <span
                                     class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
-                                <input id="amount" name="amount" type="number" step="0.01" min="0"
-                                    value="{{ old('amount', $event->billing->downpayment_amount ?? 0) }}"
-                                    class="block w-full pl-10 pr-4 py-3 rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition text-lg font-semibold"
+                                <input id="amount" name="amount" type="number" step="0.01"
+                                    min="{{ $paymentType === 'balance' ? '100' : '0' }}"
+                                    max="{{ $paymentType === 'balance' ? $amount : '' }}" value="{{ $amount }}" {{
+                                    $paymentType !=='balance' ? 'readonly' : '' }}
+                                    class="block w-full pl-10 pr-4 py-3 rounded-lg border-gray-300 {{ $paymentType !== 'balance' ? 'bg-gray-50 cursor-not-allowed' : 'focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200' }} text-lg font-semibold transition"
                                     required />
                             </div>
+                            @if($paymentType === 'balance')
+                            <p class="mt-1 text-xs text-gray-500">Enter amount between ₱100 and ₱{{
+                                number_format($amount, 2) }}</p>
+                            @else
+                            <p class="mt-1 text-xs text-gray-500">Amount is fixed for this payment type</p>
+                            @endif
                             @error('amount')
                             <p class="mt-2 text-sm text-rose-600 flex items-center gap-1">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -115,8 +197,8 @@
                                 </option>
                                 <option value="paymaya" {{ old('payment_method')=='paymaya' ? 'selected' : '' }}>💳
                                     PayMaya</option>
-                                <option value="physical_payment" {{ old('payment_method')=='physical_payment'
-                                    ? 'selected' : '' }}>💵 Physical Payment (Cash)</option>
+                                <option value="cash" {{ old('payment_method')=='cash' ? 'selected' : '' }}>💵 Cash
+                                </option>
                             </select>
                             @error('payment_method')
                             <p class="mt-2 text-sm text-rose-600 flex items-center gap-1">
@@ -139,7 +221,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
-                                Payment Receipt / Proof <span class="text-rose-500">*</span>
+                                Payment Proof / Receipt <span class="text-rose-500">*</span>
                             </label>
                             <div class="mt-2 flex justify-center px-6 pt-8 pb-8 border-2 border-gray-300 border-dashed rounded-lg hover:border-emerald-400 transition-colors cursor-pointer bg-gray-50 hover:bg-gray-100"
                                 onclick="document.getElementById('payment_receipt').click()">

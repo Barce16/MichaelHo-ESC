@@ -8,12 +8,12 @@ use App\Models\Staff;
 use App\Models\Billing;
 use App\Models\Package;
 use App\Models\Payment;
-use App\Models\Meeting;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Notifications\EventApprovedNotification;
 use App\Notifications\EventRejectedNotification;
-use App\Services\EventSmsNotifier;
+use App\Notifications\IntroPaymentApprovedNotification;
+use App\Notifications\DownpaymentApprovedNotification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
@@ -21,13 +21,6 @@ use Illuminate\Support\Str;
 
 class AdminEventController extends Controller
 {
-    protected $smsNotifier;
-
-    public function __construct(EventSmsNotifier $smsNotifier)
-    {
-        $this->smsNotifier = $smsNotifier;
-    }
-
     public function index(Request $request)
     {
         $q         = (string) $request->query('q', '');
@@ -58,7 +51,7 @@ class AdminEventController extends Controller
             ->when($packageId, fn($s) => $s->where('package_id', $packageId))
             ->when($dateFrom, fn($s) => $s->whereDate('event_date', '>=', $dateFrom))
             ->when($dateTo,   fn($s) => $s->whereDate('event_date', '<=', $dateTo))
-            ->orderByDesc('event_date')
+            ->orderByDesc('updated_at')
             ->paginate(15)
             ->withQueryString();
 
@@ -75,7 +68,7 @@ class AdminEventController extends Controller
             'package.images',
             'package.inclusions',
             'inclusions' => fn($q) => $q->withPivot('price_snapshot'),
-            'billing.payment',
+            'billing.payments',
         ]);
 
         $inclusionsSubtotal = $event->inclusions->sum(fn($i) => (float) ($i->pivot->price_snapshot ?? 0));
@@ -83,61 +76,53 @@ class AdminEventController extends Controller
         $styling = (float) ($event->package?->event_styling_price ?? 55000);
         $grandTotal = $inclusionsSubtotal + $coord + $styling;
 
-        $paymentAmount = $event->billing?->payment?->amount ?? 0;
+        $pendingIntroPayment = null;
+        $pendingDownpayment = null;
 
-        $isDownpaymentPending = $event->isDownpaymentPending();
+        if ($event->billing) {
+            $pendingIntroPayment = $event->billing->payments()
+                ->where('payment_type', Payment::TYPE_INTRODUCTORY)
+                ->where('status', Payment::STATUS_PENDING)
+                ->latest()
+                ->first();
+
+            $pendingDownpayment = $event->billing->payments()
+                ->where('payment_type', Payment::TYPE_DOWNPAYMENT)
+                ->where('status', Payment::STATUS_PENDING)
+                ->latest()
+                ->first();
+        }
 
         return view('admin.events.show', [
-            'event'        => $event,
-            'grandTotal'   => $grandTotal,
-            'paymentAmount' => $paymentAmount,
-            'isDownpaymentPending'  => $isDownpaymentPending,
+            'event' => $event,
+            'grandTotal' => $grandTotal,
+            'pendingIntroPayment' => $pendingIntroPayment,
+            'pendingDownpayment' => $pendingDownpayment,
         ]);
     }
 
-    public function updateStatus(Request $request, Event $event)
-    {
-        $data = $request->validate([
-            'status' => ['required', 'in:requested,approved,scheduled,completed,cancelled'],
-        ]);
-
-        $oldStatus = $event->status;
-        $event->update(['status' => $data['status']]);
-
-        // Send SMS notification for status change
-        $this->smsNotifier->notifyStatusChange($event, $oldStatus, $data['status']);
-
-        return back()->with('success', 'Event status updated and customer notified via SMS.');
-    }
-
+    /**
+     * Approve event - Create billing and set status to request_meeting
+     */
     public function approve(Request $request, Event $event)
     {
-        $data = $request->validate([
-            'downpayment_amount' => ['required', 'numeric', 'min:0'],
-        ]);
-
+        // Calculate totals
         $inclusionsSubtotal = $event->inclusions->sum(fn($i) => (float) ($i->pivot->price_snapshot ?? 0));
         $coord = (float) ($event->package?->coordination_price ?? 25000);
         $styling = (float) ($event->package?->event_styling_price ?? 55000);
         $grandTotal = $inclusionsSubtotal + $coord + $styling;
 
-        $billing = Billing::where('event_id', $event->id)->first();
-
-        if (!$billing) {
-            $billing = Billing::create([
-                'event_id' => $event->id,
-                'downpayment_amount' => $data['downpayment_amount'],
+        // Create or update billing
+        $billing = Billing::updateOrCreate(
+            ['event_id' => $event->id],
+            [
                 'total_amount' => $grandTotal,
+                'introductory_payment_amount' => 15000,
+                'introductory_payment_status' => 'pending',
+                'downpayment_amount' => $grandTotal / 2, // Automatically set to 50% of total
                 'status' => 'pending',
-            ]);
-        } else {
-            $billing->downpayment_amount = $data['downpayment_amount'];
-            $billing->total_amount = $grandTotal;
-            $billing->status = 'pending';
-            $billing->save();
-        }
-
-        $billing->refresh();
+            ]
+        );
 
         // Create user account if customer doesn't have one
         $customer = $event->customer;
@@ -172,45 +157,29 @@ class AdminEventController extends Controller
             $password = null;
         }
 
-        $event->status = 'approved';
-        $event->save();
+        // Update event status to request_meeting
+        $event->update(['status' => Event::STATUS_REQUEST_MEETING]);
 
         // Send email notification
-        $emailSent = false;
         if ($password && $user) {
             try {
                 $user->notify(new EventApprovedNotification($event, $username, $password, $billing));
-                $emailSent = true;
             } catch (\Exception $e) {
                 Log::error('Failed to send approval email: ' . $e->getMessage());
             }
         }
 
-        // Send SMS notification
-        $smsSent = false;
-        try {
-            $smsSent = $this->smsNotifier->notifyEventApproved($event);
-        } catch (\Exception $e) {
-            Log::error('Failed to send approval SMS: ' . $e->getMessage());
-        }
-
-        $message = 'Event approved!';
+        $message = 'Event approved! Customer must pay ₱15,000 introductory payment to schedule meeting.';
         if ($password) {
-            $message .= ' Account credentials sent to customer.';
-        }
-        if ($emailSent && $smsSent) {
-            $message .= ' (Email & SMS sent)';
-        } elseif ($emailSent) {
-            $message .= ' (Email sent, SMS failed)';
-        } elseif ($smsSent) {
-            $message .= ' (SMS sent, Email failed)';
-        } else {
-            $message .= ' (Failed to send notifications - please contact customer manually)';
+            $message .= ' Account credentials sent.';
         }
 
         return back()->with('success', $message);
     }
 
+    /**
+     * Reject event
+     */
     public function reject(Request $request, Event $event)
     {
         $data = $request->validate([
@@ -218,111 +187,209 @@ class AdminEventController extends Controller
         ]);
 
         $event->update([
-            'status' => 'rejected',
+            'status' => Event::STATUS_REJECTED,
             'rejection_reason' => $data['rejection_reason'],
         ]);
 
         $customer = $event->customer;
 
         // Send email notification
-        $emailSent = false;
         try {
             Notification::route('mail', $customer->email)
                 ->notify(new EventRejectedNotification($event, $data['rejection_reason']));
-            $emailSent = true;
         } catch (\Exception $e) {
             Log::error('Failed to send rejection email: ' . $e->getMessage());
         }
 
-        // Send SMS notification
-        $smsSent = false;
-        try {
-            $smsSent = $this->smsNotifier->notifyEventRejected($event, $data['rejection_reason']);
-        } catch (\Exception $e) {
-            Log::error('Failed to send rejection SMS: ' . $e->getMessage());
-        }
-
-        $message = 'Event rejected.';
-        if ($emailSent && $smsSent) {
-            $message .= ' Customer notified via email & SMS.';
-        } elseif ($emailSent) {
-            $message .= ' Customer notified via email (SMS failed).';
-        } elseif ($smsSent) {
-            $message .= ' Customer notified via SMS (Email failed).';
-        } else {
-            $message .= ' Failed to send notifications - please contact customer manually.';
-        }
-
-        return back()->with($emailSent || $smsSent ? 'success' : 'warning', $message);
+        return back()->with('success', 'Event rejected. Customer notified via email.');
     }
 
-    public function confirm(Request $request, Event $event)
+    /**
+     * Verify and approve introductory payment
+     */
+    public function approveIntroPayment(Request $request, Event $event)
+    {
+        if (!$event->billing) {
+            return back()->with('error', 'No billing found for this event.');
+        }
+
+        $payment = $event->billing->payments()
+            ->where('payment_type', Payment::TYPE_INTRODUCTORY)
+            ->where('status', Payment::STATUS_PENDING)
+            ->latest()
+            ->first();
+
+        if (!$payment) {
+            return back()->with('error', 'No pending introductory payment found.');
+        }
+
+        // Approve the payment
+        $payment->update([
+            'status' => Payment::STATUS_APPROVED,
+            'payment_date' => now(),
+        ]);
+
+        // Mark billing intro payment as paid
+        $event->billing->markIntroPaid();
+
+        // Update event status to meeting
+        $event->update(['status' => Event::STATUS_MEETING]);
+
+        $billing = $event->billing;
+        if ($billing && $billing->isFullyPaid()) {
+            $billing->update(['status' => 'paid']);
+        }
+
+        // Send email notification
+        if ($event->customer->user) {
+            try {
+                $event->customer->user->notify(new IntroPaymentApprovedNotification($event, $payment));
+            } catch (\Exception $e) {
+                Log::error('Failed to send intro payment approval email: ' . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', 'Introductory payment approved. Event status updated to Meeting. Customer notified via email.');
+    }
+
+    /**
+     * Reject introductory payment
+     */
+    public function rejectIntroPayment(Request $request, Event $event)
+    {
+        $reason = $request->input('rejection_reason');
+
+        $payment = $event->payments()
+            ->where('payment_type', Payment::TYPE_INTRODUCTORY)
+            ->where('status', Payment::STATUS_PENDING)
+            ->latest()
+            ->first();
+
+        if (!$payment) {
+            return back()->with('error', 'No pending introductory payment found.');
+        }
+
+        $payment->update([
+            'status' => Payment::STATUS_REJECTED,
+            'rejection_reason' => $reason,
+        ]);
+
+        return back()->with('success', 'Introductory payment rejected. Customer notified to resubmit.');
+    }
+
+    /**
+     * Request downpayment from customer
+     */
+    public function requestDownpayment(Request $request, Event $event)
     {
         $data = $request->validate([
-            'confirmation_reason' => ['nullable', 'string', 'max:1000'],
+            'downpayment_amount' => ['required', 'numeric', 'min:0'],
         ]);
 
-        $oldStatus = $event->status;
-        $event->update([
-            'status' => 'scheduled',
-        ]);
-
-        // Send SMS notification
-        try {
-            $this->smsNotifier->notifyStatusChange($event, $oldStatus, 'scheduled');
-        } catch (\Exception $e) {
-            Log::error('Failed to send confirmation SMS: ' . $e->getMessage());
+        // Validate event is in meeting status
+        if ($event->status !== Event::STATUS_MEETING) {
+            return back()->with('error', 'Can only request downpayment when event is in Meeting status.');
         }
 
-        return back()->with('success', 'Event confirmed and scheduled. Customer notified.');
-    }
-
-    public function approvePayment(Request $request, $eventId)
-    {
-        $event = Event::findOrFail($eventId);
         $billing = $event->billing;
 
-        $payment = new Payment();
-        $payment->billing_id = $billing->id;
-        $payment->amount = $request->amount;
-        $payment->payment_method = $request->payment_method;
-        $payment->payment_date = now();
-
-        if ($request->hasFile('payment_image')) {
-            $payment->payment_image = $request->file('payment_image')->store('payment_proofs');
+        if (!$billing) {
+            return back()->with('error', 'No billing found for this event.');
         }
 
-        $payment->status = 'approved';
-        $payment->save();
+        // Calculate actual amount customer needs to pay (minus intro payment)
+        $actualAmount = max(0, $data['downpayment_amount'] - $billing->introductory_payment_amount);
 
-        $billing->status = 'paid';
-        $billing->save();
+        // Update billing
+        $billing->update([
+            'downpayment_amount' => $data['downpayment_amount'], // Store full amount
+        ]);
 
-        $this->scheduleMeeting($event);
-
-        // Send SMS notification for payment confirmation
-        try {
-            $this->smsNotifier->notifyPaymentConfirmed($payment);
-        } catch (\Exception $e) {
-            Log::error('Failed to send payment confirmation SMS: ' . $e->getMessage());
-        }
-
-        return redirect()->route('admin.events.show', $event)
-            ->with('success', 'Payment approved, meeting scheduled, and customer notified via SMS.');
+        return back()->with('success', 'Downpayment requested. Customer will pay ₱' . number_format($actualAmount, 2) . ' (after ₱15k deduction).');
     }
 
-    public function scheduleMeeting(Event $event)
+    /**
+     * Approve downpayment
+     */
+    public function approveDownpayment(Request $request, Event $event)
     {
-        $meeting = new Meeting();
-        $meeting->event_id = $event->id;
-        $meeting->meeting_date = now()->addWeek();
-        $meeting->location = 'Online (Zoom link here)';
-        $meeting->agenda = 'Event Preparation Meeting';
-        $meeting->save();
+        if (!$event->billing) {
+            return back()->with('error', 'No billing found for this event.');
+        }
+
+        $payment = $event->billing->payments()
+            ->where('payment_type', Payment::TYPE_DOWNPAYMENT)
+            ->where('status', Payment::STATUS_PENDING)
+            ->latest()
+            ->first();
+
+        if (!$payment) {
+            return back()->with('error', 'No pending downpayment found.');
+        }
+
+        // Approve the payment
+        $payment->update([
+            'status' => Payment::STATUS_APPROVED,
+            'payment_date' => now(),
+        ]);
+
+
+        $billing = $event->billing;
+        if ($billing && $billing->isFullyPaid()) {
+            $billing->update(['status' => 'paid']);
+        }
+
+        // Send email notification
+        if ($event->customer->user) {
+            try {
+                $event->customer->user->notify(new DownpaymentApprovedNotification($event, $payment));
+            } catch (\Exception $e) {
+                Log::error('Failed to send downpayment approval email: ' . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', 'Downpayment approved. Customer notified via email.');
     }
 
+    /**
+     * Reject downpayment
+     */
+    public function rejectDownpayment(Request $request, Event $event)
+    {
+        $reason = $request->input('rejection_reason');
+
+        if (!$event->billing) {
+            return back()->with('error', 'No billing found for this event.');
+        }
+
+        $payment = $event->billing->payments()
+            ->where('payment_type', Payment::TYPE_DOWNPAYMENT)
+            ->where('status', Payment::STATUS_PENDING)
+            ->latest()
+            ->first();
+
+        if (!$payment) {
+            return back()->with('error', 'No pending downpayment found.');
+        }
+
+        $payment->update([
+            'status' => Payment::STATUS_REJECTED,
+            'rejection_reason' => $reason,
+        ]);
+
+        return back()->with('success', 'Downpayment rejected. Customer notified to resubmit.');
+    }
+
+    /**
+     * Assign staff page - Only for scheduled events
+     */
     public function assignStaffPage(Event $event)
     {
+        // Check if event can have staff assigned
+        if (!$event->canAssignStaff()) {
+            return back()->with('error', 'Staff can only be assigned to scheduled or ongoing events.');
+        }
+
         $event->load(['staffs']);
 
         $assignedStaffIds = $event->staffs->pluck('id')->toArray();
@@ -408,5 +475,16 @@ class AdminEventController extends Controller
         $event->staffs()->detach($staff->id);
 
         return back()->with('success', 'Staff removed.');
+    }
+
+    public function completeMeeting(Event $event)
+    {
+        if ($event->status !== Event::STATUS_MEETING) {
+            return back()->with('error', 'Event is not in meeting status.');
+        }
+
+        $event->update(['status' => Event::STATUS_SCHEDULED]);
+
+        return back()->with('success', 'Meeting marked as complete. Event is now SCHEDULED. You can now add Staffs.');
     }
 }

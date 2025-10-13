@@ -20,7 +20,7 @@
             <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
                 <h3 class="font-semibold text-lg text-gray-800">Add Staff to Event</h3>
 
-                <form method="POST" action="{{ route('admin.events.addStaff', $event) }}" class="space-y-4">
+                <form method="POST" action="{{ route('admin.events.assignStaff', $event) }}" class="space-y-4">
                     @csrf
                     <div>
                         <label for="staff" class="block text-sm font-medium text-gray-700">Select Staff</label>

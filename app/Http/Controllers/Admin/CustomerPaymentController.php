@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -11,11 +10,16 @@ use Illuminate\Http\Request;
 
 class CustomerPaymentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $payments = Payment::with('billing', 'event')
-            ->where('status', 'pending')
-            ->get();
+        $status = $request->get('status', 'pending');
+        $paymentType = $request->get('payment_type');
+
+        $payments = Payment::with(['billing.event.customer', 'event'])
+            ->when($status, fn($q) => $q->where('status', $status))
+            ->when($paymentType, fn($q) => $q->where('payment_type', $paymentType))
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
 
         return view('admin.payments.index', compact('payments'));
     }
@@ -24,23 +28,67 @@ class CustomerPaymentController extends Controller
     {
         $payment = Payment::findOrFail($paymentId);
 
-        $payment->status = 'approved';
-        $payment->save();
+        if ($payment->status !== Payment::STATUS_PENDING) {
+            return back()->with('error', 'Payment is not pending.');
+        }
 
+        // Approve the payment
+        $payment->update([
+            'status' => Payment::STATUS_APPROVED,
+            'payment_date' => now(),
+        ]);
+
+        $event = $payment->event;
         $billing = $payment->billing;
-        $billing->total_amount -= $payment->amount;
-        $billing->save();
 
-        return redirect()->route('admin.payments.index')->with('success', 'Payment approved successfully.');
+        // Handle based on payment type
+        if ($payment->isIntroductory()) {
+            // Mark intro payment as paid in billing
+            $billing->markIntroPaid();
+
+            // Update event status to meeting
+            $event->update(['status' => Event::STATUS_MEETING]);
+
+            $message = 'Introductory payment approved. Event status updated to Meeting.';
+        } elseif ($payment->isDownpayment()) {
+            // Update event status to scheduled
+            $event->update(['status' => Event::STATUS_SCHEDULED]);
+
+            $message = 'Downpayment approved. Event is now SCHEDULED.';
+        } else {
+            // Balance or other payment type
+            $message = 'Payment approved successfully.';
+        }
+
+        return redirect()->route('admin.payments.index')->with('success', $message);
     }
 
-    public function reject($paymentId)
+    public function reject(Request $request, $paymentId)
     {
         $payment = Payment::findOrFail($paymentId);
 
-        $payment->status = 'rejected';
-        $payment->save();
+        if ($payment->status !== Payment::STATUS_PENDING) {
+            return back()->with('error', 'Payment is not pending.');
+        }
 
-        return redirect()->route('admin.payments.index')->with('error', 'Payment rejected.');
+        $reason = $request->input('rejection_reason');
+
+        $payment->update([
+            'status' => Payment::STATUS_REJECTED,
+            'rejection_reason' => $reason,
+        ]);
+
+        return redirect()->route('admin.payments.index')
+            ->with('success', 'Payment rejected. Customer can resubmit.');
+    }
+
+    /**
+     * Show payment details for verification
+     */
+    public function show(Payment $payment)
+    {
+        $payment->load(['billing.event.customer', 'event']);
+
+        return view('admin.payments.show', compact('payment'));
     }
 }

@@ -8,13 +8,14 @@ use App\Http\Requests\UpdateEventRequest;
 use App\Models\Event;
 use App\Models\Package;
 use App\Models\Inclusion;
+use App\Models\Payment;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class EventController extends Controller
 {
-
     public function index(Request $request)
     {
         $customer = $request->user()->customer;
@@ -27,7 +28,6 @@ class EventController extends Controller
 
         return view('customers.events.index', compact('events'));
     }
-
 
     public function create()
     {
@@ -44,7 +44,7 @@ class EventController extends Controller
         return view('customers.events.create', compact('packages', 'allInclusions'));
     }
 
-    public function store(StoreEventRequest $request)
+    public function store(Request $request)
     {
         $data = $request->validate([
             'name'         => ['required', 'string', 'max:150'],
@@ -115,7 +115,7 @@ class EventController extends Controller
                 'budget'      => $data['budget'] ?? null,
                 'guests'      => $data['guests'] ?? null,
                 'notes'       => $data['notes'] ?? null,
-                'status'      => 'requested',
+                'status'      => Event::STATUS_REQUESTED,
             ]);
 
             if ($selectedIds->isNotEmpty()) {
@@ -129,36 +129,78 @@ class EventController extends Controller
 
         return redirect()
             ->route('customer.events.index')
-            ->with('success', 'Event request submitted.');
+            ->with('success', 'Event request submitted. Please wait for admin approval.');
     }
 
-
-    public function show(Request $request, Event $event)
+    public function show(Event $event)
     {
+        $customer = Auth::user()->customer;
 
+        if (!$customer || $event->customer_id !== $customer->id) {
+            abort(403);
+        }
 
-        $customer = $request->user()->customer;
-        abort_if(!$customer || $event->customer_id !== $customer->id, 403);
+        $event->load(['package', 'inclusions', 'customer', 'billing.payments']);
 
-        $event->load(['package', 'billing']);
+        // Check for pending payments
+        $pendingIntroPayment = null;
+        $pendingDownpayment = null;
 
-        $incs = $event->inclusions ?? collect();
-        $incSubtotal = $incs->sum(fn($i) => (float)($i->pivot->price_snapshot ?? $i->price ?? 0));
+        if ($event->billing) {
+            $pendingIntroPayment = $event->billing->payments()
+                ->where('payments.payment_type', Payment::TYPE_INTRODUCTORY)
+                ->where('payments.status', Payment::STATUS_PENDING)
+                ->latest('payments.created_at')
+                ->first();
 
-        return view('customers.events.show', compact('event', 'incSubtotal'));
+            $pendingDownpayment = $event->billing->payments()
+                ->where('payments.payment_type', Payment::TYPE_DOWNPAYMENT)
+                ->where('payments.status', Payment::STATUS_PENDING)
+                ->latest('payments.created_at')
+                ->first();
+        }
+
+        // Calculate amounts
+        $introAmount = 15000;
+        $downpaymentAmount = 0;
+
+        if ($event->billing && $event->billing->downpayment_amount > 0) {
+            // Only subtract intro payment if it's been approved
+            $introDeduction = ($event->billing->introductory_payment_status === 'paid') ? 15000 : 0;
+            $downpaymentAmount = $event->billing->downpayment_amount - $introDeduction;
+        }
+
+        // Check if downpayment is paid (required for balance payments)
+        $isDownpaymentPaid = $event->hasDownpaymentPaid();
+        $canPayBalance = $isDownpaymentPaid && $event->billing && $event->billing->remaining_balance > 0;
+
+        return view('customers.events.show', compact(
+            'event',
+            'pendingIntroPayment',
+            'pendingDownpayment',
+            'introAmount',
+            'downpaymentAmount',
+            'isDownpaymentPaid',
+            'canPayBalance'
+        ));
     }
-
 
     public function edit(Request $request, Event $event)
     {
-
         $customer = $request->user()->customer;
         abort_if(!$customer || $event->customer_id !== $customer->id, 403);
 
-        $packages = Package::with([
-            'inclusions'
-        ])->where('is_active', true)->orderBy('name')->get();
+        // Can only edit if status is requested, request_meeting, or meeting
+        if (!in_array($event->status, [Event::STATUS_REQUESTED, Event::STATUS_REQUEST_MEETING, Event::STATUS_MEETING])) {
+            return redirect()
+                ->route('customer.events.show', $event)
+                ->with('error', 'Cannot edit event in current status.');
+        }
 
+        $packages = Package::with(['inclusions'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
         $event->load(['package']);
 
@@ -167,12 +209,21 @@ class EventController extends Controller
             ->get()
             ->groupBy('category');
 
-
         return view('customers.events.edit', compact('event', 'packages', 'allInclusions'));
     }
 
     public function update(Request $request, Event $event)
     {
+        $customer = $request->user()->customer;
+        abort_if(!$customer || $event->customer_id !== $customer->id, 403);
+
+        // Can only edit if status is requested, request_meeting, or meeting
+        if (!in_array($event->status, [Event::STATUS_REQUESTED, Event::STATUS_REQUEST_MEETING, Event::STATUS_MEETING])) {
+            return redirect()
+                ->route('customer.events.show', $event)
+                ->with('error', 'Cannot edit event in current status.');
+        }
+
         $data = $request->validate([
             'name'         => ['required', 'string', 'max:150'],
             'event_date'   => ['required', 'date'],
