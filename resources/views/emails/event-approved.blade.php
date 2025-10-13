@@ -97,7 +97,7 @@
 
         .credentials-box {
             background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
-            color: #ffffff;
+            color: #5a5a5a;
             padding: 25px;
             border-radius: 8px;
             margin: 25px 0;
@@ -329,7 +329,8 @@
 
             <div class="message">
                 <p><strong>Congratulations!</strong> We are thrilled to inform you that your event booking has been
-                    <strong>approved</strong>.</p>
+                    <strong>approved</strong>.
+                </p>
                 <p>We're excited to be part of your special day and can't wait to bring your vision to life!</p>
             </div>
 
