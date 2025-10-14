@@ -75,8 +75,105 @@
                 </div>
             </div>
 
-            <!-- User menu (unchanged) -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+            <!-- Right side: Notifications + User menu -->
+            <div class="hidden sm:flex sm:items-center sm:ms-6 gap-3">
+                <!-- Notification Bell -->
+                <div x-data="notificationDropdown()" class="relative">
+                    <button @click="toggleDropdown()"
+                        class="relative p-2 text-gray-600 hover:text-gray-800 focus:outline-none transition rounded-lg hover:bg-gray-100">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <span x-show="unreadCount > 0" x-text="unreadCount"
+                            class="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full"></span>
+                    </button>
+
+                    <!-- Dropdown -->
+                    <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                        class="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+                        style="display: none;">
+
+                        <!-- Header -->
+                        <div
+                            class="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50">
+                            <h3 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                Notifications
+                                <span x-show="unreadCount > 0" x-text="'(' + unreadCount + ')'"
+                                    class="text-blue-600"></span>
+                            </h3>
+                            <button @click="markAllAsRead()" x-show="unreadCount > 0"
+                                class="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline">
+                                Mark all read
+                            </button>
+                        </div>
+
+                        <!-- Notifications List -->
+                        <div class="max-h-[32rem] overflow-y-auto">
+                            <template x-if="notifications.length === 0">
+                                <div class="px-4 py-12 text-center">
+                                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                    </svg>
+                                    <p class="text-gray-500 text-sm">No notifications yet</p>
+                                </div>
+                            </template>
+
+                            <template x-for="notification in notifications" :key="notification.id">
+                                <a :href="`/notifications/${notification.id}/read`"
+                                    class="block px-4 py-3 hover:bg-gray-50 transition border-b border-gray-100"
+                                    :class="{ 'bg-blue-50': !notification.is_read }">
+                                    <div class="flex items-start gap-3">
+                                        <!-- Icon -->
+                                        <div :class="{
+                                            'bg-orange-100 text-orange-600': notification.type === 'event_request',
+                                            'bg-emerald-100 text-emerald-600': notification.type === 'payment_submitted',
+                                            'bg-blue-100 text-blue-600': notification.type === 'event_status',
+                                            'bg-green-100 text-green-600': notification.type === 'payment_approved',
+                                            'bg-red-100 text-red-600': notification.type === 'payment_rejected',
+                                            'bg-purple-100 text-purple-600': notification.type === 'schedule_assigned',
+                                            'bg-teal-100 text-teal-600': notification.type === 'payroll_paid',
+                                        }"
+                                            class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+
+                                        <!-- Content -->
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-gray-900 mb-1"
+                                                x-text="notification.title"></p>
+                                            <p class="text-xs text-gray-600 line-clamp-2 leading-relaxed"
+                                                x-text="notification.message"></p>
+                                            <p class="text-xs text-gray-400 mt-2"
+                                                x-text="formatDate(notification.created_at)"></p>
+                                        </div>
+
+                                        <!-- Unread indicator -->
+                                        <template x-if="!notification.is_read">
+                                            <span
+                                                class="w-2.5 h-2.5 bg-blue-600 rounded-full flex-shrink-0 mt-1"></span>
+                                        </template>
+                                    </div>
+                                </a>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Profile -->
                 <img src="{{ Auth::user()->profile_photo_url }}" class="h-8 w-8 rounded-full object-cover"
                     alt="{{ Auth::user()->name }}">
 
@@ -158,7 +255,7 @@
             <x-nav-link :href="route('staff.index')" :active="request()->routeIs('staff.*')">
                 {{ __('Staff') }}
             </x-nav-link>
-            <x-responsive-nav-link :href="route('reports.monthly')" :active="request()->routeIs('reports.*')">
+            <x-responsive-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('reports.*')">
                 {{ __('Reports') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.users.list')" :active="request()->routeIs('admin.users.list')">
@@ -208,10 +305,79 @@
 
 {{-- Toasts --}}
 @if (session('success'))
-<x-toast type="success" :message="session('success')" /> @endif
+<x-toast type="success" :message="session('success')" />
+@endif
 @if (session('info'))
-<x-toast type="info" :message="session('info')" /> @endif
+<x-toast type="info" :message="session('info')" />
+@endif
 @if (session('warning'))
-<x-toast type="warning" :message="session('warning')" /> @endif
+<x-toast type="warning" :message="session('warning')" />
+@endif
 @if (session('error'))
-<x-toast type="error" :message="session('error')" /> @endif
+<x-toast type="error" :message="session('error')" />
+@endif
+
+{{-- Alpine.js Notification Component --}}
+<script>
+    function notificationDropdown() {
+    return {
+        open: false,
+        notifications: [],
+        unreadCount: 0,
+
+        init() {
+            this.fetchNotifications();
+            // Poll every 30 seconds for new notifications
+            setInterval(() => {
+                this.fetchNotifications();
+            }, 30000);
+        },
+
+        async fetchNotifications() {
+            try {
+                const response = await fetch('/notifications');
+                const data = await response.json();
+                this.notifications = data.notifications;
+                this.unreadCount = data.unread_count;
+            } catch (error) {
+                console.error('Failed to fetch notifications:', error);
+            }
+        },
+
+        toggleDropdown() {
+            this.open = !this.open;
+            if (this.open) {
+                this.fetchNotifications();
+            }
+        },
+
+        async markAllAsRead() {
+            try {
+                await fetch('/notifications/mark-all-read', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                this.fetchNotifications();
+            } catch (error) {
+                console.error('Failed to mark as read:', error);
+            }
+        },
+
+        formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000); // seconds
+
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+            
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+    }
+}
+</script>

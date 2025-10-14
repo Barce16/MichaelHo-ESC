@@ -7,6 +7,7 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Services\NotificationService;
 
 class PaymentController extends Controller
 {
@@ -287,7 +288,7 @@ class PaymentController extends Controller
         $filePath = $request->file('payment_receipt')->store('payment_receipts', 'public');
 
         // Create payment record
-        Payment::create([
+        $payment = Payment::create([
             'billing_id' => $billing->id,
             'payment_type' => $data['payment_type'],
             'payment_image' => $filePath,
@@ -303,6 +304,10 @@ class PaymentController extends Controller
             'balance' => 'Balance payment proof submitted. Please wait for admin verification.',
             default => 'Payment proof submitted. Please wait for admin verification.',
         };
+
+        // Notify admins
+        app(NotificationService::class)->notifyAdminPaymentSubmitted($payment);
+
 
         return redirect()
             ->route('customer.events.show', $event)

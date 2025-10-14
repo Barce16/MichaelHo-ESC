@@ -18,9 +18,17 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use App\Services\NotificationService;
 
 class AdminEventController extends Controller
 {
+
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
     public function index(Request $request)
     {
         $q         = (string) $request->query('q', '');
@@ -174,6 +182,8 @@ class AdminEventController extends Controller
             $message .= ' Account credentials sent.';
         }
 
+        $this->notificationService->notifyAdminNewEventRequest($event);
+
         return back()->with('success', $message);
     }
 
@@ -273,6 +283,8 @@ class AdminEventController extends Controller
             'status' => Payment::STATUS_REJECTED,
             'rejection_reason' => $reason,
         ]);
+
+        $this->notificationService->notifyCustomerPaymentRejected($payment, $reason);
 
         return back()->with('success', 'Introductory payment rejected. Customer notified to resubmit.');
     }
@@ -377,6 +389,8 @@ class AdminEventController extends Controller
             'rejection_reason' => $reason,
         ]);
 
+        $this->notificationService->notifyCustomerPaymentRejected($payment, $reason);
+
         return back()->with('success', 'Downpayment rejected. Customer notified to resubmit.');
     }
 
@@ -412,9 +426,15 @@ class AdminEventController extends Controller
             'removed_staff_ids.*' => 'exists:staffs,id',
         ]);
 
+        $newlyAssignedCount = 0;
+        $removedCount = 0;
+
         // Add staff with role and rate
         if ($request->has('staff')) {
             foreach ($request->staff as $staffId => $data) {
+                // Check if this is a new assignment
+                $isNewAssignment = !$event->staffs()->where('staff_id', $staffId)->exists();
+
                 $event->staffs()->syncWithoutDetaching([
                     $staffId => [
                         'assignment_role' => $data['role'],
@@ -422,16 +442,43 @@ class AdminEventController extends Controller
                         'pay_status' => 'pending'
                     ]
                 ]);
+
+                // Send notification only for new assignments
+                if ($isNewAssignment) {
+                    $staff = Staff::find($staffId);
+                    if ($staff && $staff->user) {
+                        // Get the pivot data for the notification
+                        $staffAssignment = (object)[
+                            'staff' => $staff,
+                            'event' => $event,
+                            'assignment_role' => $data['role'],
+                            'pay_rate' => $data['rate'],
+                        ];
+
+                        $this->notificationService->notifyStaffNewSchedule($staffAssignment);
+                        $newlyAssignedCount++;
+                    }
+                }
             }
         }
 
         // Remove staff
         if ($request->has('removed_staff_ids')) {
+            $removedCount = count($request->removed_staff_ids);
             $event->staffs()->detach($request->removed_staff_ids);
         }
 
+        // Build success message
+        $message = 'Staff assignment updated successfully.';
+        if ($newlyAssignedCount > 0) {
+            $message .= " {$newlyAssignedCount} staff member(s) notified of new assignment.";
+        }
+        if ($removedCount > 0) {
+            $message .= " {$removedCount} staff member(s) removed.";
+        }
+
         return redirect()->route('admin.events.assignStaffPage', $event)
-            ->with('success', 'Staff assignment updated successfully');
+            ->with('success', $message);
     }
 
     public function updateStaff(Request $request, Event $event)
@@ -441,9 +488,37 @@ class AdminEventController extends Controller
             'staff_ids.*' => ['integer', 'exists:staffs,id'],
         ]);
 
-        $event->staffs()->sync($data['staff_ids'] ?? []);
+        // Get currently assigned staff
+        $currentStaffIds = $event->staffs()->pluck('staff_id')->toArray();
+        $newStaffIds = $data['staff_ids'] ?? [];
 
-        return back()->with('success', 'Staff assignments updated.');
+        // Find newly added staff (not previously assigned)
+        $addedStaffIds = array_diff($newStaffIds, $currentStaffIds);
+
+        // Sync staff assignments
+        $event->staffs()->sync($newStaffIds);
+
+        // Notify newly added staff
+        $notifiedCount = 0;
+        foreach ($addedStaffIds as $staffId) {
+            $staff = Staff::find($staffId);
+            if ($staff && $staff->user) {
+                $staffAssignment = (object)[
+                    'staff' => $staff,
+                    'event' => $event,
+                ];
+
+                $this->notificationService->notifyStaffNewSchedule($staffAssignment);
+                $notifiedCount++;
+            }
+        }
+
+        $message = 'Staff assignments updated.';
+        if ($notifiedCount > 0) {
+            $message .= " {$notifiedCount} staff member(s) notified of new assignment.";
+        }
+
+        return back()->with('success', $message);
     }
 
     public function destroy(Event $event)
@@ -472,9 +547,21 @@ class AdminEventController extends Controller
 
     public function removeStaff(Event $event, Staff $staff)
     {
-        $event->staffs()->detach($staff->id);
+        // Check if staff is assigned to this event
+        $wasAssigned = $event->staffs()->where('staff_id', $staff->id)->exists();
 
-        return back()->with('success', 'Staff removed.');
+        if ($wasAssigned) {
+            $event->staffs()->detach($staff->id);
+
+            // Optional: Notify staff of removal
+            if ($staff->user) {
+                $this->notificationService->notifyStaffScheduleRemoved($staff, $event);
+            }
+
+            return back()->with('success', "{$staff->staff_name} removed from event.");
+        }
+
+        return back()->with('info', 'Staff was not assigned to this event.');
     }
 
     public function completeMeeting(Event $event)

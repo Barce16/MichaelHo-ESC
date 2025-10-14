@@ -13,9 +13,17 @@ use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Services\NotificationService;
 
 class EventController extends Controller
 {
+
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
     public function index(Request $request)
     {
         $customer = $request->user()->customer;
@@ -125,6 +133,8 @@ class EventController extends Controller
                 }
                 $event->inclusions()->attach($attach);
             }
+
+            $this->notificationService->notifyAdminNewEventRequest($event);
         });
 
         return redirect()

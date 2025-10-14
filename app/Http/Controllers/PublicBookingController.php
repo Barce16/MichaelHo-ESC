@@ -8,9 +8,18 @@ use App\Models\Customer;
 use App\Models\Inclusion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\NotificationService;
 
 class PublicBookingController extends Controller
 {
+
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     public function show(Package $package)
     {
 
@@ -103,6 +112,7 @@ class PublicBookingController extends Controller
                     'status' => 'requested',
                 ]);
 
+
                 // Attach inclusions with price snapshot
                 if ($selectedIds->isNotEmpty()) {
                     $attach = [];
@@ -111,7 +121,10 @@ class PublicBookingController extends Controller
                     }
                     $event->inclusions()->attach($attach);
                 }
+
+                $this->notificationService->notifyAdminNewEventRequest($event);
             });
+
 
             return redirect()
                 ->route('booking.success')

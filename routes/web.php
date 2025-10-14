@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AvailabilityController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CustomerController;
@@ -23,6 +24,7 @@ use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsureStaff;
 use Illuminate\Support\Facades\Route;
 use App\Models\Package;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -66,12 +68,19 @@ Route::get('/api/availability', [AvailabilityController::class, 'getMonthAvailab
 Route::get('/inclusions/by-package-type', [InclusionController::class, 'getByPackageType'])
     ->name('inclusions.by-package-type');
 
-
 Route::middleware('auth')->group(function () {
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+
+    // Notifications
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
+        Route::get('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    });
 
 
     // ========== CUSTOMER AREA ==========
@@ -224,7 +233,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('customers', CustomerController::class);
     Route::resource('staff', StaffController::class);
 
-    Route::get('/reports/monthly', fn() => view('reports.monthly'))->name('reports.monthly');
+    // Route::get('/reports/monthly', fn() => view('reports.monthly'))->name('reports.monthly');
 });
 
 require __DIR__ . '/auth.php';

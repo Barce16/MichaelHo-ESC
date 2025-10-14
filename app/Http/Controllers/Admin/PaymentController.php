@@ -7,10 +7,18 @@ use App\Models\Payment;
 use App\Models\Event;
 use App\Models\Billing;
 use Illuminate\Http\Request;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
+
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
 
     public function verifyPayment(Request $request, $eventId)
     {
@@ -65,6 +73,8 @@ class PaymentController extends Controller
             $billing->update(['status' => 'paid']);
         }
 
+        $this->notificationService->notifyCustomerPaymentApproved($payment);
+
         return redirect()->route('admin.events.show', $event)
             ->with('success', 'Payment approved successfully.');
     }
@@ -85,6 +95,9 @@ class PaymentController extends Controller
         $payment->status = 'rejected';
         $payment->rejection_reason = $reason;
         $payment->save();
+
+
+        $this->notificationService->notifyCustomerPaymentRejected($payment, $request->rejection_reason);
 
         return redirect()->route('admin.events.show', $event)
             ->with('success', 'Payment rejected successfully.');

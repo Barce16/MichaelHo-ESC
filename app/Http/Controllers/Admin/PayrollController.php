@@ -7,9 +7,16 @@ use App\Models\Event;
 use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\NotificationService;
 
 class PayrollController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
     public function index(Request $request)
     {
         $status = $request->get('status', 'all');
@@ -64,9 +71,20 @@ class PayrollController extends Controller
 
     public function markAsPaid(Request $request, Event $event, Staff $staff)
     {
+
+        $pivotData = $event->staffs()->where('staff_id', $staff->id)->first()->pivot;
+
         $event->staffs()->updateExistingPivot($staff->id, [
             'pay_status' => 'paid',
         ]);
+
+        $payrollRecord = (object)[
+            'staff' => $staff,
+            'total_amount' => $pivotData->pay_rate,
+            'event' => $event,
+        ];
+
+        $this->notificationService->notifyStaffPayrollPaid($payrollRecord);
 
         return back()->with('success', 'Staff payment marked as paid successfully');
     }
