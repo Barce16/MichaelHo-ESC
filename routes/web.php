@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AvailabilityController;
+use App\Http\Controllers\CustomerFeedbackController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PublicBookingController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\Admin\FeedbackController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Customer\BillingPageController;
 use App\Http\Controllers\Customer\PaymentController;
@@ -24,10 +26,17 @@ use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsureStaff;
 use Illuminate\Support\Facades\Route;
 use App\Models\Package;
+use App\Models\Feedback;
 
 
 Route::get('/', function () {
-    return view('welcome');
+    $publishedFeedback = Feedback::with(['customer', 'event'])
+        ->where('is_published', true)
+        ->orderBy('published_at', 'desc')
+        ->limit(6)
+        ->get();
+
+    return view('welcome', compact('publishedFeedback'));
 })->name('welcome');
 
 Route::get('/events', function () {
@@ -67,6 +76,35 @@ Route::get('/api/availability', [AvailabilityController::class, 'getMonthAvailab
 
 Route::get('/inclusions/by-package-type', [InclusionController::class, 'getByPackageType'])
     ->name('inclusions.by-package-type');
+
+
+Route::get('/test-sms', function () {
+    try {
+        $smsNotifier = app(\App\Services\SmsNotifier::class);
+
+        if (empty(config('services.semaphore.api_key'))) {
+            return response()->json(['error' => 'Semaphore API key not configured']);
+        }
+
+        $result = $smsNotifier->sendSms('09058619045', 'Welcome Message from Semaphore at ' . now()->format('h:i A'));
+
+        if ($result) {
+            return response()->json([
+                'success' => true,
+                'message' => 'SMS sent! Check your phone.'
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed - check logs'
+        ], 500);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
 
 Route::middleware('auth')->group(function () {
     // Profile
@@ -115,6 +153,12 @@ Route::middleware('auth')->group(function () {
             // Billings
             Route::get('/billings', [BillingPageController::class, 'index'])
                 ->name('billings');
+
+            // Customer Feedback Routes
+            Route::get('/events/{event}/feedback/create', [CustomerFeedbackController::class, 'create'])->name('feedback.create');
+            Route::post('/events/{event}/feedback', [CustomerFeedbackController::class, 'store'])->name('feedback.store');
+            Route::get('/events/{event}/feedback/edit', [CustomerFeedbackController::class, 'edit'])->name('feedback.edit');
+            Route::put('/events/{event}/feedback', [CustomerFeedbackController::class, 'update'])->name('feedback.update');
         });
 
     // ========== STAFF AREA ==========
@@ -203,6 +247,11 @@ Route::middleware('auth')->group(function () {
 
                 Route::resource('inclusions', InclusionController::class)
                     ->names('inclusions');
+
+                Route::get('/feedback', [FeedbackController::class, 'index'])->name('feedback.index');
+                Route::post('/feedback/{feedback}/publish', [FeedbackController::class, 'publish'])->name('feedback.publish');
+                Route::post('/feedback/{feedback}/unpublish', [FeedbackController::class, 'unpublish'])->name('feedback.unpublish');
+                Route::delete('/feedback/{feedback}', [FeedbackController::class, 'destroy'])->name('feedback.destroy');
             });
 
             // ---- Payroll ----

@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Event;
 use App\Models\Customer;
+use App\Models\Package;
+use App\Models\Inclusion;
+use App\Models\Feedback;
 use Illuminate\Http\Request;
 use App\Support\HandlesProfilePhotos;
 use Illuminate\Support\Facades\Password;
@@ -76,35 +79,37 @@ class AdminController extends Controller
         $totalCustomers = Customer::count();
 
         // Package statistics
-        $totalPackages = \App\Models\Package::count();
-        $activePackages = \App\Models\Package::where('is_active', true)->count();
+        $totalPackages = Package::count();
+        $activePackages = Package::where('is_active', true)->count();
 
         // Inclusion statistics
-        $totalInclusions = \App\Models\Inclusion::count();
-        $availableInclusions = \App\Models\Inclusion::where('is_active', true)->count();
+        $totalInclusions = Inclusion::count();
+        $availableInclusions = Inclusion::where('is_active', true)->count();
 
         // Recent packages (top 4 active ones)
-        $recentPackages = \App\Models\Package::where('is_active', true)
+        $recentPackages = Package::where('is_active', true)
             ->latest()
             ->take(4)
             ->get();
 
         // Popular inclusions (most used, top 6)
-        $popularInclusions = \App\Models\Inclusion::withCount('events')
+        $popularInclusions = Inclusion::withCount('events')
             ->where('is_active', true)
             ->orderByDesc('events_count')
             ->take(6)
             ->get();
 
-        return view('admin.management.index', compact(
-            'totalEvents',
-            'totalCustomers',
-            'totalPackages',
-            'activePackages',
-            'totalInclusions',
-            'availableInclusions',
-            'recentPackages',
-            'popularInclusions'
-        ));
+        return view('admin.management.index', [
+            'totalEvents' => Event::count(),
+            'totalCustomers' => Customer::count(),
+            'totalPackages' => Package::count(),
+            'activePackages' => Package::where('is_active', true)->count(),
+            'totalInclusions' => Inclusion::count(),
+            'availableInclusions' => Inclusion::where('is_active', true)->count(),
+            'recentPackages' => Package::where('is_active', true)->latest()->limit(4)->get(),
+            'popularInclusions' => Inclusion::where('is_active', true)->latest()->limit(6)->get(),
+            'totalFeedback' => Feedback::count(), // Add this
+            'publishedFeedback' => Feedback::where('is_published', true)->count(), // Add this
+        ]);
     }
 }

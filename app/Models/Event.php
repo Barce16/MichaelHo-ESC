@@ -230,4 +230,14 @@ class Event extends Model
         return $query->where('event_date', '<', today())
             ->where('status', '!=', self::STATUS_COMPLETED);
     }
+
+    public function feedback(): HasOne
+    {
+        return $this->hasOne(Feedback::class);
+    }
+
+    public function hasFeedback(): bool
+    {
+        return $this->feedback()->exists();
+    }
 }

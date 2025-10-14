@@ -215,4 +215,28 @@ class NotificationService
                 'read_at' => now(),
             ]);
     }
+
+
+    /**
+     * Notify admin of new customer feedback
+     */
+    public function notifyAdminCustomerFeedback($feedback): void
+    {
+        $admins = User::where('user_type', 'admin')->get();
+
+        $event = $feedback->event;
+        $customer = $feedback->customer;
+
+        $stars = str_repeat('⭐', $feedback->rating);
+
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'customer_feedback',
+                'title' => 'New Customer Feedback',
+                'message' => "{$customer->customer_name} rated '{$event->name}' {$stars} ({$feedback->rating}/5)",
+                'link' => route('admin.events.show', $event),
+            ]);
+        }
+    }
 }

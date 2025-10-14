@@ -386,6 +386,71 @@
         </div>
         @endif
 
+        {{-- Show feedback section for completed events --}}
+        @if($event->status === 'completed')
+        @if($event->hasFeedback())
+        {{-- Show existing feedback --}}
+        <div
+            class="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-xl shadow-sm overflow-hidden">
+            <div class="p-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-green-900 mb-2">✅ Thank You for Your Feedback!</h3>
+                        <div class="bg-white rounded-lg p-4 mb-3">
+                            <div class="text-2xl mb-2">{{ $event->feedback->stars_html }}</div>
+                            <p class="text-sm text-gray-700">{{ $event->feedback->comment }}</p>
+                            <p class="text-xs text-gray-500 mt-2">Submitted {{
+                                $event->feedback->created_at->diffForHumans() }}</p>
+                        </div>
+                        <a href="{{ route('customer.feedback.edit', $event) }}"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-white text-green-700 font-medium rounded-lg hover:bg-green-50 transition border border-green-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Edit Feedback
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @else
+        {{-- Prompt to submit feedback --}}
+        <div
+            class="bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 border-yellow-500 rounded-xl shadow-sm overflow-hidden">
+            <div class="p-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-yellow-900 mb-2">⭐ Share Your Experience!</h3>
+                        <p class="text-yellow-800 mb-4">Your event is complete! We'd love to hear about your experience.
+                            Your feedback helps us improve our services.</p>
+                        <a href="{{ route('customer.feedback.create', $event) }}"
+                            class="inline-flex items-center gap-2 px-6 py-3 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition shadow-md hover:shadow-lg">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            Submit Feedback
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+        @endif
+
         {{-- 9. REJECTED Status --}}
         @if($event->status === 'rejected')
         <div

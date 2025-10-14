@@ -217,160 +217,210 @@
             <!-- Reviews Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
-                <!-- Review Card 1 -->
+                @if($publishedFeedback->count() > 0)
+                {{-- Show database feedback --}}
+                @foreach($publishedFeedback as $feedback)
                 <div
                     class="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 animate-on-scroll from-left">
                     <svg class="w-12 h-12 text-white/20 mb-4" fill="currentColor" viewBox="0 0 24 24">
                         <path
                             d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
                     </svg>
-                    <p class="text-gray-200 mb-6 leading-relaxed">
-                        I would like to reply to this review with two of many reasons I would recommend Michael Ho. 1.
-                        Professionalism. It's clear to me that he cares about his craft and the satisfaction of his
-                        customers. 2. Talent. Michael has clearly found his calling in life. His arrangements are beyond
-                        what I can explain. Proportional designs for the occasions, symmetrical (or not when
-                        appropriate) color, depth. He should be teaching at the university level.
-                    </p>
-                    <div class="border-t border-white/10 pt-4">
-                        <h4 class="font-bold text-lg mb-1">Matt Hickman, Virginia, USA</h4>
-                        <a href="https://www.facebook.com/share/17jdrX6DQp/" target="_blank"
-                            class="text-sm text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
-                            View Review
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                        </a>
-                    </div>
-                </div>
 
-                <!-- Review Card 2 -->
-                <div
-                    class="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 animate-on-scroll scale-up">
-                    <svg class="w-12 h-12 text-white/20 mb-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                    </svg>
-                    <p class="text-gray-200 mb-6 leading-relaxed">
-                        Attended a friend's wedding at Dahilayan Bukidnon last 23Feb2019. Exceptional wedding
-                        coordination done by Michael and his team. Very organized and the program was smooth and on
-                        time... The place was fantastic that guests never had any boring moment. I recommend this group
-                        100%.
-                    </p>
-                    <div class="border-t border-white/10 pt-4">
-                        <h4 class="font-bold text-lg mb-1">Jonah M. Severa</h4>
-                        <a href="https://www.facebook.com/share/1J86B2Q1ox/" target="_blank"
-                            class="text-sm text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
-                            View Review
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    {{-- Elegant flat stars --}}
+                    <div class="flex gap-1 mb-4">
+                        @for($i = 1; $i <= 5; $i++) @if($i <=$feedback->rating)
+                            <svg class="w-5 h-5 text-amber-200/80" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                             </svg>
-                        </a>
+                            @else
+                            <svg class="w-5 h-5 text-white/20" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            @endif
+                            @endfor
                     </div>
-                </div>
 
-                <!-- Review Card 3 -->
-                <div
-                    class="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 animate-on-scroll from-right">
-                    <svg class="w-12 h-12 text-white/20 mb-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                    </svg>
                     <p class="text-gray-200 mb-6 leading-relaxed">
-                        Hi Mic! Thank you so much to your awesome team. Very accommodating and easy to get along with.
-                        All request granted! Very flexible in terms sa ginagmay na hassle, aws hehe! Professional
-                        indeed! I'm more than satisfied sa result sa photoshoot namo ni Niall, one day we'll both
-                        look back on our photos and reminisce good memories. Extra credit to sir Adi (Adrian Flores) and
-                        to sir Cleve. Sa uulitin hap. More power and God bless.
+                        {{ $feedback->comment }}
                     </p>
                     <div class="border-t border-white/10 pt-4">
-                        <h4 class="font-bold text-lg mb-1">Honey Hazel L. Doydora</h4>
-                        <a href="https://www.facebook.com/share/19rfzd27RN/" target="_blank"
-                            class="text-sm text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
-                            View Review
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                        </a>
+                        <h4 class="font-bold text-lg mb-1">{{ $feedback->customer->customer_name }}</h4>
+                        <p class="text-sm text-gray-400">{{ $feedback->event->name }} • {{
+                            $feedback->event->event_date->format('F Y') }}</p>
                     </div>
                 </div>
+                @endforeach
 
-                <!-- Review Card 4 -->
-                <div
-                    class="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 animate-on-scroll from-left">
-                    <svg class="w-12 h-12 text-white/20 mb-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                    </svg>
-                    <p class="text-gray-200 mb-6 leading-relaxed">
-                        Very professional, systematic,<br>
-                        Hands on and the team is great.<br>
-                        My son's wedding was so organized.<br>
-                        Michael Ho is a pro.
-                    </p>
-                    <div class="border-t border-white/10 pt-4">
-                        <h4 class="font-bold text-lg mb-1">Jona Fe</h4>
-                        <a href="https://www.facebook.com/share/1JUYBzKQEJ/" target="_blank"
-                            class="text-sm text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
-                            View Review
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                        </a>
-                    </div>
-                </div>
+                {{-- Fill remaining slots with default reviews if less than 6 --}}
+                @if($publishedFeedback->count() < 6) @php $defaultReviews=[ [ 'name'=> 'Matt Hickman, Virginia, USA',
+                    'review' => 'I would like to reply to this review with two of many reasons I would recommend Michael
+                    Ho. 1. Professionalism. It\'s clear to me that he cares about his craft and the satisfaction of his
+                    customers. 2. Talent. Michael has clearly found his calling in life. His arrangements are beyond
+                    what I can explain. Proportional designs for the occasions, symmetrical (or not when appropriate)
+                    color, depth. He should be teaching at the university level.',
+                    'link' => 'https://www.facebook.com/share/17jdrX6DQp/'
+                    ],
+                    [
+                    'name' => 'Jonah M. Severa',
+                    'review' => 'Attended a friend\'s wedding at Dahilayan Bukidnon last 23Feb2019. Exceptional wedding
+                    coordination done by Michael and his team. Very organized and the program was smooth and on time...
+                    The place was fantastic that guests never had any boring moment. I recommend this group 100%.',
+                    'link' => 'https://www.facebook.com/share/1J86B2Q1ox/'
+                    ],
+                    [
+                    'name' => 'Honey Hazel L. Doydora',
+                    'review' => 'Hi Mic! Thank you so much to your awesome team. Very accommodating and easy to get
+                    along with. All request granted! Very flexible in terms sa ginagmay na hassle, aws hehe!
+                    Professional indeed! I\'m more than satisfied sa result sa photoshoot namo ni Niall, one day we\'ll
+                    both look back on our photos and reminisce good memories. Extra credit to sir Adi (Adrian Flores)
+                    and to sir Cleve. Sa uulitin hap. More power and God bless.',
+                    'link' => 'https://www.facebook.com/share/19rfzd27RN/'
+                    ],
+                    [
+                    'name' => 'Jona Fe',
+                    'review' => 'Very professional, systematic, Hands on and the team is great. My son\'s wedding was so
+                    organized. Michael Ho is a pro.',
+                    'link' => 'https://www.facebook.com/share/1JUYBzKQEJ/'
+                    ],
+                    [
+                    'name' => 'Adrian Flores',
+                    'review' => 'One of the top Event Stylists & Coordinators in the Philippines... Bukidnon\'s
+                    Pride..',
+                    'link' => 'https://www.facebook.com/share/1E7L1zm3tg/'
+                    ],
+                    ];
 
-                <!-- Review Card 5 -->
-                <div
-                    class="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 animate-on-scroll scale-up">
-                    <svg class="w-12 h-12 text-white/20 mb-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                    </svg>
-                    <p class="text-gray-200 mb-6 leading-relaxed">
-                        One of the top Event Stylists & Coordinators in the Philippines... Bukidnon's Pride..
-                    </p>
-                    <div class="border-t border-white/10 pt-4">
-                        <h4 class="font-bold text-lg mb-1">Adrian Flores</h4>
-                        <a href="https://www.facebook.com/share/1E7L1zm3tg/" target="_blank"
-                            class="text-sm text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
-                            View Review
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                        </a>
-                    </div>
-                </div>
+                    $remainingSlots = 6 - $publishedFeedback->count();
+                    $defaultReviewsToShow = array_slice($defaultReviews, 0, $remainingSlots);
+                    @endphp
 
-                <!-- Review Card 6 -->
-                <div
-                    class="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 animate-on-scroll from-right">
-                    <svg class="w-12 h-12 text-white/20 mb-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                    </svg>
-                    <p class="text-gray-200 mb-6 leading-relaxed">
-                        As a supplier, Michael Ho Events Styling & Coordination team is so much fun to work with. Their
-                        efficiency in managing the schedules is just right, and with a whole lot of love. If you're
-                        looking out for a wedding coordination team for your big day, do make sure to consider this
-                        team.
-                    </p>
-                    <div class="border-t border-white/10 pt-4">
-                        <h4 class="font-bold text-lg mb-1">Jaybee Yaba</h4>
-                        <a href="https://www.facebook.com/share/1777W5x3B9/" target="_blank"
-                            class="text-sm text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
-                            View Review
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                        </a>
+                    @foreach($defaultReviewsToShow as $review)
+                    <div
+                        class="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 animate-on-scroll scale-up">
+                        <svg class="w-12 h-12 text-white/20 mb-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+                        </svg>
+
+                        {{-- 5 stars for default reviews --}}
+                        <div class="flex gap-1 mb-4">
+                            @for($i = 1; $i <= 5; $i++) <svg class="w-5 h-5 text-amber-200/80" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path
+                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                                @endfor
+                        </div>
+
+                        <p class="text-gray-200 mb-6 leading-relaxed">
+                            {{ $review['review'] }}
+                        </p>
+                        <div class="border-t border-white/10 pt-4">
+                            <h4 class="font-bold text-lg mb-1">{{ $review['name'] }}</h4>
+                            <a href="{{ $review['link'] }}" target="_blank"
+                                class="text-sm text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
+                                View Review
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                            </a>
+                        </div>
                     </div>
-                </div>
+                    @endforeach
+                    @endif
+
+                    @else
+                    {{-- Show all default reviews if no published feedback --}}
+                    @php
+                    $allDefaultReviews = [
+                    [
+                    'name' => 'Matt Hickman, Virginia, USA',
+                    'review' => 'I would like to reply to this review with two of many reasons I would recommend Michael
+                    Ho. 1. Professionalism. It\'s clear to me that he cares about his craft and the satisfaction of his
+                    customers. 2. Talent. Michael has clearly found his calling in life. His arrangements are beyond
+                    what I can explain. Proportional designs for the occasions, symmetrical (or not when appropriate)
+                    color, depth. He should be teaching at the university level.',
+                    'link' => 'https://www.facebook.com/share/17jdrX6DQp/'
+                    ],
+                    [
+                    'name' => 'Jonah M. Severa',
+                    'review' => 'Attended a friend\'s wedding at Dahilayan Bukidnon last 23Feb2019. Exceptional wedding
+                    coordination done by Michael and his team. Very organized and the program was smooth and on time...
+                    The place was fantastic that guests never had any boring moment. I recommend this group 100%.',
+                    'link' => 'https://www.facebook.com/share/1J86B2Q1ox/'
+                    ],
+                    [
+                    'name' => 'Honey Hazel L. Doydora',
+                    'review' => 'Hi Mic! Thank you so much to your awesome team. Very accommodating and easy to get
+                    along with. All request granted! Very flexible in terms sa ginagmay na hassle, aws hehe!
+                    Professional indeed! I\'m more than satisfied sa result sa photoshoot namo ni Niall, one day we\'ll
+                    both look back on our photos and reminisce good memories. Extra credit to sir Adi (Adrian Flores)
+                    and to sir Cleve. Sa uulitin hap. More power and God bless.',
+                    'link' => 'https://www.facebook.com/share/19rfzd27RN/'
+                    ],
+                    [
+                    'name' => 'Jona Fe',
+                    'review' => 'Very professional, systematic, Hands on and the team is great. My son\'s wedding was so
+                    organized. Michael Ho is a pro.',
+                    'link' => 'https://www.facebook.com/share/1JUYBzKQEJ/'
+                    ],
+                    [
+                    'name' => 'Adrian Flores',
+                    'review' => 'One of the top Event Stylists & Coordinators in the Philippines... Bukidnon\'s
+                    Pride..',
+                    'link' => 'https://www.facebook.com/share/1E7L1zm3tg/'
+                    ],
+                    [
+                    'name' => 'Jaybee Yaba',
+                    'review' => 'As a supplier, Michael Ho Events Styling & Coordination team is so much fun to work
+                    with. Their efficiency in managing the schedules is just right, and with a whole lot of love. If
+                    you\'re looking out for a wedding coordination team for your big day, do make sure to consider this
+                    team.',
+                    'link' => 'https://www.facebook.com/share/1777W5x3B9/'
+                    ],
+                    ];
+                    @endphp
+
+                    @foreach($allDefaultReviews as $review)
+                    <div
+                        class="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 animate-on-scroll">
+                        <svg class="w-12 h-12 text-white/20 mb-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+                        </svg>
+
+                        <div class="flex gap-1 mb-4">
+                            @for($i = 1; $i <= 5; $i++) <svg class="w-5 h-5 text-amber-200/80" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path
+                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                                @endfor
+                        </div>
+
+                        <p class="text-gray-200 mb-6 leading-relaxed">
+                            {{ $review['review'] }}
+                        </p>
+                        <div class="border-t border-white/10 pt-4">
+                            <h4 class="font-bold text-lg mb-1">{{ $review['name'] }}</h4>
+                            <a href="{{ $review['link'] }}" target="_blank"
+                                class="text-sm text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
+                                View Review
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    @endforeach
+                    @endif
 
             </div>
         </div>
