@@ -115,10 +115,43 @@
             <!-- Events Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
+                @if($eventShowcases->count() > 0)
+                {{-- Show database event showcases --}}
+                @foreach($eventShowcases as $index => $showcase)
+                <div
+                    class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 animate-on-scroll {{ $index === 0 ? 'from-left' : ($index === 1 ? 'scale-up' : 'from-right') }}">
+                    <div class="aspect-[4/5] overflow-hidden">
+                        <img src="{{ $showcase->image_url }}" alt="{{ $showcase->event_name }}"
+                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    </div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
+                    <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                        <div class="mb-2">
+                            <span
+                                class="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium uppercase tracking-wider">
+                                {{ $showcase->type }}
+                            </span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-2 font-libre">{{ $showcase->event_name }}</h3>
+                        <p class="text-sm text-gray-200 mb-3">{{ $showcase->description }}</p>
+                        <div class="flex items-center text-sm text-gray-300">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                            <span>{{ $showcase->location }}</span>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+
+                @else
+                {{-- Fallback to hardcoded events if no database showcases --}}
+
                 <!-- Event Card 1: Wedding -->
                 <div
                     class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 animate-on-scroll from-left">
-
                     <div class="aspect-[4/5] overflow-hidden">
                         <img src="https://scontent.fcgy2-4.fna.fbcdn.net/v/t39.30808-6/557960014_1337283081741390_2253853673411969444_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=f727a1&_nc_eui2=AeG4xAq3SH-mjyJNoIBmhA3NyeRUzR5CNSjJ5FTNHkI1KLm0-2G39P6ZarAk0mg0sasCbGF1lCahrtGGYg4DTg8G&_nc_ohc=9S8Po-69JWEQ7kNvwE0dnYT&_nc_oc=AdlffZWMrY6wE-669a9_VxnA-bOlIUA1K7ZhuBO04Hv3Qw5Cu0jwOJg2DV9IAntzb9w&_nc_zt=23&_nc_ht=scontent.fcgy2-4.fna&_nc_gid=m7OsQSV2bGmYJ7GtEZmb6w&oh=00_AfaxE4mMdYH56Fw3V7W-K0FBTV2GpSnB66KABXXHDkEUKQ&oe=68E3080B"
                             alt="Elegant Wedding"
@@ -130,8 +163,7 @@
                             <span
                                 class="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium uppercase tracking-wider">WEDDING</span>
                         </div>
-                        <h3 class="text-2xl font-bold mb-2 font-libre">BRYAN
-                            + CARN Wedding</h3>
+                        <h3 class="text-2xl font-bold mb-2 font-libre">BRYAN + CARN Wedding</h3>
                         <p class="text-sm text-gray-200 mb-3">When the world blurs, love stays clear.</p>
                         <div class="flex items-center text-sm text-gray-300">
                             <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -199,6 +231,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
             </div>
         </div>

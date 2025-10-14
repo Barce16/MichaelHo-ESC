@@ -17,6 +17,7 @@ use App\Http\Controllers\Customer\EventController as CustomerEventController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\CustomerPaymentController;
 use App\Http\Controllers\Admin\AdminEventController;
+use App\Http\Controllers\Admin\EventShowcaseController;
 use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\InclusionController;
 use App\Http\Controllers\Admin\ReportController;
@@ -27,16 +28,23 @@ use App\Http\Middleware\EnsureStaff;
 use Illuminate\Support\Facades\Route;
 use App\Models\Package;
 use App\Models\Feedback;
+use App\Models\EventShowcase;
 
 
 Route::get('/', function () {
+
+    $eventShowcases = EventShowcase::where('is_published', true)
+        ->orderBy('display_order')
+        ->limit(3)
+        ->get();
+
     $publishedFeedback = Feedback::with(['customer', 'event'])
         ->where('is_published', true)
         ->orderBy('published_at', 'desc')
         ->limit(6)
         ->get();
 
-    return view('welcome', compact('publishedFeedback'));
+    return view('welcome', compact('publishedFeedback', 'eventShowcases'));
 })->name('welcome');
 
 Route::get('/events', function () {
@@ -252,6 +260,15 @@ Route::middleware('auth')->group(function () {
                 Route::post('/feedback/{feedback}/publish', [FeedbackController::class, 'publish'])->name('feedback.publish');
                 Route::post('/feedback/{feedback}/unpublish', [FeedbackController::class, 'unpublish'])->name('feedback.unpublish');
                 Route::delete('/feedback/{feedback}', [FeedbackController::class, 'destroy'])->name('feedback.destroy');
+
+                Route::get('/showcases', [EventShowcaseController::class, 'index'])->name('showcases.index');
+                Route::get('/showcases/create', [EventShowcaseController::class, 'create'])->name('showcases.create');
+                Route::post('/showcases', [EventShowcaseController::class, 'store'])->name('showcases.store');
+                Route::get('/showcases/{showcase}/edit', [EventShowcaseController::class, 'edit'])->name('showcases.edit');
+                Route::put('/showcases/{showcase}', [EventShowcaseController::class, 'update'])->name('showcases.update');
+                Route::delete('/showcases/{showcase}', [EventShowcaseController::class, 'destroy'])->name('showcases.destroy');
+                Route::post('/showcases/{showcase}/publish', [EventShowcaseController::class, 'publish'])->name('showcases.publish');
+                Route::post('/showcases/{showcase}/unpublish', [EventShowcaseController::class, 'unpublish'])->name('showcases.unpublish');
             });
 
             // ---- Payroll ----
