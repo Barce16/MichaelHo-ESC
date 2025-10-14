@@ -88,18 +88,34 @@ Route::get('/inclusions/by-package-type', [InclusionController::class, 'getByPac
 
 Route::get('/test-sms', function () {
     try {
-        $smsNotifier = app(\App\Services\SmsNotifier::class);
+        $config = [
+            'api_key' => config('services.httpsms.api_key'),
+            'phone_number' => config('services.httpsms.phone_number'),
+        ];
 
-        if (empty(config('services.semaphore.api_key'))) {
-            return response()->json(['error' => 'Semaphore API key not configured']);
+        if (empty($config['api_key']) || empty($config['phone_number'])) {
+            return response()->json([
+                'error' => 'httpSMS credentials not configured'
+            ]);
         }
 
-        $result = $smsNotifier->sendSms('09058619045', 'Welcome Message from Semaphore at ' . now()->format('h:i A'));
+        $smsNotifier = app(\App\Services\SmsNotifier::class);
+
+        // ⚠️ CHANGE THIS TO A DIFFERENT PHONE NUMBER ⚠️
+        // Don't send to your httpSMS phone!
+        $recipientPhone = '639650432843'; // ← Put a different phone number here
+
+        $result = $smsNotifier->sendSms(
+            $recipientPhone,  // ← Different number!
+            'Hello Test message from httpSMS at ' . now()->format('h:i A')
+        );
 
         if ($result) {
             return response()->json([
                 'success' => true,
-                'message' => 'SMS sent! Check your phone.'
+                'message' => 'SMS sent successfully!',
+                'sent_to' => $recipientPhone,
+                'note' => 'Check the recipient phone (not your httpSMS phone)'
             ]);
         }
 

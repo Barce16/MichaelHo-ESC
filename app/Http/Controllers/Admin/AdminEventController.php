@@ -195,6 +195,7 @@ class AdminEventController extends Controller
         $data = $request->validate([
             'rejection_reason' => ['nullable', 'string', 'max:1000'],
         ]);
+        $oldStatus = $event->status;
 
         $event->update([
             'status' => Event::STATUS_REJECTED,
@@ -210,6 +211,8 @@ class AdminEventController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to send rejection email: ' . $e->getMessage());
         }
+
+        $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_REJECTED);
 
         return back()->with('success', 'Event rejected. Customer notified via email.');
     }
@@ -258,6 +261,9 @@ class AdminEventController extends Controller
                 Log::error('Failed to send intro payment approval email: ' . $e->getMessage());
             }
         }
+
+        $this->notificationService->notifyCustomerPaymentApproved($payment);
+
 
         return back()->with('success', 'Introductory payment approved. Event status updated to Meeting. Customer notified via email.');
     }
@@ -344,6 +350,8 @@ class AdminEventController extends Controller
             'status' => Payment::STATUS_APPROVED,
             'payment_date' => now(),
         ]);
+
+        $this->notificationService->notifyCustomerPaymentApproved($payment);
 
 
         $billing = $event->billing;

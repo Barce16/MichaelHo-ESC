@@ -35,9 +35,10 @@ return [
         ],
     ],
 
-    'semaphore' => [
-        'api_key' => env('SEMAPHORE_API_KEY'),
-        'sender_name' => env('SEMAPHORE_SENDER_NAME', 'SEMAPHORE'),
+    'httpsms' => [
+        'api_key' => env('HTTPSMS_API_KEY'),
+        'phone_number' => env('HTTPSMS_PHONE_NUMBER'),
+        'api_url' => 'https://api.httpsms.com/v1',
     ],
 
 ];

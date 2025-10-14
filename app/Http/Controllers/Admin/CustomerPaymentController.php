@@ -6,10 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Event;
 use App\Models\Billing;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class CustomerPaymentController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     public function index(Request $request)
     {
         $status = $request->get('status', 'pending');
@@ -47,18 +55,28 @@ class CustomerPaymentController extends Controller
             $billing->markIntroPaid();
 
             // Update event status to meeting
+            $oldStatus = $event->status;
             $event->update(['status' => Event::STATUS_MEETING]);
+            $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_MEETING);
 
             $message = 'Introductory payment approved. Event status updated to Meeting.';
         } elseif ($payment->isDownpayment()) {
             // Update event status to scheduled
+            $oldStatus = $event->status;
             $event->update(['status' => Event::STATUS_SCHEDULED]);
-
+            $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_SCHEDULED);
             $message = 'Downpayment approved. Event is now SCHEDULED.';
         } else {
             // Balance or other payment type
             $message = 'Payment approved successfully.';
         }
+
+        if ($billing->isFullyPaid()) {
+            $billing->update(['status' => 'paid']);
+        }
+
+        // Send in-app notification
+        $this->notificationService->notifyCustomerPaymentApproved($payment);
 
         return redirect()->route('admin.payments.index')->with('success', $message);
     }
@@ -77,6 +95,8 @@ class CustomerPaymentController extends Controller
             'status' => Payment::STATUS_REJECTED,
             'rejection_reason' => $reason,
         ]);
+
+        $this->notificationService->notifyCustomerPaymentRejected($payment, $reason);
 
         return redirect()->route('admin.payments.index')
             ->with('success', 'Payment rejected. Customer can resubmit.');

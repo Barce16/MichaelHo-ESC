@@ -35,6 +35,7 @@ class Event extends Model
         'notes',
         'status',
         'rejection_reason',
+
     ];
 
     protected $casts = [

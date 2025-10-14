@@ -55,21 +55,48 @@ class NotificationService
 
         if (!$user) return;
 
-        $statusLabels = [
-            'requested' => 'Requested',
-            'request_meeting' => 'Approved - Payment Required',
-            'meeting' => 'Meeting Scheduled',
-            'scheduled' => 'Event Scheduled',
-            'ongoing' => 'Event Ongoing',
-            'completed' => 'Event Completed',
-            'rejected' => 'Request Rejected',
+        // Customized messages for each status
+        $statusMessages = [
+            'requested' => [
+                'title' => 'Event Request Received',
+                'message' => "Thank you! Your event '{$event->name}' has been received and is under review."
+            ],
+            'request_meeting' => [
+                'title' => 'Event Approved!',
+                'message' => "Great news! Your event '{$event->name}' has been approved. Please pay the ₱15,000 introductory payment to proceed."
+            ],
+            'meeting' => [
+                'title' => 'Meeting Scheduled',
+                'message' => "Your introductory payment has been confirmed! A meeting for '{$event->name}' has been scheduled to finalize the details."
+            ],
+            'scheduled' => [
+                'title' => 'Event Scheduled',
+                'message' => "Exciting! Your event '{$event->name}' has been officially scheduled for " . $event->event_date->format('F d, Y') . ". We're ready to make it amazing!"
+            ],
+            'ongoing' => [
+                'title' => 'Event Started',
+                'message' => "Your event '{$event->name}' is now happening! We hope you're having a wonderful time. Enjoy every moment!"
+            ],
+            'completed' => [
+                'title' => 'Event Completed',
+                'message' => "Your event '{$event->name}' has been completed successfully! Thank you for choosing us. We'd love to hear your feedback!"
+            ],
+            'rejected' => [
+                'title' => 'Event Request Declined',
+                'message' => "We regret to inform you that your event '{$event->name}' request could not be approved" . ($event->rejection_reason ? ". Reason: {$event->rejection_reason}" : ".") . " Please contact us for more information."
+            ],
+        ];
+
+        $notification = $statusMessages[$newStatus] ?? [
+            'title' => 'Event Status Updated',
+            'message' => "Your event '{$event->name}' status has been updated."
         ];
 
         Notification::create([
             'user_id' => $user->id,
             'type' => 'event_status',
-            'title' => 'Event Status Updated',
-            'message' => "Your event '{$event->name}' status changed to: {$statusLabels[$newStatus]}",
+            'title' => $notification['title'],
+            'message' => $notification['message'],
             'link' => route('customer.events.show', $event),
         ]);
     }
