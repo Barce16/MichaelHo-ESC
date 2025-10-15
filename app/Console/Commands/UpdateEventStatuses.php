@@ -8,24 +8,14 @@ use Illuminate\Support\Facades\Log;
 
 class UpdateEventStatuses extends Command
 {
-    /**
-     * The name and signature of the console command.
-     */
     protected $signature = 'events:update-statuses';
-
-    /**
-     * The console command description.
-     */
     protected $description = 'Update event statuses based on event dates (ongoing/completed)';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
         $this->info('Updating event statuses...');
 
-        // Update scheduled events to ongoing if event date is today
+        // Update scheduled events to ongoing if event date is TODAY
         $ongoingCount = Event::where('status', Event::STATUS_SCHEDULED)
             ->whereDate('event_date', today())
             ->update(['status' => Event::STATUS_ONGOING]);
@@ -35,8 +25,8 @@ class UpdateEventStatuses extends Command
             Log::info("Updated {$ongoingCount} events to ongoing status");
         }
 
-        // Update ongoing events to completed if event date is in the past
-        $completedCount = Event::where('status', Event::STATUS_ONGOING)
+        // Update scheduled OR ongoing events to completed if event date is in the PAST
+        $completedCount = Event::whereIn('status', [Event::STATUS_SCHEDULED, Event::STATUS_ONGOING])
             ->whereDate('event_date', '<', today())
             ->update(['status' => Event::STATUS_COMPLETED]);
 

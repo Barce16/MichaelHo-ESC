@@ -75,6 +75,7 @@
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
 
+
             eyeIcon.classList.toggle('hidden');
             eyeSlashIcon.classList.toggle('hidden');
         });
