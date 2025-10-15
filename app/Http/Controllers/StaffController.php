@@ -106,7 +106,7 @@ class StaffController extends Controller
             ]);
         });
 
-        return redirect()->route('staff.show', $staff)->with('success', 'Staff updated.');
+        return redirect()->route('admin.staff.show', $staff)->with('success', 'Staff updated.');
     }
 
     public function destroy(Staff $staff)

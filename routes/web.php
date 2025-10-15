@@ -88,44 +88,59 @@ Route::get('/inclusions/by-package-type', [InclusionController::class, 'getByPac
 
 Route::get('/test-sms', function () {
     try {
-        $config = [
-            'api_key' => config('services.httpsms.api_key'),
-            'phone_number' => config('services.httpsms.phone_number'),
-        ];
+        // Check config
+        $apiToken = config('services.iprogtech.api_token');
 
-        if (empty($config['api_key']) || empty($config['phone_number'])) {
+        if (empty($apiToken)) {
             return response()->json([
-                'error' => 'httpSMS credentials not configured'
+                'error' => 'iprogtech API token not configured',
+                'instructions' => [
+                    '1. Get API token from iprogtech',
+                    '2. Add to .env: IPROGTECH_API_TOKEN=your_token',
+                    '3. Clear cache: php artisan config:clear'
+                ]
             ]);
         }
 
         $smsNotifier = app(\App\Services\SmsNotifier::class);
 
-        // ⚠️ CHANGE THIS TO A DIFFERENT PHONE NUMBER ⚠️
-        // Don't send to your httpSMS phone!
-        $recipientPhone = '639650432843'; // ← Put a different phone number here
-
+        // Send to a DIFFERENT phone number (not your own!)
         $result = $smsNotifier->sendSms(
-            $recipientPhone,  // ← Different number!
-            'Hello Test message from httpSMS at ' . now()->format('h:i A')
+            '09152796976', // ← Change this to recipient's number
+            'Message from iprogtech at ' . now()->format('h:i A')
         );
 
         if ($result) {
             return response()->json([
                 'success' => true,
-                'message' => 'SMS sent successfully!',
-                'sent_to' => $recipientPhone,
-                'note' => 'Check the recipient phone (not your httpSMS phone)'
+                'message' => 'SMS sent successfully! Check recipient phone.',
+                'provider' => 'iprogtech'
             ]);
+        }
+
+        // Check logs for errors
+        $logFile = storage_path('logs/laravel.log');
+        $logs = '';
+        if (file_exists($logFile)) {
+            $lines = file($logFile);
+            $recentLines = array_slice($lines, -20);
+            foreach ($recentLines as $line) {
+                if (stripos($line, 'iprogtech') !== false || stripos($line, 'sms') !== false) {
+                    $logs .= $line . "\n";
+                }
+            }
         }
 
         return response()->json([
             'success' => false,
-            'message' => 'Failed - check logs'
+            'message' => 'Failed to send SMS - check logs',
+            'recent_logs' => $logs
         ], 500);
     } catch (\Exception $e) {
         return response()->json([
-            'error' => $e->getMessage()
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
         ], 500);
     }
 });
@@ -235,7 +250,9 @@ Route::middleware('auth')->group(function () {
             Route::post('events/{event}/reject-downpayment', [AdminEventController::class, 'rejectDownpayment'])
                 ->name('events.rejectDownpayment');
 
+            Route::resource('customers', CustomerController::class);
             // Staff assignment
+            Route::resource('staff', StaffController::class);
             Route::get('events/{event}/assign-staff', [AdminEventController::class, 'assignStaffPage'])
                 ->name('events.assignStaffPage');
             Route::post('events/{event}/assign-staff', [AdminEventController::class, 'assignStaff'])
@@ -310,10 +327,6 @@ Route::middleware('auth')->group(function () {
             });
         });
 
-
-
-    Route::resource('customers', CustomerController::class);
-    Route::resource('staff', StaffController::class);
 
     // Route::get('/reports/monthly', fn() => view('reports.monthly'))->name('reports.monthly');
 });

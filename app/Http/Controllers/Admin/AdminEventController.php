@@ -19,15 +19,18 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use App\Services\NotificationService;
+use App\Services\SmsNotifier;
 
 class AdminEventController extends Controller
 {
 
     protected $notificationService;
+    protected $smsNotifier;
 
-    public function __construct(NotificationService $notificationService)
+    public function __construct(NotificationService $notificationService, SmsNotifier $smsNotifier)
     {
         $this->notificationService = $notificationService;
+        $this->smsNotifier = $smsNotifier;
     }
     public function index(Request $request)
     {
@@ -177,6 +180,16 @@ class AdminEventController extends Controller
             }
         }
 
+        // Send SMS with login details
+        try {
+            $this->smsNotifier->notifyEventApproved($event, $username, $password);
+        } catch (\Exception $e) {
+            Log::error('Failed to send event approval SMS', [
+                'event_id' => $event->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
         $message = 'Event approved! Customer must pay ₱15,000 introductory payment to schedule meeting.';
         if ($password) {
             $message .= ' Account credentials sent.';
@@ -214,6 +227,16 @@ class AdminEventController extends Controller
 
         $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_REJECTED);
 
+        // Send SMS
+        try {
+            $this->smsNotifier->notifyEventStatusChange($event, Event::STATUS_REJECTED);
+        } catch (\Exception $e) {
+            Log::error('Failed to send event rejection SMS', [
+                'event_id' => $event->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
         return back()->with('success', 'Event rejected. Customer notified via email.');
     }
 
@@ -235,6 +258,9 @@ class AdminEventController extends Controller
         if (!$payment) {
             return back()->with('error', 'No pending introductory payment found.');
         }
+
+        // Store old status for notification
+        $oldStatus = $event->status;
 
         // Approve the payment
         $payment->update([
@@ -262,10 +288,38 @@ class AdminEventController extends Controller
             }
         }
 
+        // Send in-app notification
         $this->notificationService->notifyCustomerPaymentApproved($payment);
 
+        // Notify about event status change (payment approved → meeting scheduled)
+        $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_MEETING);
 
-        return back()->with('success', 'Introductory payment approved. Event status updated to Meeting. Customer notified via email.');
+        // Send SMS notifications
+        $smsSent = false;
+        try {
+            // SMS for payment approval
+            $this->smsNotifier->notifyPaymentConfirmed($payment);
+
+            // SMS for status change to meeting
+            $this->smsNotifier->notifyEventStatusChange($event, Event::STATUS_MEETING);
+
+            $smsSent = true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send intro payment approval SMS', [
+                'payment_id' => $payment->id,
+                'event_id' => $event->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        $message = 'Introductory payment approved. Event status updated to Meeting.';
+        if ($smsSent) {
+            $message .= ' Customer notified via email, SMS, and in-app notification.';
+        } else {
+            $message .= ' Customer notified via email and in-app notification.';
+        }
+
+        return back()->with('success', $message);
     }
 
     /**
@@ -273,6 +327,10 @@ class AdminEventController extends Controller
      */
     public function rejectIntroPayment(Request $request, Event $event)
     {
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ]);
+
         $reason = $request->input('rejection_reason');
 
         $payment = $event->payments()
@@ -290,9 +348,29 @@ class AdminEventController extends Controller
             'rejection_reason' => $reason,
         ]);
 
+        // Send in-app notification
         $this->notificationService->notifyCustomerPaymentRejected($payment, $reason);
 
-        return back()->with('success', 'Introductory payment rejected. Customer notified to resubmit.');
+        // Send SMS notification
+        $smsSent = false;
+        try {
+            $this->smsNotifier->notifyPaymentRejected($payment, $reason);
+            $smsSent = true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send intro payment rejection SMS', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        $message = 'Introductory payment rejected.';
+        if ($smsSent) {
+            $message .= ' Customer notified via SMS and in-app notification to resubmit.';
+        } else {
+            $message .= ' Customer notified via in-app notification to resubmit.';
+        }
+
+        return back()->with('success', $message);
     }
 
     /**
@@ -351,8 +429,8 @@ class AdminEventController extends Controller
             'payment_date' => now(),
         ]);
 
+        // Send in-app notification
         $this->notificationService->notifyCustomerPaymentApproved($payment);
-
 
         $billing = $event->billing;
         if ($billing && $billing->isFullyPaid()) {
@@ -368,7 +446,26 @@ class AdminEventController extends Controller
             }
         }
 
-        return back()->with('success', 'Downpayment approved. Customer notified via email.');
+        // Send SMS notification
+        $smsSent = false;
+        try {
+            $this->smsNotifier->notifyPaymentConfirmed($payment);
+            $smsSent = true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send downpayment approval SMS', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        $message = 'Downpayment approved.';
+        if ($smsSent) {
+            $message .= ' Customer notified via email, SMS, and in-app notification.';
+        } else {
+            $message .= ' Customer notified via email and in-app notification.';
+        }
+
+        return back()->with('success', $message);
     }
 
     /**
@@ -376,6 +473,10 @@ class AdminEventController extends Controller
      */
     public function rejectDownpayment(Request $request, Event $event)
     {
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ]);
+
         $reason = $request->input('rejection_reason');
 
         if (!$event->billing) {
@@ -397,9 +498,29 @@ class AdminEventController extends Controller
             'rejection_reason' => $reason,
         ]);
 
+        // Send in-app notification
         $this->notificationService->notifyCustomerPaymentRejected($payment, $reason);
 
-        return back()->with('success', 'Downpayment rejected. Customer notified to resubmit.');
+        // Send SMS notification
+        $smsSent = false;
+        try {
+            $this->smsNotifier->notifyPaymentRejected($payment, $reason);
+            $smsSent = true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send downpayment rejection SMS', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        $message = 'Downpayment rejected.';
+        if ($smsSent) {
+            $message .= ' Customer notified via SMS and in-app notification to resubmit.';
+        } else {
+            $message .= ' Customer notified via in-app notification to resubmit.';
+        }
+
+        return back()->with('success', $message);
     }
 
     /**

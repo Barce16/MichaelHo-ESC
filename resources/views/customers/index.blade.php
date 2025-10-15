@@ -232,7 +232,7 @@
                                 </td>
 
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
-                                    <a href="{{ route('customers.show', $c) }}"
+                                    <a href="{{ route('admin.customers.show', $c) }}"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

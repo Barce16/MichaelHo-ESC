@@ -35,10 +35,9 @@ return [
         ],
     ],
 
-    'httpsms' => [
-        'api_key' => env('HTTPSMS_API_KEY'),
-        'phone_number' => env('HTTPSMS_PHONE_NUMBER'),
-        'api_url' => 'https://api.httpsms.com/v1',
+    'iprogtech' => [
+        'api_token' => env('IPROGTECH_API_TOKEN'),
+        'api_url' => 'https://sms.iprogtech.com/api/v1/',
     ],
 
 ];

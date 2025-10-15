@@ -6,7 +6,7 @@
                 <p class="text-sm text-gray-500 mt-1">View customer information and booking history</p>
             </div>
             <div class="flex gap-2">
-                <a href="{{ route('customers.index') }}"
+                <a href="{{ route('admin.customers.index') }}"
                     class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

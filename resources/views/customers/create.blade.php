@@ -32,7 +32,7 @@
                     </div>
                     <div class="pt-2">
                         <button class="bg-gray-800 text-white px-4 py-2 rounded">Save</button>
-                        <a href="{{ route('customers.index') }}"
+                        <a href="{{ route('admin.customers.index') }}"
                             class="ml-2 inline-block bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
                             Cancel
                         </a>

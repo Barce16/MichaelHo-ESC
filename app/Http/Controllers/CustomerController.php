@@ -36,7 +36,7 @@ class CustomerController extends Controller
         ]);
 
         Customer::create($data);
-        return redirect()->route('customers.index')->with('success', 'Customer added.');
+        return redirect()->route('admin.customers.index')->with('success', 'Customer added.');
     }
 
     public function edit(Customer $customer)
@@ -54,7 +54,7 @@ class CustomerController extends Controller
         ]);
 
         $customer->update($data);
-        return redirect()->route('customers.index')->with('success', 'Customer updated.');
+        return redirect()->route('admin.customers.index')->with('success', 'Customer updated.');
     }
 
     public function show(Customer $customer)

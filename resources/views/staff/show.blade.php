@@ -6,7 +6,7 @@
                 <p class="text-sm text-gray-500 mt-1">View staff member information and assignments</p>
             </div>
             <div class="flex gap-2">
-                <a href="{{ route('staff.edit', $staff) }}"
+                <a href="{{ route('admin.staff.edit', $staff) }}"
                     class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 text-white font-medium rounded-lg hover:bg-slate-800 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -14,7 +14,7 @@
                     </svg>
                     Edit
                 </a>
-                <a href="{{ route('staff.index') }}"
+                <a href="{{ route('admin.staff.index') }}"
                     class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

@@ -7,15 +7,19 @@ use App\Models\Payment;
 use App\Models\Event;
 use App\Models\Billing;
 use App\Services\NotificationService;
+use App\Services\SmsNotifier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CustomerPaymentController extends Controller
 {
     protected $notificationService;
+    protected $smsNotifier;
 
-    public function __construct(NotificationService $notificationService)
+    public function __construct(NotificationService $notificationService, SmsNotifier $smsNotifier)
     {
         $this->notificationService = $notificationService;
+        $this->smsNotifier = $smsNotifier;
     }
 
     public function index(Request $request)
@@ -59,12 +63,33 @@ class CustomerPaymentController extends Controller
             $event->update(['status' => Event::STATUS_MEETING]);
             $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_MEETING);
 
+            // Send SMS for status change
+            try {
+                $this->smsNotifier->notifyEventStatusChange($event, Event::STATUS_MEETING);
+            } catch (\Exception $e) {
+                Log::error('Failed to send event status SMS', [
+                    'event_id' => $event->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
             $message = 'Introductory payment approved. Event status updated to Meeting.';
         } elseif ($payment->isDownpayment()) {
             // Update event status to scheduled
             $oldStatus = $event->status;
             $event->update(['status' => Event::STATUS_SCHEDULED]);
             $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_SCHEDULED);
+
+            // Send SMS for status change
+            try {
+                $this->smsNotifier->notifyEventStatusChange($event, Event::STATUS_SCHEDULED);
+            } catch (\Exception $e) {
+                Log::error('Failed to send event status SMS', [
+                    'event_id' => $event->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
             $message = 'Downpayment approved. Event is now SCHEDULED.';
         } else {
             // Balance or other payment type
@@ -78,6 +103,24 @@ class CustomerPaymentController extends Controller
         // Send in-app notification
         $this->notificationService->notifyCustomerPaymentApproved($payment);
 
+        // Send SMS notification for payment approval
+        $smsSent = false;
+        try {
+            $this->smsNotifier->notifyPaymentConfirmed($payment);
+            $smsSent = true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send payment approval SMS', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        if ($smsSent) {
+            $message .= ' Customer notified via SMS and in-app notification.';
+        } else {
+            $message .= ' Customer notified via in-app notification.';
+        }
+
         return redirect()->route('admin.payments.index')->with('success', $message);
     }
 
@@ -89,6 +132,10 @@ class CustomerPaymentController extends Controller
             return back()->with('error', 'Payment is not pending.');
         }
 
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ]);
+
         $reason = $request->input('rejection_reason');
 
         $payment->update([
@@ -96,10 +143,30 @@ class CustomerPaymentController extends Controller
             'rejection_reason' => $reason,
         ]);
 
+        // Send in-app notification
         $this->notificationService->notifyCustomerPaymentRejected($payment, $reason);
 
+        // Send SMS notification
+        $smsSent = false;
+        try {
+            $this->smsNotifier->notifyPaymentRejected($payment, $reason);
+            $smsSent = true;
+        } catch (\Exception $e) {
+            Log::error('Failed to send payment rejection SMS', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        $message = 'Payment rejected. Customer can resubmit.';
+        if ($smsSent) {
+            $message .= ' Customer notified via SMS and in-app notification.';
+        } else {
+            $message .= ' Customer notified via in-app notification.';
+        }
+
         return redirect()->route('admin.payments.index')
-            ->with('success', 'Payment rejected. Customer can resubmit.');
+            ->with('success', $message);
     }
 
     /**

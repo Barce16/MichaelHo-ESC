@@ -5,7 +5,7 @@
                 <h2 class="font-bold text-2xl text-gray-800">Edit Staff Member</h2>
                 <p class="text-sm text-gray-500 mt-1">Update staff information and settings</p>
             </div>
-            <a href="{{ route('staff.show', $staff) }}"
+            <a href="{{ route('admin.staff.show', $staff) }}"
                 class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -40,7 +40,7 @@
             </div>
             @endif
 
-            <form method="POST" enctype="multipart/form-data" action="{{ route('staff.update', $staff) }}"
+            <form method="POST" enctype="multipart/form-data" action="{{ route('admin.staff.update', $staff) }}"
                 class="space-y-6">
                 @csrf
                 @method('PUT')
@@ -363,7 +363,7 @@
 
                         @if($staff->events->count() > 6)
                         <div class="mt-4 text-center">
-                            <a href="{{ route('staff.show', $staff) }}"
+                            <a href="{{ route('admin.staff.show', $staff) }}"
                                 class="text-sm text-slate-600 hover:text-slate-900 font-medium">
                                 View all {{ $staff->events->count() }} assignments →
                             </a>
@@ -376,7 +376,7 @@
                 {{-- Form Actions --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div class="flex items-center justify-between">
-                        <a href="{{ route('staff.show', $staff) }}"
+                        <a href="{{ route('admin.staff.show', $staff) }}"
                             class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

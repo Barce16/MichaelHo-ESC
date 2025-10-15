@@ -10,52 +10,45 @@ use App\Models\Event;
 class SmsNotifier
 {
     protected $client;
-    protected $apiKey;
-    protected $phoneNumber;
+    protected $apiToken;
+    protected $apiUrl;
 
     public function __construct()
     {
-        $this->apiKey = config('services.httpsms.api_key');
-        $this->phoneNumber = config('services.httpsms.phone_number');
+        $this->apiToken = config('services.iprogtech.api_token');
+        $this->apiUrl = config('services.iprogtech.api_url');
 
-        // httpSMS uses a different URL structure - NO /v1 in base
         $this->client = new Client([
-            'base_uri' => 'https://api.httpsms.com',
+            'base_uri' => $this->apiUrl,
             'timeout' => 30,
-            'headers' => [
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-                'x-api-key' => $this->apiKey,
-            ]
         ]);
     }
 
     /**
-     * Send SMS notification using httpSMS API
+     * Send SMS notification using iprogtech API
      */
     public function sendSms(string $to, string $message): bool
     {
         try {
-            // Format phone number to international format
             $formattedPhone = $this->formatPhoneNumber($to);
 
-            Log::info('Attempting to send SMS via httpSMS', [
+            Log::info('Attempting to send SMS via iprogtech', [
                 'to' => $formattedPhone,
-                'from' => $this->phoneNumber,
-                'message_length' => strlen($message)
+                'message_length' => strlen($message),
+                'api_url' => $this->apiUrl . '/sms_messages'
             ]);
 
-            $response = $this->client->post('/v1/messages/send', [
-                'json' => [
-                    'from' => $this->phoneNumber,
-                    'to' => $formattedPhone,
-                    'content' => $message,
+            $response = $this->client->post('sms_messages', [
+                'form_params' => [
+                    'api_token' => $this->apiToken,
+                    'phone_number' => $formattedPhone,
+                    'message' => $message,
                 ]
             ]);
 
             $result = json_decode($response->getBody()->getContents(), true);
 
-            Log::info('httpSMS sent successfully', [
+            Log::info('iprogtech SMS sent successfully', [
                 'to' => $formattedPhone,
                 'response' => $result
             ]);
@@ -66,7 +59,7 @@ class SmsNotifier
             $statusCode = $response ? $response->getStatusCode() : 'N/A';
             $responseBody = $response ? $response->getBody()->getContents() : 'No response body';
 
-            Log::error('httpSMS API Client Error', [
+            Log::error('iprogtech API Client Error', [
                 'to' => $to,
                 'status_code' => $statusCode,
                 'error' => $e->getMessage(),
@@ -74,49 +67,35 @@ class SmsNotifier
             ]);
 
             return false;
-        } catch (\GuzzleHttp\Exception\ServerException $e) {
-            $response = $e->getResponse();
-            $responseBody = $response ? $response->getBody()->getContents() : 'No response body';
-
-            Log::error('httpSMS API Server Error', [
-                'to' => $to,
-                'status_code' => $response ? $response->getStatusCode() : 'N/A',
-                'error' => $e->getMessage(),
-                'response_body' => $responseBody
-            ]);
-            return false;
         } catch (\Exception $e) {
-            Log::error('Failed to send httpSMS - General Error', [
+            Log::error('Failed to send iprogtech SMS - General Error', [
                 'to' => $to,
                 'error' => $e->getMessage(),
-                'class' => get_class($e),
-                'trace' => $e->getTraceAsString()
             ]);
             return false;
         }
     }
-
     /**
-     * Format phone number to international format (+639XXXXXXXXX)
+     * Format phone number
      */
     protected function formatPhoneNumber(string $phone): string
     {
         // Remove all non-numeric characters
         $phone = preg_replace('/[^0-9]/', '', $phone);
 
-        // If starts with 0, replace with +63 (Philippines)
+        // If starts with 0, replace with 63
         if (substr($phone, 0, 1) === '0') {
-            $phone = '+63' . substr($phone, 1);
+            $phone = '63' . substr($phone, 1);
         }
 
-        // If starts with 63, add +
-        if (substr($phone, 0, 2) === '63') {
-            $phone = '+' . $phone;
+        // If starts with +63, remove the +
+        if (substr($phone, 0, 3) === '+63') {
+            $phone = substr($phone, 1);
         }
 
-        // If doesn't start with +, add it
-        if (substr($phone, 0, 1) !== '+') {
-            $phone = '+' . $phone;
+        // If doesn't start with 63, add it
+        if (substr($phone, 0, 2) !== '63') {
+            $phone = '63' . $phone;
         }
 
         return $phone;

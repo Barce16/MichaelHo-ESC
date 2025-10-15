@@ -5,7 +5,7 @@
                 <h2 class="font-bold text-2xl text-gray-800">Staff Management</h2>
                 <p class="text-sm text-gray-500 mt-1">Manage team members and their assignments</p>
             </div>
-            <a href="{{ route('staff.create') }}"
+            <a href="{{ route('admin.staff.create') }}"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 text-white font-medium rounded-lg hover:bg-slate-800 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -164,7 +164,7 @@
 
                     {{-- Action Buttons --}}
                     <div class="flex gap-2 items-end">
-                        <a href="{{ route('staff.index') }}"
+                        <a href="{{ route('admin.staff.index') }}"
                             class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition text-center">
                             Reset
                         </a>
@@ -317,7 +317,7 @@
 
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        <a href="{{ route('staff.show', $s) }}"
+                                        <a href="{{ route('admin.staff.show', $s) }}"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -327,7 +327,7 @@
                                             </svg>
                                             View
                                         </a>
-                                        <a href="{{ route('staff.edit', $s) }}"
+                                        <a href="{{ route('admin.staff.edit', $s) }}"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-violet-700 bg-violet-100 rounded-lg hover:bg-violet-200 transition">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

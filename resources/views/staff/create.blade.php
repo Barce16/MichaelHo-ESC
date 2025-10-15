@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800">Add New Staff Member</h2>
-            <a href="{{ route('staff.index') }}"
+            <a href="{{ route('admin.staff.index') }}"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -381,7 +381,7 @@
 
                 {{-- Action Buttons --}}
                 <div class="flex flex-col sm:flex-row gap-3">
-                    <a href="{{ route('staff.index') }}"
+                    <a href="{{ route('admin.staff.index') }}"
                         class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
