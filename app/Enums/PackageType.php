@@ -78,6 +78,7 @@ enum PackageType: string
             self::SEMINAR => 'bg-zinc-100 text-zinc-800',
             self::TEAM_BUILDING => 'bg-teal-100 text-teal-800',
             self::HOLIDAY_PARTY => 'bg-emerald-100 text-emerald-800',
+            self::KIDDIE_PARTY => 'bg-sky-200 text-sky-900',
             self::FUNDRAISER => 'bg-lime-100 text-lime-800',
             self::PRODUCT_LAUNCH => 'bg-orange-100 text-orange-800',
             self::GALA => 'bg-violet-100 text-violet-800',

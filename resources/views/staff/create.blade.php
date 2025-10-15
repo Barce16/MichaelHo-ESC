@@ -41,7 +41,8 @@
             </div>
             @endif
 
-            <form method="POST" enctype="multipart/form-data" action="{{ route('staff.store') }}" class="space-y-6">
+            <form method="POST" enctype="multipart/form-data" action="{{ route('admin.staff.store') }}"
+                class="space-y-6">
                 @csrf
 
                 {{-- Profile Photo Section --}}
