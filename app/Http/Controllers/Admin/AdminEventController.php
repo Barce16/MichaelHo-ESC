@@ -14,6 +14,7 @@ use App\Notifications\EventApprovedNotification;
 use App\Notifications\EventRejectedNotification;
 use App\Notifications\IntroPaymentApprovedNotification;
 use App\Notifications\DownpaymentApprovedNotification;
+use App\Notifications\EventApprovedExistingUserNotification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
@@ -130,7 +131,7 @@ class AdminEventController extends Controller
                 'total_amount' => $grandTotal,
                 'introductory_payment_amount' => 15000,
                 'introductory_payment_status' => 'pending',
-                'downpayment_amount' => $grandTotal / 2, // Automatically set to 50% of total
+                'downpayment_amount' => $grandTotal / 2,
                 'status' => 'pending',
             ]
         );
@@ -138,10 +139,14 @@ class AdminEventController extends Controller
         // Create user account if customer doesn't have one
         $customer = $event->customer;
         $user = null;
-        $password = '12345678';
+        $password = null;
         $username = null;
+        $isNewUser = false;
 
         if (!$customer->user_id) {
+            $isNewUser = true;
+            $password = '12345678';
+
             $baseName = Str::slug(Str::lower($customer->customer_name));
             $username = $baseName;
 
@@ -165,37 +170,60 @@ class AdminEventController extends Controller
         } else {
             $user = $customer->user;
             $username = $user->username;
-            $password = null;
         }
+
+        // Store old status for notification
+        $oldStatus = $event->status;
 
         // Update event status to request_meeting
         $event->update(['status' => Event::STATUS_REQUEST_MEETING]);
 
-        // Send email notification
-        if ($password && $user) {
+        // Send in-app notification
+        $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_REQUEST_MEETING);
+
+        if ($isNewUser && $password) {
+            // NEW USER: Send credentials
+
+            // Send email with credentials
             try {
                 $user->notify(new EventApprovedNotification($event, $username, $password, $billing));
             } catch (\Exception $e) {
                 Log::error('Failed to send approval email: ' . $e->getMessage());
             }
-        }
 
-        // Send SMS with login details
-        try {
-            $this->smsNotifier->notifyEventApproved($event, $username, $password);
-        } catch (\Exception $e) {
-            Log::error('Failed to send event approval SMS', [
-                'event_id' => $event->id,
-                'error' => $e->getMessage()
-            ]);
-        }
+            // Send SMS with credentials
+            try {
+                $this->smsNotifier->notifyEventApproved($event, $username, $password);
+            } catch (\Exception $e) {
+                Log::error('Failed to send event approval SMS', [
+                    'event_id' => $event->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
 
-        $message = 'Event approved! Customer must pay ₱15,000 introductory payment to schedule meeting.';
-        if ($password) {
-            $message .= ' Account credentials sent.';
-        }
+            $message = 'Event approved! Customer must pay ₱15,000 introductory payment. Account credentials sent via email and SMS.';
+        } else {
+            // EXISTING USER: No credentials
 
-        $this->notificationService->notifyAdminNewEventRequest($event);
+            // Send email without credentials
+            try {
+                $user->notify(new EventApprovedExistingUserNotification($event, $billing));
+            } catch (\Exception $e) {
+                Log::error('Failed to send approval email: ' . $e->getMessage());
+            }
+
+            // Send SMS without credentials
+            try {
+                $this->smsNotifier->notifyEventApprovedExistingUser($event);
+            } catch (\Exception $e) {
+                Log::error('Failed to send event approval SMS', [
+                    'event_id' => $event->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            $message = 'Event approved! Customer must pay ₱15,000 introductory payment. Customer notified via email and SMS.';
+        }
 
         return back()->with('success', $message);
     }

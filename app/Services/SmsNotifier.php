@@ -102,6 +102,29 @@ class SmsNotifier
     }
 
     /**
+     * Notify existing customer that their event was approved (no login details)
+     */
+    public function notifyEventApprovedExistingUser(Event $event): bool
+    {
+        $customer = $event->customer;
+
+        // Check if phone exists
+        if (empty($customer->phone)) {
+            Log::warning('SMS not sent: Customer has no phone number', [
+                'customer_id' => $customer->id,
+                'event_id' => $event->id
+            ]);
+            return false;
+        }
+
+        $message = "Good news {$customer->customer_name}! Your event '{$event->name}' has been approved.\n\n";
+        $message .= "Next Step: Pay P15,000 introductory payment to schedule your meeting.\n\n";
+        $message .= "Login to your account to submit payment: " . url('/login');
+
+        return $this->sendSms($customer->phone, $message);
+    }
+
+    /**
      * Notify customer that their event was approved
      */
     public function notifyEventApproved(Event $event, string $username, string $password): bool
