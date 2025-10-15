@@ -208,27 +208,31 @@
                         <thead class="bg-slate-50">
                             <tr>
                                 <th
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Date
+                                    class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Booked
                                 </th>
                                 <th
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     Event Details
                                 </th>
                                 <th
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     Package
                                 </th>
                                 <th
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     Customer
                                 </th>
                                 <th
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Event Date
+                                </th>
+                                <th
+                                    class="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     Status
                                 </th>
                                 <th
-                                    class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    class="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
@@ -236,115 +240,96 @@
                         <tbody class="divide-y divide-gray-200 bg-white">
                             @forelse($events as $e)
                             <tr class="hover:bg-slate-50 transition">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center gap-2">
-                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        <div>
-                                            <div class="text-sm font-medium text-gray-900">
-                                                {{ \Illuminate\Support\Carbon::parse($e->event_date)->format('M d, Y')
-                                                }}
-                                            </div>
-                                            @if($e->event_time)
-                                            <div class="text-xs text-gray-500">
-                                                {{ \Illuminate\Support\Carbon::parse($e->event_time)->format('g:i A') }}
-                                            </div>
-                                            @endif
-                                        </div>
+                                {{-- Booked Date --}}
+                                <td class="px-3 py-3 whitespace-nowrap">
+                                    <div class="text-xs text-gray-900">
+                                        {{ $e->created_at->format('M d, Y') }}
                                     </div>
                                 </td>
 
-                                <td class="px-6 py-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ $e->name }}</div>
-                                    @if($e->event_location)
-                                    <div class="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
-                                        {{ Str::limit($e->event_location, 30) }}
+                                {{-- Event Details --}}
+                                <td class="px-3 py-3">
+                                    <div class="text-sm font-medium text-gray-900">{{ Str::limit($e->name, 25) }}</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">
+                                        @if($e->event_time)
+                                        {{ \Illuminate\Support\Carbon::parse($e->event_time)->format('g:i A') }}
+                                        @endif
+                                        @if($e->event_location && $e->event_time) • @endif
+                                        @if($e->event_location)
+                                        {{ Str::limit($e->event_location, 20) }}
+                                        @endif
                                     </div>
-                                    @endif
                                     @if($e->guest_count)
-                                    <div class="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                        </svg>
+                                    <div class="text-xs text-gray-400 mt-0.5">
                                         {{ number_format($e->guest_count) }} guests
                                     </div>
                                     @endif
                                 </td>
 
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                {{-- Package --}}
+                                <td class="px-3 py-3">
                                     @if($e->package)
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
-                                            <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                            </svg>
-                                        </div>
-                                        <span class="text-sm font-medium text-gray-900">{{ $e->package->name }}</span>
-                                    </div>
+                                    <span class="text-xs font-medium text-gray-900">{{ $e->package->name }}</span>
                                     @else
-                                    <span class="text-sm text-gray-400">—</span>
+                                    <span class="text-xs text-gray-400">—</span>
                                     @endif
                                 </td>
 
-                                <td class="px-6 py-4">
+                                {{-- Customer --}}
+                                <td class="px-3 py-3">
                                     @if($e->customer)
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center">
-                                            <span class="text-xs font-semibold text-sky-700">
-                                                {{ strtoupper(substr($e->customer->customer_name, 0, 1)) }}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <div class="text-sm font-medium text-gray-900">{{
-                                                $e->customer->customer_name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $e->customer->email }}</div>
+                                    <div>
+                                        <div class="text-xs font-medium text-gray-900">{{
+                                            Str::limit($e->customer->customer_name, 20) }}</div>
+                                        <div class="text-xs text-gray-500">{{ Str::limit($e->customer->email, 25) }}
                                         </div>
                                     </div>
                                     @else
-                                    <span class="text-sm text-gray-400">—</span>
+                                    <span class="text-xs text-gray-400">—</span>
                                     @endif
                                 </td>
 
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                {{-- Event Date --}}
+                                <td class="px-3 py-3 whitespace-nowrap">
+                                    <div class="text-xs font-medium text-gray-900">
+                                        {{ \Illuminate\Support\Carbon::parse($e->event_date)->format('M d, Y') }}
+                                    </div>
+                                </td>
+
+                                {{-- Status --}}
+                                <td class="px-3 py-3 whitespace-nowrap">
                                     @php
                                     $statusConfig = match($e->status) {
                                     'requested' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-700', 'border' =>
                                     'border-amber-200', 'dot' => 'bg-amber-500'],
-                                    'approved' => ['bg' => 'bg-sky-50', 'text' => 'text-sky-700', 'border' =>
+                                    'request_meeting' => ['bg' => 'bg-sky-50', 'text' => 'text-sky-700', 'border' =>
                                     'border-sky-200', 'dot' => 'bg-sky-500'],
+                                    'meeting' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-700', 'border' =>
+                                    'border-blue-200', 'dot' => 'bg-blue-500'],
                                     'scheduled' => ['bg' => 'bg-violet-50', 'text' => 'text-violet-700', 'border' =>
                                     'border-violet-200', 'dot' => 'bg-violet-500'],
+                                    'ongoing' => ['bg' => 'bg-indigo-50', 'text' => 'text-indigo-700', 'border' =>
+                                    'border-indigo-200', 'dot' => 'bg-indigo-500'],
                                     'completed' => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-700', 'border' =>
                                     'border-emerald-200', 'dot' => 'bg-emerald-500'],
-                                    'cancelled' => ['bg' => 'bg-rose-50', 'text' => 'text-rose-700', 'border' =>
+                                    'rejected' => ['bg' => 'bg-rose-50', 'text' => 'text-rose-700', 'border' =>
                                     'border-rose-200', 'dot' => 'bg-rose-500'],
                                     default => ['bg' => 'bg-slate-50', 'text' => 'text-slate-700', 'border' =>
                                     'border-slate-200', 'dot' => 'bg-slate-500'],
                                     };
                                     @endphp
                                     <span
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border {{ $statusConfig['bg'] }} {{ $statusConfig['text'] }} {{ $statusConfig['border'] }}">
-                                        <span class="w-1.5 h-1.5 rounded-full {{ $statusConfig['dot'] }}"></span>
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border {{ $statusConfig['bg'] }} {{ $statusConfig['text'] }} {{ $statusConfig['border'] }}">
+                                        <span class="w-1 h-1 rounded-full {{ $statusConfig['dot'] }}"></span>
                                         {{ ucwords(str_replace('_', ' ', strtolower($e->status))) }}
                                     </span>
                                 </td>
 
-                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                {{-- Actions --}}
+                                <td class="px-3 py-3 whitespace-nowrap text-center">
                                     <a href="{{ route('admin.events.show', $e) }}"
-                                        class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -356,7 +341,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center">
+                                <td colspan="7" class="px-6 py-12 text-center">
                                     <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

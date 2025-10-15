@@ -20,6 +20,7 @@ enum PackageType: string
     case SEMINAR = 'seminar';
     case TEAM_BUILDING = 'team_building';
     case HOLIDAY_PARTY = 'holiday_party';
+    case KIDDIE_PARTY = 'kiddie_party';
     case FUNDRAISER = 'fundraiser';
     case PRODUCT_LAUNCH = 'product_launch';
     case GALA = 'gala';
@@ -47,6 +48,7 @@ enum PackageType: string
             self::SEMINAR => 'Seminar',
             self::TEAM_BUILDING => 'Team Building',
             self::HOLIDAY_PARTY => 'Holiday Party',
+            self::KIDDIE_PARTY => 'Kiddie Party',
             self::FUNDRAISER => 'Fundraiser',
             self::PRODUCT_LAUNCH => 'Product Launch',
             self::GALA => 'Gala',

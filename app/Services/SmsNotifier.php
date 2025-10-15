@@ -114,7 +114,7 @@ class SmsNotifier
         $message .= "Next Step: Pay P15,000 introductory payment.\n\n";
         $message .= "Login at: " . url('/login');
 
-        return $this->sendSms($customer->contact_number, $message);
+        return $this->sendSms($customer->phone, $message);
     }
 
     /**
@@ -145,7 +145,7 @@ class SmsNotifier
 
         $message .= "View details: " . route('customer.events.show', $event);
 
-        return $this->sendSms($customer->contact_number, $message);
+        return $this->sendSms($customer->phone, $message);
     }
 
     /**
@@ -163,7 +163,7 @@ class SmsNotifier
         $message .= "Please resubmit your payment.\n\n";
         $message .= "View event: " . route('customer.events.show', $event);
 
-        return $this->sendSms($customer->contact_number, $message);
+        return $this->sendSms($customer->phone, $message);
     }
 
     /**
@@ -183,6 +183,6 @@ class SmsNotifier
         $message = $statusMessages[$newStatus] ?? "Your event '{$event->name}' status has been updated to: {$newStatus}";
         $message .= "\n\nView details: " . route('customer.events.show', $event);
 
-        return $this->sendSms($customer->contact_number, $message);
+        return $this->sendSms($customer->phone, $message);
     }
 }
