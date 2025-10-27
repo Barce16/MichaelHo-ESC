@@ -312,25 +312,7 @@
     </footer>
 
     <script>
-        const topBar = document.getElementById('top-bar');
-        const navbar = document.getElementById('navbar');
-        const spacer = document.getElementById('navbar-spacer');
-        
-        const topBarHeight = topBar.offsetHeight;
 
-        window.addEventListener('scroll', () => {
-            const scrollY = window.scrollY || window.pageYOffset;
-
-            if (scrollY >= topBarHeight) {
-                navbar.classList.add('fixed', 'top-0', 'left-0', 'w-full', 'z-50');
-                topBar.classList.add('hidden');
-                spacer.style.height = navbar.offsetHeight + 'px';
-            } else {
-                navbar.classList.remove('fixed', 'top-0', 'left-0', 'w-full', 'z-50');
-                topBar.classList.remove('hidden');
-                spacer.style.height = '0px';
-            }
-        });
     </script>
 
 </body>
