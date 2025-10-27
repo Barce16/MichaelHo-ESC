@@ -93,7 +93,7 @@
 
             @if($packages->count() > 0)
             <!-- Package Count -->
-            <div class="text-center my-8">
+            <div class="text-center " style="padding-block: 2rem;">
                 <p class="text-sm text-gray-600">{{ $packages->count() }} package{{ $packages->count() > 1 ? 's' : '' }}
                     available</p>
             </div>
