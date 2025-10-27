@@ -788,12 +788,31 @@
                                 class="flex items-start gap-4 p-4 border border-gray-200 hover:border-gray-900 transition cursor-pointer group">
                                 <input type="checkbox" :checked="isInclusionSelected(currentCategory, index)"
                                     @change="toggleInclusion(currentCategory, index)"
-                                    class="mt-1 w-4 h-4 text-black border-gray-300 focus:ring-black">
-                                <div class="flex-1">
-                                    <span class="text-sm text-gray-900 group-hover:text-black"
-                                        x-text="inclusion.name || inclusion"></span>
-                                    <template x-if="inclusion.description">
-                                        <p class="text-xs text-gray-500 mt-1" x-text="inclusion.description"></p>
+                                    class="mt-1 w-4 h-4 text-black border-gray-300 focus:ring-black flex-shrink-0">
+
+                                <!-- Inclusion Image -->
+                                <template x-if="inclusion.image">
+                                    <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                                        <img :src="`{{ asset('storage') }}/${inclusion.image}`"
+                                            :alt="inclusion.name || inclusion" class="w-full h-full object-cover">
+                                    </div>
+                                </template>
+
+                                <!-- Inclusion Details -->
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <span class="text-sm font-medium text-gray-900 group-hover:text-black"
+                                            x-text="inclusion.name || inclusion"></span>
+                                        <template x-if="inclusion.price && inclusion.price > 0">
+                                            <span class="text-sm font-semibold text-gray-900 whitespace-nowrap"
+                                                x-text="'₱' + parseFloat(inclusion.price).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
+                                        </template>
+                                    </div>
+
+                                    <!-- Notes -->
+                                    <template x-if="inclusion.notes && inclusion.notes.trim()">
+                                        <p class="text-xs text-gray-600 mt-1 leading-relaxed" x-text="inclusion.notes">
+                                        </p>
                                     </template>
                                 </div>
                             </label>
