@@ -88,12 +88,12 @@
     </div>
 
     <!-- PACKAGES GRID -->
-    <section class="py-10">
+    <section class="pb-10">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
             @if($packages->count() > 0)
             <!-- Package Count -->
-            <div class="text-center mb-8">
+            <div class="text-center my-8">
                 <p class="text-sm text-gray-600">{{ $packages->count() }} package{{ $packages->count() > 1 ? 's' : '' }}
                     available</p>
             </div>
