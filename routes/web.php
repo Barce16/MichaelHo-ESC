@@ -48,6 +48,12 @@ Route::get('/', function () {
         ->sort()
         ->values();
 
+    // Get featured packages for carousel
+    $packages = Package::with('images')
+        ->latest()
+        ->take(6)  // or however many you want to show
+        ->get();
+
     // Get published feedback for reviews section
     $publishedFeedback = Feedback::with(['customer', 'event'])
         ->where('is_published', true)
@@ -55,7 +61,7 @@ Route::get('/', function () {
         ->take(6)
         ->get();
 
-    return view('welcome', compact('eventShowcases', 'categories', 'publishedFeedback'));
+    return view('welcome', compact('eventShowcases', 'categories', 'packages', 'publishedFeedback'));
 });
 
 

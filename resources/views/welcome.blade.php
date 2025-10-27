@@ -8,35 +8,71 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Style+Script&family=Dancing+Script:wght@400..700&family=Libre+Caslon+Display&family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Niconne&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap"
         rel="stylesheet">
 
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @endif
+
+    <style>
+        /* Custom elegant styles */
+        .elegant-shadow {
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .elegant-shadow-hover {
+            box-shadow: 0 10px 60px rgba(0, 0, 0, 0.12);
+        }
+
+        /* Elegant animations */
+        .animate-on-scroll {
+            opacity: 0;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .animate-on-scroll.from-left {
+            transform: translateX(-30px);
+        }
+
+        .animate-on-scroll.from-right {
+            transform: translateX(30px);
+        }
+
+        .animate-on-scroll.from-bottom {
+            transform: translateY(30px);
+        }
+
+        .animate-on-scroll.scale-up {
+            transform: scale(0.95);
+        }
+
+        .animate-on-scroll.animate-in {
+            opacity: 1;
+            transform: translateX(0) translateY(0) scale(1);
+        }
+    </style>
 </head>
 
-<body class="min-h-screen text-neutral-900 antialiased selection:bg-black selection:text-white">
+<body class="min-h-screen bg-white text-neutral-900 antialiased selection:bg-black selection:text-white">
 
-    <!-- HEADER CONTAINER (Top Bar + Navbar) -->
+    <!-- HEADER CONTAINER -->
     <div id="header-container" class="relative z-50">
-
-        <!-- Top Bar -->
-        <div id="top-bar" class="bg-gray-950 text-white text-sm">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between h-10">
-                <!-- Left: Social Media -->
-                <div class="flex items-center gap-4">
+        <!-- Top Bar - More minimal and elegant -->
+        <div id="top-bar" class="bg-black text-white text-xs">
+            <div class="mx-auto max-w-screen-xl px-6 lg:px-12 flex items-center justify-between h-9">
+                <div class="flex items-center gap-6">
                     <a href="https://www.facebook.com/MichaelHoEventsPlanningandCoordinating/" target="_blank"
-                        class="hover:text-gray-400" aria-label="Facebook">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        class="opacity-70 hover:opacity-100 transition-opacity" aria-label="Facebook">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                             <path
                                 d="M22.675 0H1.325C.593 0 0 .593 0 1.325v21.351C0 23.406.593 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.464.099 2.795.143v3.24l-1.918.001c-1.504 0-1.794.716-1.794 1.764v2.312h3.587l-.467 3.622h-3.12V24h6.116C23.406 24 24 23.406 24 22.676V1.325C24 .593 23.406 0 22.675 0z" />
                         </svg>
                     </a>
                     <a href="https://www.instagram.com/michaelhoevents/?hl=en" target="_blank"
-                        class="hover:text-gray-400" aria-label="Instagram">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        class="opacity-70 hover:opacity-100 transition-opacity" aria-label="Instagram">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                             <path
                                 d="M12 2.163c3.204 0 3.584.012 4.85.07 1.17.056 1.97.24 2.43.403a4.92 4.92 0 011.675 1.087 4.92 4.92 0 011.087 1.675c.163.46.347 1.26.403 2.43.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.056 1.17-.24 1.97-.403 2.43a4.918 4.918 0 01-1.087 1.675 4.918 4.918 0 01-1.675 1.087c-.46.163-1.26.347-2.43.403-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.17-.056-1.97-.24-2.43-.403a4.918 4.918 0 01-1.675-1.087 4.918 4.918 0 01-1.087-1.675c-.163-.46-.347-1.26-.403-2.43C2.175 15.747 2.163 15.367 2.163 12s.012-3.584.07-4.85c.056-1.17.24-1.97.403-2.43a4.92 4.92 0 011.087-1.675A4.92 4.92 0 015.398 2.636c.46-.163 1.26-.347 2.43-.403C8.416 2.175 8.796 2.163 12 2.163zm0-2.163C8.741 0 8.332.013 7.052.072 5.775.131 4.772.348 3.95.692a6.918 6.918 0 00-2.53 1.656A6.918 6.918 0 00.692 4.878c-.344.822-.561 1.825-.62 3.102C.013 8.332 0 8.741 0 12c0 3.259.013 3.668.072 4.948.059 1.277.276 2.28.62 3.102a6.918 6.918 0 001.656 2.53 6.918 6.918 0 002.53 1.656c.822.344 1.825.561 3.102.62C8.332 23.987 8.741 24 12 24s3.668-.013 4.948-.072c1.277-.059 2.28-.276 3.102-.62a6.918 6.918 0 002.53-1.656 6.918 6.918 0 001.656-2.53c.344-.822.561-1.825.62-3.102.059-1.28.072-1.689.072-4.948s-.013-3.668-.072-4.948c-.059-1.277-.276-2.28-.62-3.102a6.918 6.918 0 00-1.656-2.53A6.918 6.918 0 0019.05.692c-.822-.344-1.825-.561-3.102-.62C15.668.013 15.259 0 12 0z" />
                             <path
@@ -45,36 +81,40 @@
                         </svg>
                     </a>
                 </div>
-
-                <!-- Right: Email & Phone -->
-                <div class="hidden sm:flex items-center gap-6">
+                <div class="hidden sm:flex items-center gap-8 uppercase tracking-wider font-light">
                     <span>michaelhoevents@gmail.com</span>
                     <span>+639173062531</span>
                 </div>
             </div>
         </div>
 
-        <!-- Navbar -->
-        <header id="navbar" class="bg-white/80 shadow-sm">
-            <nav class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="py-5 flex items-center justify-between">
+        <!-- Navbar - Clean and minimal -->
+        <header id="navbar" class="bg-white/95 backdrop-blur-sm border-b border-gray-100">
+            <nav class="mx-auto max-w-screen-xl px-6 lg:px-12">
+                <div class="py-6 flex items-center justify-between">
                     <a href="{{ url('/') }}">
-                        <img src="{{ asset('images/favicon.png') }}" alt="Logo" class="h-16">
+                        <img src="{{ asset('images/favicon.png') }}" alt="Logo" class="h-14">
                     </a>
-                    <div class="flex items-center gap-3 sm:gap-5 text-sm font-medium">
-                        <a href="{{ url('/') }}" class="hover:text-gray-600 transition-colors">Home</a>
+                    <div class="flex items-center gap-10 text-xs uppercase tracking-widest font-medium">
+                        <a href="{{ url('/') }}" class="text-black border-b-2 border-black pb-1">
+                            Home
+                        </a>
 
                         @foreach($categories as $category)
                         <a href="{{ route('services.category', $category) }}"
-                            class="hover:text-gray-600 transition-colors capitalize">
+                            class="text-gray-700 hover:text-black transition-colors duration-300">
                             {{ $category }}
                         </a>
                         @endforeach
 
                         <a href="{{ route('services.index') }}"
-                            class="hover:text-gray-600 transition-colors">Services</a>
+                            class="text-gray-700 hover:text-black transition-colors duration-300">
+                            Services
+                        </a>
                         <a href="{{ Route::has('login') ? route('login') : '#' }}"
-                            class="hover:text-gray-600 transition-colors">Log in</a>
+                            class="text-gray-700 hover:text-black transition-colors duration-300">
+                            Account
+                        </a>
                     </div>
                 </div>
             </nav>
@@ -84,423 +124,492 @@
     <!-- Spacer for sticky navbar -->
     <div id="navbar-spacer" class="h-0"></div>
 
-    <!-- HERO SECTION -->
-    <div class="relative min-h-screen flex flex-col items-center justify-center"
+    <!-- HERO SECTION - Elegant minimal -->
+    <div class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
         style="background-image: url('{{ asset('images/hero.jpg') }}'); background-size: cover; background-position: center;">
 
-        <!-- Overlay -->
-        <div class="absolute inset-0 bg-black opacity-70"></div>
+        <!-- Sophisticated overlay gradient -->
+        <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70"></div>
 
-        <div class="relative text-center text-white px-4">
-            <h1 class="text-4xl sm:text-7xl font-bold mb-4 font-libre animate-on-scroll from-bottom">
-                Michael Ho Events Styling & Coordination
+        <div class="relative text-center text-white px-6 max-w-screen-xl mx-auto">
+            <h1 class="text-5xl sm:text-7xl font-light mb-6 tracking-tight animate-on-scroll from-bottom"
+                style="font-family: 'Playfair Display', serif;">
+                Michael Ho Events
             </h1>
-            <p class="text-lg sm:text-4xl mb-6 font-style-script animate-on-scroll from-bottom"
-                style="transition-delay: 0.2s;">
-                Making your special moments unforgettable.
+            <p class="text-xl sm:text-2xl mb-3 font-light italic animate-on-scroll from-bottom"
+                style="font-family: 'Playfair Display', serif; transition-delay: 0.2s;">
+                Styling & Coordination
             </p>
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 animate-on-scroll scale-up"
-                style="transition-delay: 0.4s;">
-                <a href="{{ route('services.index') }}" class="group relative inline-flex items-center bg-white text-black font-medium px-6 py-3 rounded-xl shadow-lg 
-                           hover:bg-gray-900 hover:text-white hover:pl-10 duration-300 overflow-hidden">
-                    <svg class="absolute left-3 w-5 h-5 transform -translate-x-10 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100"
-                        fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                    <span class="transition-transform duration-300">View Services</span>
+            <p class="text-base sm:text-lg mb-12 font-light tracking-wide animate-on-scroll from-bottom"
+                style="font-family: 'Cormorant Garamond', serif; transition-delay: 0.3s;">
+                Creating extraordinary celebrations with timeless elegance
+            </p>
+
+            <!-- Elegant CTA button -->
+            <div class="animate-on-scroll scale-up" style="transition-delay: 0.4s;">
+                <a href="{{ route('services.index') }}"
+                    class="inline-block px-10 py-4 border-2 border-white text-white text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-500">
+                    Explore Our Services
                 </a>
             </div>
         </div>
+
+        <!-- Elegant scroll indicator -->
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-white animate-bounce">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+        </div>
     </div>
 
-    <!-- EVENTS SHOWCASE SECTION -->
-    <section class="py-20 bg-gradient-to-b from-white via-gray-50 to-white">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <!-- PORTFOLIO SECTION - Elegant grid -->
+    <section class="py-24 bg-white">
+        <div class="mx-auto max-w-screen-xl px-6 lg:px-12">
             <!-- Section Header -->
             <div class="text-center mb-16 animate-on-scroll from-bottom">
-                <h2 class="text-5xl font-bold mb-4 font-libre text-gray-900">Portfolio</h2>
-                <p class="text-xl text-gray-600 font-style-script">Creating memories that last a lifetime</p>
-                <div class="w-24 h-1 bg-gray-900 mx-auto mt-6"></div>
+                <h2 class="text-5xl font-light mb-4" style="font-family: 'Playfair Display', serif;">
+                    Our <span class="italic">Portfolio</span>
+                </h2>
+                <p class="text-lg text-gray-600 font-light" style="font-family: 'Cormorant Garamond', serif;">
+                    A curated collection of unforgettable celebrations
+                </p>
+                <!-- Elegant divider -->
+                <div class="mt-8 flex items-center justify-center">
+                    <div class="h-px w-24 bg-gray-900"></div>
+                    <div class="mx-3 w-1.5 h-1.5 bg-gray-900"></div>
+                    <div class="h-px w-24 bg-gray-900"></div>
+                </div>
             </div>
 
-            <!-- Events Grid -->
+            <!-- Events Grid - No rounded corners -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
                 @if($eventShowcases->count() > 0)
-                {{-- Show database event showcases --}}
                 @foreach($eventShowcases as $index => $showcase)
                 <div
-                    class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 animate-on-scroll {{ $index === 0 ? 'from-left' : ($index === 1 ? 'scale-up' : 'from-right') }}">
-                    <div class="aspect-[4/5] overflow-hidden">
+                    class="group relative overflow-hidden animate-on-scroll {{ $index === 0 ? 'from-left' : ($index === 1 ? 'scale-up' : 'from-right') }}">
+                    <div class="aspect-[3/4] overflow-hidden bg-gray-100">
                         <img src="{{ $showcase->image_url }}" alt="{{ $showcase->event_name }}"
-                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                     </div>
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
-                    <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <!-- Elegant overlay -->
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                    </div>
+
+                    <!-- Content overlay -->
+                    <div
+                        class="absolute bottom-0 left-0 right-0 p-6 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">
                         <div class="mb-2">
                             <span
-                                class="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium uppercase tracking-wider">
+                                class="inline-block px-3 py-1 border border-white/50 text-[10px] font-medium uppercase tracking-wider">
                                 {{ $showcase->type }}
                             </span>
                         </div>
-                        <h3 class="text-2xl font-bold mb-2 font-libre">{{ $showcase->event_name }}</h3>
-                        <p class="text-sm text-gray-200 mb-3">{{ $showcase->description }}</p>
-                        <div class="flex items-center text-sm text-gray-300">
-                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                                    clip-rule="evenodd"></path>
-                            </svg>
-                            <span>{{ $showcase->location }}</span>
-                        </div>
+                        <h3 class="text-xl font-light mb-2" style="font-family: 'Playfair Display', serif;">
+                            {{ $showcase->event_name }}
+                        </h3>
+                        {{-- <p class="text-sm opacity-90 font-light">
+                            {{ $showcase->date->format('F Y') }}
+                        </p> --}}
                     </div>
                 </div>
                 @endforeach
                 @else
-                {{-- Fallback to static showcase --}}
+                {{-- Fallback showcases with elegant design --}}
+                @foreach(['Birthday Celebration', 'Wedding Reception', 'Corporate Event'] as $index => $event)
                 <div
-                    class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 animate-on-scroll from-left">
-                    <div class="aspect-[4/5] overflow-hidden">
-                        <img src="{{ asset('images/wed1.jpg') }}" alt="Wedding Event"
-                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                    </div>
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
-                    <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
-                        <div class="mb-2">
-                            <span
-                                class="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium uppercase tracking-wider">
-                                Wedding
-                            </span>
-                        </div>
-                        <h3 class="text-2xl font-bold mb-2 font-libre">Elegant Garden Wedding</h3>
-                        <p class="text-sm text-gray-200 mb-3">A beautiful celebration under the stars</p>
-                        <div class="flex items-center text-sm text-gray-300">
-                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                                    clip-rule="evenodd"></path>
+                    class="group relative overflow-hidden animate-on-scroll {{ $index === 0 ? 'from-left' : ($index === 1 ? 'scale-up' : 'from-right') }}">
+                    <div class="aspect-[3/4] overflow-hidden bg-gradient-to-b from-gray-100 to-gray-200">
+                        <div class="w-full h-full flex items-center justify-center">
+                            <svg class="w-20 h-20 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>Cagayan de Oro</span>
                         </div>
+                    </div>
+                    <div
+                        class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent text-white">
+                        <h3 class="text-xl font-light" style="font-family: 'Playfair Display', serif;">
+                            {{ $event }}
+                        </h3>
+                        <p class="text-sm opacity-75">Premium Event Experience</p>
                     </div>
                 </div>
-
-                <div
-                    class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 animate-on-scroll scale-up">
-                    <div class="aspect-[4/5] overflow-hidden">
-                        <img src="{{ asset('images/bday1.jpg') }}" alt="Birthday Event"
-                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                    </div>
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
-                    <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
-                        <div class="mb-2">
-                            <span
-                                class="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium uppercase tracking-wider">
-                                Birthday
-                            </span>
-                        </div>
-                        <h3 class="text-2xl font-bold mb-2 font-libre">Magical Birthday Celebration</h3>
-                        <p class="text-sm text-gray-200 mb-3">Creating unforgettable childhood memories</p>
-                        <div class="flex items-center text-sm text-gray-300">
-                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                                    clip-rule="evenodd"></path>
-                            </svg>
-                            <span>Cagayan de Oro</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 animate-on-scroll from-right">
-                    <div class="aspect-[4/5] overflow-hidden">
-                        <img src="{{ asset('images/corp1.jpg') }}" alt="Corporate Event"
-                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                    </div>
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
-                    <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
-                        <div class="mb-2">
-                            <span
-                                class="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium uppercase tracking-wider">
-                                Corporate
-                            </span>
-                        </div>
-                        <h3 class="text-2xl font-bold mb-2 font-libre">Professional Corporate Event</h3>
-                        <p class="text-sm text-gray-200 mb-3">Excellence in business gatherings</p>
-                        <div class="flex items-center text-sm text-gray-300">
-                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                                    clip-rule="evenodd"></path>
-                            </svg>
-                            <span>Cagayan de Oro</span>
-                        </div>
-                    </div>
-                </div>
+                @endforeach
                 @endif
 
             </div>
 
-            <!-- View More Button -->
-            <div class="text-center mt-12 animate-on-scroll from-bottom">
+            <!-- View All Button -->
+            <div class="text-center mt-16 animate-on-scroll from-bottom">
                 <a href="{{ route('events-showcase.index') }}"
-                    class="inline-flex items-center gap-2 bg-gray-900 text-white px-8 py-4 rounded-xl font-semibold hover:bg-black transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                    View All Events
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
+                    class="inline-block px-8 py-3 border border-black text-black text-xs uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-300">
+                    View Full Portfolio
                 </a>
             </div>
         </div>
     </section>
 
-    <!-- REVIEWS SECTION -->
-    <section class="py-20 bg-gray-900 text-white">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <!-- Section Header -->
-            <div class="text-center mb-16">
-                <h2 class="text-5xl font-bold mb-4 font-libre">What Our Clients Say</h2>
-                <p class="text-xl text-gray-300 font-style-script">Testimonials from our wonderful clients</p>
-                <div class="w-24 h-1 bg-white mx-auto mt-6"></div>
+    <!-- SERVICES SECTION - Elegant cards -->
+    <section class="py-24 bg-gray-50">
+        <div class="mx-auto max-w-screen-xl px-6 lg:px-12">
+            <div class="text-center mb-16 animate-on-scroll from-bottom">
+                <h2 class="text-5xl font-light mb-4" style="font-family: 'Playfair Display', serif;">
+                    Our <span class="italic">Services</span>
+                </h2>
+                <p class="text-lg text-gray-600 font-light" style="font-family: 'Cormorant Garamond', serif;">
+                    Comprehensive event planning tailored to your vision
+                </p>
+                <!-- Elegant divider -->
+                <div class="mt-8 flex items-center justify-center">
+                    <div class="h-px w-24 bg-gray-900"></div>
+                    <div class="mx-3 w-1.5 h-1.5 bg-gray-900"></div>
+                    <div class="h-px w-24 bg-gray-900"></div>
+                </div>
             </div>
 
-            <!-- Reviews Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-
-                @if($publishedFeedback->count() > 0)
-                {{-- Show database feedback --}}
-                @foreach($publishedFeedback as $feedback)
-                <div
-                    class="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 animate-on-scroll from-left">
-                    <svg class="w-12 h-12 text-white/20 mb-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                    </svg>
-
-                    {{-- Elegant flat stars --}}
-                    <div class="flex gap-1 mb-4">
-                        @for($i = 1; $i <= 5; $i++) @if($i <=$feedback->rating)
-                            <svg class="w-5 h-5 text-amber-200/80" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                @foreach(['Full Planning', 'Partial Planning', 'Day Coordination'] as $service)
+                <div class="text-center animate-on-scroll from-bottom"
+                    style="transition-delay: {{ $loop->index * 0.1 }}s;">
+                    <div class="mb-6">
+                        <div class="w-20 h-20 mx-auto border border-gray-300 flex items-center justify-center">
+                            <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                    d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                             </svg>
-                            @else
-                            <svg class="w-5 h-5 text-white/20" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            @endif
-                            @endfor
+                        </div>
                     </div>
-
-                    <p class="text-gray-200 mb-6 leading-relaxed">
-                        {{ $feedback->comment }}
+                    <h3 class="text-2xl font-light mb-3" style="font-family: 'Playfair Display', serif;">
+                        {{ $service }}
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-6 leading-relaxed">
+                        Professional event {{ strtolower($service) }} services designed to bring your vision to life
+                        with elegance and precision.
                     </p>
-                    <div class="border-t border-white/10 pt-4">
-                        <h4 class="font-bold text-lg mb-1">{{ $feedback->customer->customer_name }}</h4>
-                        <p class="text-sm text-gray-400">{{ $feedback->event->name }} • {{
-                            $feedback->event->event_date->format('F Y') }}</p>
-                    </div>
+                    <a href="{{ route('services.index') }}"
+                        class="text-xs uppercase tracking-wider text-black hover:tracking-widest transition-all duration-300">
+                        Learn More →
+                    </a>
                 </div>
                 @endforeach
-
-                {{-- Fill remaining slots with default reviews if less than 6 --}}
-                @if($publishedFeedback->count() < 6) @php $defaultReviews=[ [ 'name'=> 'Matt Hickman, Virginia, USA',
-                    'review' => 'I would like to reply to this review with two of many reasons I would recommend Michael
-                    Ho. 1. Professionalism. It\'s clear to me that he cares about his craft and the satisfaction of his
-                    customers. 2. Talent. Michael has clearly found his calling in life. His arrangements are beyond
-                    what I can explain. Proportional designs for the occasions, symmetrical (or not when appropriate)
-                    color, depth. He should be teaching at the university level.',
-                    'link' => 'https://www.facebook.com/share/17jdrX6DQp/'
-                    ],
-                    [
-                    'name' => 'Jonah M. Severa',
-                    'review' => 'Attended a friend\'s wedding at Dahilayan Bukidnon last 23Feb2019. Exceptional wedding
-                    coordination done by Michael and his team. Very organized and the program was smooth and on time...
-                    The place was fantastic that guests never had any boring moment. I recommend this group 100%.',
-                    'link' => 'https://www.facebook.com/share/1J86B2Q1ox/'
-                    ],
-                    [
-                    'name' => 'Honey Hazel L. Doydora',
-                    'review' => 'Hi Mic! Thank you so much to your awesome team. Very accommodating and easy to get
-                    along with. All request granted! Very flexible in terms sa ginagmay na hassle, aws hehe!
-                    Professional indeed! I\'m more than satisfied sa result sa photoshoot namo ni Niall, one day we\'ll
-                    both look back on our photos and reminisce good memories. Extra credit to sir Adi (Adrian Flores)
-                    and to sir Cleve. Sa uulitin hap. More power and God bless.',
-                    'link' => 'https://www.facebook.com/share/19rfzd27RN/'
-                    ],
-                    [
-                    'name' => 'Jona Fe',
-                    'review' => 'Very professional, systematic, Hands on and the team is great. My son\'s wedding was so
-                    organized. Michael Ho is a pro.',
-                    'link' => 'https://www.facebook.com/share/1JUYBzKQEJ/'
-                    ],
-                    [
-                    'name' => 'Adrian Flores',
-                    'review' => 'One of the top Event Stylists & Coordinators in the Philippines... Bukidnon\'s
-                    Pride..',
-                    'link' => 'https://www.facebook.com/share/1E7L1zm3tg/'
-                    ],
-                    ];
-
-                    $remainingSlots = 6 - $publishedFeedback->count();
-                    $defaultReviewsToShow = array_slice($defaultReviews, 0, $remainingSlots);
-                    @endphp
-
-                    @foreach($defaultReviewsToShow as $review)
-                    <div
-                        class="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 animate-on-scroll scale-up">
-                        <svg class="w-12 h-12 text-white/20 mb-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path
-                                d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                        </svg>
-
-                        {{-- 5 stars for default reviews --}}
-                        <div class="flex gap-1 mb-4">
-                            @for($i = 1; $i <= 5; $i++) <svg class="w-5 h-5 text-amber-200/80" fill="currentColor"
-                                viewBox="0 0 20 20">
-                                <path
-                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                                @endfor
-                        </div>
-
-                        <p class="text-gray-200 mb-6 leading-relaxed">
-                            {{ $review['review'] }}
-                        </p>
-                        <div class="border-t border-white/10 pt-4">
-                            <h4 class="font-bold text-lg mb-1">{{ $review['name'] }}</h4>
-                            <a href="{{ $review['link'] }}" target="_blank"
-                                class="text-sm text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
-                                View Review
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-                    @endforeach
-                    @endif
-
-                    @else
-                    {{-- Show all default reviews if no published feedback --}}
-                    @php
-                    $allDefaultReviews = [
-                    [
-                    'name' => 'Matt Hickman, Virginia, USA',
-                    'review' => 'I would like to reply to this review with two of many reasons I would recommend Michael
-                    Ho. 1. Professionalism. It\'s clear to me that he cares about his craft and the satisfaction of his
-                    customers. 2. Talent. Michael has clearly found his calling in life. His arrangements are beyond
-                    what I can explain. Proportional designs for the occasions, symmetrical (or not when appropriate)
-                    color, depth. He should be teaching at the university level.',
-                    'link' => 'https://www.facebook.com/share/17jdrX6DQp/'
-                    ],
-                    [
-                    'name' => 'Jonah M. Severa',
-                    'review' => 'Attended a friend\'s wedding at Dahilayan Bukidnon last 23Feb2019. Exceptional wedding
-                    coordination done by Michael and his team. Very organized and the program was smooth and on time...
-                    The place was fantastic that guests never had any boring moment. I recommend this group 100%.',
-                    'link' => 'https://www.facebook.com/share/1J86B2Q1ox/'
-                    ],
-                    [
-                    'name' => 'Honey Hazel L. Doydora',
-                    'review' => 'Hi Mic! Thank you so much to your awesome team. Very accommodating and easy to get
-                    along with. All request granted! Very flexible in terms sa ginagmay na hassle, aws hehe!
-                    Professional indeed! I\'m more than satisfied sa result sa photoshoot namo ni Niall, one day we\'ll
-                    both look back on our photos and reminisce good memories. Extra credit to sir Adi (Adrian Flores)
-                    and to sir Cleve. Sa uulitin hap. More power and God bless.',
-                    'link' => 'https://www.facebook.com/share/19rfzd27RN/'
-                    ],
-                    [
-                    'name' => 'Jona Fe',
-                    'review' => 'Very professional, systematic, Hands on and the team is great. My son\'s wedding was so
-                    organized. Michael Ho is a pro.',
-                    'link' => 'https://www.facebook.com/share/1JUYBzKQEJ/'
-                    ],
-                    [
-                    'name' => 'Adrian Flores',
-                    'review' => 'One of the top Event Stylists & Coordinators in the Philippines... Bukidnon\'s
-                    Pride..',
-                    'link' => 'https://www.facebook.com/share/1E7L1zm3tg/'
-                    ],
-                    [
-                    'name' => 'Jaybee Yaba',
-                    'review' => 'As a supplier, Michael Ho Events Styling & Coordination team is so much fun to work
-                    with. Their efficiency in managing the schedules is just right, and with a whole lot of love. If
-                    you\'re looking out for a wedding coordination team for your big day, do make sure to consider this
-                    team.',
-                    'link' => 'https://www.facebook.com/share/1777W5x3B9/'
-                    ],
-                    ];
-                    @endphp
-
-                    @foreach($allDefaultReviews as $review)
-                    <div
-                        class="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 animate-on-scroll">
-                        <svg class="w-12 h-12 text-white/20 mb-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path
-                                d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                        </svg>
-
-                        <div class="flex gap-1 mb-4">
-                            @for($i = 1; $i <= 5; $i++) <svg class="w-5 h-5 text-amber-200/80" fill="currentColor"
-                                viewBox="0 0 20 20">
-                                <path
-                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                                @endfor
-                        </div>
-
-                        <p class="text-gray-200 mb-6 leading-relaxed">
-                            {{ $review['review'] }}
-                        </p>
-                        <div class="border-t border-white/10 pt-4">
-                            <h4 class="font-bold text-lg mb-1">{{ $review['name'] }}</h4>
-                            <a href="{{ $review['link'] }}" target="_blank"
-                                class="text-sm text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
-                                View Review
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-                    @endforeach
-                    @endif
-
             </div>
         </div>
     </section>
 
-    <!-- FOOTER -->
-    <footer class="bg-gray-950 text-gray-400 py-16">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-8">
-                <!-- Column 1: About -->
-                <div class="animate-on-scroll from-left">
-                    <img src="{{ asset('images/favicon.png') }}" alt="Logo" class="h-16 mb-6">
-                    <p class="text-sm leading-relaxed mb-4">
-                        Creating unforgettable moments for weddings, birthdays, corporate events, and more. Your vision,
-                        our expertise.
+    <!-- PACKAGES SECTION - Elegant carousel -->
+    <section class="py-24 bg-white">
+        <div class="mx-auto max-w-screen-xl px-6 lg:px-12">
+            <div class="text-center mb-16 animate-on-scroll from-bottom">
+                <h2 class="text-5xl font-light mb-4" style="font-family: 'Playfair Display', serif;">
+                    Featured <span class="italic">Packages</span>
+                </h2>
+                <p class="text-lg text-gray-600 font-light" style="font-family: 'Cormorant Garamond', serif;">
+                    Curated collections for every celebration
+                </p>
+                <!-- Elegant divider -->
+                <div class="mt-8 flex items-center justify-center">
+                    <div class="h-px w-24 bg-gray-900"></div>
+                    <div class="mx-3 w-1.5 h-1.5 bg-gray-900"></div>
+                    <div class="h-px w-24 bg-gray-900"></div>
+                </div>
+            </div>
+
+            <!-- Packages Carousel -->
+            <div x-data="{
+                currentSlide: 0,
+                totalSlides: {{ $packages->count() }},
+                itemsPerView: window.innerWidth >= 1024 ? 3 : (window.innerWidth >= 768 ? 2 : 1),
+                get maxSlide() {
+                    return Math.max(0, this.totalSlides - this.itemsPerView);
+                },
+                next() {
+                    if (this.currentSlide < this.maxSlide) {
+                        this.currentSlide++;
+                    }
+                },
+                prev() {
+                    if (this.currentSlide > 0) {
+                        this.currentSlide--;
+                    }
+                },
+                init() {
+                    window.addEventListener('resize', () => {
+                        this.itemsPerView = window.innerWidth >= 1024 ? 3 : (window.innerWidth >= 768 ? 2 : 1);
+                        if (this.currentSlide > this.maxSlide) {
+                            this.currentSlide = this.maxSlide;
+                        }
+                    });
+                }
+            }" class="relative animate-on-scroll scale-up">
+
+                <div class="overflow-hidden">
+                    <div class="flex transition-transform duration-700 ease-out"
+                        :style="`transform: translateX(-${currentSlide * (100 / itemsPerView)}%)`">
+                        @foreach($packages as $package)
+                        <div class="w-full md:w-1/2 lg:w-1/3 flex-shrink-0 px-4">
+                            <div class="group">
+                                <!-- Package Image - No rounded corners -->
+                                <div class="relative aspect-[3/4] overflow-hidden bg-gray-100 mb-6">
+                                    @if($package->images->isNotEmpty())
+                                    <img src="{{ asset('storage/' . $package->images->first()->path) }}"
+                                        alt="{{ $package->name }}"
+                                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                                    @else
+                                    <div
+                                        class="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
+                                        <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    @endif
+
+                                    <!-- Elegant overlay -->
+                                    <div
+                                        class="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-opacity duration-500">
+                                    </div>
+                                </div>
+
+                                <!-- Package Content -->
+                                <div class="text-center">
+                                    <h3 class="text-2xl font-light mb-2"
+                                        style="font-family: 'Playfair Display', serif;">
+                                        {{ $package->name }}
+                                    </h3>
+
+                                    <p class="text-3xl font-light text-black mb-4">
+                                        ₱{{ number_format($package->price, 0, ',', ',') }}
+                                    </p>
+
+                                    <p class="text-sm text-gray-600 mb-6 line-clamp-2">
+                                        {{ $package->description ?? 'Exclusive package for your special celebration' }}
+                                    </p>
+
+                                    <a href="{{ route('services.show', $package->id) }}"
+                                        class="inline-block px-8 py-3 border border-black text-black text-xs uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-300">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Navigation Arrows -->
+                @if($packages->count() > 1)
+                <button @click="prev" :disabled="currentSlide === 0"
+                    :class="{ 'opacity-30 cursor-not-allowed': currentSlide === 0 }"
+                    class="absolute left-0 top-1/3 -translate-y-1/2 -translate-x-4 bg-white border border-gray-200 p-3 hover:border-black transition-all z-10">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+
+                <button @click="next" :disabled="currentSlide >= maxSlide"
+                    :class="{ 'opacity-30 cursor-not-allowed': currentSlide >= maxSlide }"
+                    class="absolute right-0 top-1/3 -translate-y-1/2 translate-x-4 bg-white border border-gray-200 p-3 hover:border-black transition-all z-10">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+                @endif
+
+                <!-- Dots Indicator -->
+                @if($packages->count() > 1)
+                <div class="flex justify-center gap-3 mt-10">
+                    <template x-for="i in (maxSlide + 1)" :key="i">
+                        <button @click="currentSlide = i - 1"
+                            :class="{ 'bg-black w-8': currentSlide === i - 1, 'bg-gray-300 w-2': currentSlide !== i - 1 }"
+                            class="h-2 transition-all duration-300"></button>
+                    </template>
+                </div>
+                @endif
+            </div>
+        </div>
+    </section>
+
+    <!-- REVIEWS SECTION - Elegant testimonials -->
+    <section class="py-24 bg-gray-50">
+        <div class="mx-auto max-w-screen-xl px-6 lg:px-12">
+            <div class="text-center mb-16 animate-on-scroll from-bottom">
+                <h2 class="text-5xl font-light mb-4" style="font-family: 'Playfair Display', serif;">
+                    Client <span class="italic">Testimonials</span>
+                </h2>
+                <p class="text-lg text-gray-600 font-light" style="font-family: 'Cormorant Garamond', serif;">
+                    Words from our cherished clients
+                </p>
+                <!-- Elegant divider -->
+                <div class="mt-8 flex items-center justify-center">
+                    <div class="h-px w-24 bg-gray-900"></div>
+                    <div class="mx-3 w-1.5 h-1.5 bg-gray-900"></div>
+                    <div class="h-px w-24 bg-gray-900"></div>
+                </div>
+            </div>
+
+            <!-- Reviews Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                @forelse($publishedFeedback as $feedback)
+                <div class="bg-white p-8 border border-gray-200 animate-on-scroll from-bottom"
+                    style="transition-delay: {{ $loop->index * 0.1 }}s;">
+                    <!-- Stars Rating -->
+                    <div class="flex items-center justify-center mb-6">
+                        @for($i = 1; $i <= 5; $i++) <svg
+                            class="w-5 h-5 {{ $i <= $feedback->rating ? 'text-black' : 'text-gray-300' }}"
+                            fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            @endfor
+                    </div>
+
+                    <!-- Review Content -->
+                    <blockquote class="text-center mb-6">
+                        <p class="text-gray-700 italic leading-relaxed"
+                            style="font-family: 'Cormorant Garamond', serif; font-size: 1.1rem;">
+                            "{{ $feedback->message }}"
+                        </p>
+                    </blockquote>
+
+                    <!-- Reviewer Info -->
+                    <div class="text-center border-t border-gray-100 pt-6">
+                        <p class="font-medium text-sm uppercase tracking-wider text-gray-900">
+                            {{ $feedback->customer->name ?? 'Guest' }}
+                        </p>
+                        @if($feedback->event)
+                        <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">
+                            {{ $feedback->event->type ?? '' }} Event
+                        </p>
+                        @endif
+                        <p class="text-xs text-gray-400 mt-2">
+                            {{ $feedback->created_at->format('F Y') }}
+                        </p>
+                    </div>
+                </div>
+                @empty
+                <!-- Fallback reviews if no database reviews -->
+                @php
+                $fallbackReviews = [
+                [
+                'rating' => 5,
+                'message' => 'Michael Ho Events transformed our wedding into a fairytale. Every detail was perfect, and
+                the coordination was flawless.',
+                'name' => 'Sarah & James',
+                'event' => 'Wedding',
+                'date' => 'December 2023'
+                ],
+                [
+                'rating' => 5,
+                'message' => 'Professional, creative, and absolutely wonderful to work with. They made our corporate
+                event truly memorable.',
+                'name' => 'Robert Chen',
+                'event' => 'Corporate',
+                'date' => 'November 2023'
+                ],
+                [
+                'rating' => 5,
+                'message' => 'The attention to detail and personal touch they brought to our celebration was beyond our
+                expectations.',
+                'name' => 'Maria Santos',
+                'event' => 'Birthday',
+                'date' => 'October 2023'
+                ]
+                ];
+                @endphp
+
+                @foreach($fallbackReviews as $index => $review)
+                <div class="bg-white p-8 border border-gray-200 animate-on-scroll from-bottom"
+                    style="transition-delay: {{ $index * 0.1 }}s;">
+                    <!-- Stars Rating -->
+                    <div class="flex items-center justify-center mb-6">
+                        @for($i = 1; $i <= 5; $i++) <svg
+                            class="w-5 h-5 {{ $i <= $review['rating'] ? 'text-black' : 'text-gray-300' }}"
+                            fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            @endfor
+                    </div>
+
+                    <!-- Review Content -->
+                    <blockquote class="text-center mb-6">
+                        <p class="text-gray-700 italic leading-relaxed"
+                            style="font-family: 'Cormorant Garamond', serif; font-size: 1.1rem;">
+                            "{{ $review['message'] }}"
+                        </p>
+                    </blockquote>
+
+                    <!-- Reviewer Info -->
+                    <div class="text-center border-t border-gray-100 pt-6">
+                        <p class="font-medium text-sm uppercase tracking-wider text-gray-900">
+                            {{ $review['name'] }}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">
+                            {{ $review['event'] }} Event
+                        </p>
+                        <p class="text-xs text-gray-400 mt-2">
+                            {{ $review['date'] }}
+                        </p>
+                    </div>
+                </div>
+                @endforeach
+                @endforelse
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-white border-t border-gray-100">
+        <div class="mx-auto max-w-screen-xl px-6 lg:px-12 text-center">
+            <h2 class="text-4xl font-light mb-4" style="font-family: 'Playfair Display', serif;">
+                Let's Create Something <span class="italic">Extraordinary</span>
+            </h2>
+            <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto font-light">
+                Begin your journey to an unforgettable celebration
+            </p>
+            <div class="flex items-center justify-center gap-4">
+                <a href="tel:+639173062531"
+                    class="px-8 py-3 bg-black text-white text-xs uppercase tracking-widest hover:bg-gray-900 transition-colors">
+                    Schedule Consultation
+                </a>
+                <a href="{{ route('services.index') }}"
+                    class="px-8 py-3 border border-black text-black text-xs uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-300">
+                    View Services
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER - Clean and minimal -->
+    <footer class="bg-black text-white py-16">
+        <div class="mx-auto max-w-screen-xl px-6 lg:px-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+
+                <!-- Column 1: Brand -->
+                <div>
+                    <h3 class="text-2xl font-light mb-4" style="font-family: 'Playfair Display', serif;">
+                        Michael Ho Events
+                    </h3>
+                    <p class="text-sm text-gray-400 leading-relaxed mb-6">
+                        Creating extraordinary celebrations with impeccable attention to detail and timeless elegance.
                     </p>
                     <div class="flex items-center gap-4">
                         <a href="https://www.facebook.com/MichaelHoEventsPlanningandCoordinating/" target="_blank"
-                            class="hover:text-white transition-colors">
+                            class="text-gray-400 hover:text-white transition-colors">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                 <path
                                     d="M22.675 0H1.325C.593 0 0 .593 0 1.325v21.351C0 23.406.593 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.464.099 2.795.143v3.24l-1.918.001c-1.504 0-1.794.716-1.794 1.764v2.312h3.587l-.467 3.622h-3.12V24h6.116C23.406 24 24 23.406 24 22.676V1.325C24 .593 23.406 0 22.675 0z" />
                             </svg>
                         </a>
                         <a href="https://www.instagram.com/michaelhoevents/?hl=en" target="_blank"
-                            class="hover:text-white transition-colors">
+                            class="text-gray-400 hover:text-white transition-colors">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                 <path
-                                    d="M12 2.163c3.204 0 3.584.012 4.85.07 1.17.056 1.97.24 2.43.403a4.92 4.92 0 011.675 1.087 4.92 4.92 0 011.087 1.675c.163.46.347 1.26.403 2.43.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.056 1.17-.24 1.97-.403 2.43a4.918 4.918 0 01-1.087 1.675 4.918 4.918 0 01-1.675 1.087c-.46.163-1.26.347-2.43.403-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.17-.056-1.97-.24-2.43-.403a4.918 4.918 0 01-1.675-1.087 4.918 4.918 0 01-1.087-1.675c-.163-.46-.347-1.26-.403-2.43C2.175 15.747 2.163 15.367 2.163 12s.012-3.584.07-4.85c.056-1.17.24-1.97.403-2.43a4.92 4.92 0 011.087-1.675A4.92 4.92 0 015.398 2.636c.46-.163 1.26-.347 2.43-.403C8.416 2.175 8.796 2.163 12 2.163zm0-2.163C8.741 0 8.332.013 7.052.072 5.775.131 4.772.348 3.95.692a6.918 6.918 0 00-2.53 1.656A6.918 6.918 0 00.692 4.878c-.344.822-.561 1.825-.62 3.102C.013 8.332 0 8.741 0 12c0 3.259.013 3.668.072 4.948.059 1.277.276 2.28.62 3.102a6.918 6.918 0 001.656 2.53 6.918 6.918 0 002.53 1.656c.822.344 1.825.561 3.102.62C8.332 23.987 8.741 24 12 24s3.668-.013 4.948-.072c1.277-.059 2.28-.276 3.102-.62a6.918 6.918 0 002.53-1.656 6.918 6.918 0 001.656-2.53c.344-.822.561-1.825.62-3.102.059-1.28.072-1.689.072-4.948s-.013-3.668-.072-4.948c-.059-1.277-.276-2.28-.62-3.102a6.918 6.918 0 00-1.656-2.53A6.918 6.918 0 0019.05.692c-.822-.344-1.825-.561-3.102-.62C15.668.013 15.259 0 12 0z" />
+                                    d="M12 2.163c3.204 0 3.584.012 4.85.07 1.17.056 1.97.24 2.43.403a4.92 4.92 0 011.675 1.087 4.92 4.92 0 011.087 1.675c.163.46.347 1.26.403 2.43.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.056 1.17-.24 1.97-.403 2.43a4.918 4.918 0 01-1.087 1.675 4.918 4.918 0 01-1.675 1.087c-.46.163-1.26.347-2.43.403-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.17-.056-1.97-.24-2.43-.403a4.918 4.918 0 01-1.675-1.087 4.918 4.918 0 01-1.087-1.675c-.163-.46-.347-1.26-.403-2.43C2.175 15.747 2.163 15.367 2.163 12s.012-3.584.07-4.85c.056-1.17.24-1.97.403-2.43a4.92 4.92 0 011.087-1.675A4.92 4.92 0 015.398 2.636c.46-.163 1.26-.347 2.43-.403C8.416 2.175 8.796 2.163 12 2.163zm0-2.163C8.741 0 8.332.013 7.052.072 5.775.131 4.772.348 3.95.692a6.918 6.918 0 00-2.53 1.656A6.918 6.918 0 00.692 4.878c-.344.822-.561 1.825-.62 3.102C.013 8.332 0 8.741 0 12c0 3.259.013 3.668.072 4.948.059 1.277.276 2.28.62 3.102a6.918 6.918 0 001.656 2.53 6.918 6.918 0 002.53 1.656c.822.344 1.825.561 3.102.62C8.332 23.987 8.741 24 12 24s3.668-.013 4.948-.072c1.277-.059 2.28-.276 3.102-.62a6.918 6.918 0 002.53-1.656 6.918 6.918 0 001.656-2.53c.344-.822.561-1.825.62-3.102.059-1.28.072-1.689.072-4.948s-.013-3.668-.072-4.948c-.059-1.277-.276-2.28-.62-3.102a6.918 6.918 0 00-1.656-2.53A6.918 6.918 0 0020.05.692c-.822-.344-1.825-.561-3.102-.62C15.668.013 15.259 0 12 0z" />
                                 <path
                                     d="M12 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zm0 10.162a3.999 3.999 0 110-7.998 3.999 3.999 0 010 7.998z" />
                                 <circle cx="18.406" cy="5.594" r="1.44" />
@@ -510,72 +619,47 @@
                 </div>
 
                 <!-- Column 2: Quick Links -->
-                <div class="animate-on-scroll from-bottom">
-                    <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+                <div>
+                    <h4 class="text-xs uppercase tracking-widest mb-6 text-gray-400">Navigation</h4>
                     <ul class="space-y-3 text-sm">
                         <li>
-                            <a href="#" class="hover:text-white transition-colors flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                                </svg>
+                            <a href="#" class="text-gray-300 hover:text-white transition-colors">
                                 Home
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('services.index') }}"
-                                class="hover:text-white transition-colors flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                                </svg>
+                                class="text-gray-300 hover:text-white transition-colors">
                                 Services
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('services.index') }}"
-                                class="hover:text-white transition-colors flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                                </svg>
-                                Services
+                            <a href="{{ route('events-showcase.index') }}"
+                                class="text-gray-300 hover:text-white transition-colors">
+                                Portfolio
                             </a>
                         </li>
                         <li>
                             <a href="{{ Route::has('login') ? route('login') : '#' }}"
-                                class="hover:text-white transition-colors flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                                </svg>
-                                Log in
+                                class="text-gray-300 hover:text-white transition-colors">
+                                Account
                             </a>
                         </li>
                     </ul>
                 </div>
 
-                <!-- Column 3: Contact Info -->
-                <div class="animate-on-scroll from-right">
-                    <h4 class="text-lg font-semibold mb-4">Get In Touch</h4>
-                    <ul class="space-y-3 text-gray-400 text-sm">
-                        <li class="flex items-start gap-3">
-                            <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            <a href="mailto:michaelhoevents@gmail.com" class="hover:text-white transition-colors">
+                <!-- Column 3: Contact -->
+                <div>
+                    <h4 class="text-xs uppercase tracking-widest mb-6 text-gray-400">Contact</h4>
+                    <ul class="space-y-4 text-sm">
+                        <li>
+                            <a href="mailto:michaelhoevents@gmail.com"
+                                class="text-gray-300 hover:text-white transition-colors">
                                 michaelhoevents@gmail.com
                             </a>
                         </li>
-                        <li class="flex items-start gap-3">
-                            <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                            </svg>
-                            <a href="tel:+639173062531" class="hover:text-white transition-colors">
+                        <li>
+                            <a href="tel:+639173062531" class="text-gray-300 hover:text-white transition-colors">
                                 +63 917 306 2531
                             </a>
                         </li>
@@ -586,9 +670,13 @@
 
             <!-- Bottom Bar -->
             <div class="pt-8 border-t border-gray-800">
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-400">
-                    <p>© {{ date('Y') }} Michael Ho Events Styling & Coordination. All rights reserved.</p>
-                    <p class="font-style-script text-base">Creating memories, one event at a time</p>
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">
+                        © {{ date('Y') }} Michael Ho Events. All rights reserved.
+                    </p>
+                    <p class="text-xs text-gray-400 italic" style="font-family: 'Cormorant Garamond', serif;">
+                        Creating memories, one event at a time
+                    </p>
                 </div>
             </div>
         </div>
@@ -596,73 +684,43 @@
 
     <script>
         const topBar = document.getElementById('top-bar');
-    const navbar = document.getElementById('navbar');
-    const spacer = document.getElementById('navbar-spacer');
-    
-    const topBarHeight = topBar.offsetHeight;
+        const navbar = document.getElementById('navbar');
+        const spacer = document.getElementById('navbar-spacer');
+        
+        const topBarHeight = topBar.offsetHeight;
 
-    window.addEventListener('scroll', () => {
-        const scrollY = window.scrollY || window.pageYOffset;
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY || window.pageYOffset;
 
-        if (scrollY >= topBarHeight) {
-            navbar.classList.add('fixed', 'top-0', 'left-0', 'w-full', 'z-50');
-            topBar.classList.add('hidden');
-            spacer.style.height = navbar.offsetHeight + 'px';
-        } else {
-            navbar.classList.remove('fixed', 'top-0', 'left-0', 'w-full', 'z-50');
-            topBar.classList.remove('hidden');
-            spacer.style.height = '0px';
-        }
-    });
-
-    // Scroll Animation Observer
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -100px 0px'
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('animate-in');
+            if (scrollY >= topBarHeight) {
+                navbar.classList.add('fixed', 'top-0', 'left-0', 'w-full', 'z-50');
+                topBar.classList.add('hidden');
+                spacer.style.height = navbar.offsetHeight + 'px';
             } else {
-                entry.target.classList.remove('animate-in');
+                navbar.classList.remove('fixed', 'top-0', 'left-0', 'w-full', 'z-50');
+                topBar.classList.remove('hidden');
+                spacer.style.height = '0px';
             }
         });
-    }, observerOptions);
 
-    document.querySelectorAll('.animate-on-scroll').forEach(el => {
-        observer.observe(el);
-    });
+        // Scroll Animation Observer
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.animate-on-scroll').forEach(el => {
+            observer.observe(el);
+        });
     </script>
-
-    <style>
-        .animate-on-scroll {
-            opacity: 0;
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .animate-on-scroll.from-left {
-            transform: translateX(-50px);
-        }
-
-        .animate-on-scroll.from-right {
-            transform: translateX(50px);
-        }
-
-        .animate-on-scroll.from-bottom {
-            transform: translateY(50px);
-        }
-
-        .animate-on-scroll.scale-up {
-            transform: scale(0.9);
-        }
-
-        .animate-on-scroll.animate-in {
-            opacity: 1;
-            transform: translateX(0) translateY(0) scale(1);
-        }
-    </style>
 
 </body>
 

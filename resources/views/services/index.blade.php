@@ -8,30 +8,67 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Style+Script&family=Dancing+Script:wght@400..700&family=Libre+Caslon+Display&family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Niconne&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap"
         rel="stylesheet">
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <style>
+        /* Custom elegant styles */
+        .elegant-shadow {
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .elegant-shadow-hover {
+            box-shadow: 0 10px 60px rgba(0, 0, 0, 0.12);
+        }
+
+        .text-elegant {
+            letter-spacing: 0.02em;
+        }
+
+        .border-elegant {
+            border: 1px solid #e5e5e5;
+        }
+
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
 </head>
 
-<body class="min-h-screen bg-gray-50 text-neutral-900 antialiased selection:bg-black selection:text-white">
+<body class="min-h-screen bg-white text-neutral-900 antialiased selection:bg-black selection:text-white">
 
     <!-- HEADER CONTAINER -->
     <div id="header-container" class="relative z-50">
-        <!-- Top Bar -->
-        <div id="top-bar" class="bg-gray-950 text-white text-sm">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between h-10">
-                <div class="flex items-center gap-4">
+        <!-- Top Bar - More minimal and elegant -->
+        <div id="top-bar" class="bg-black text-white text-xs">
+            <div class="mx-auto max-w-screen-xl px-6 lg:px-12 flex items-center justify-between h-9">
+                <div class="flex items-center gap-6">
                     <a href="https://www.facebook.com/MichaelHoEventsPlanningandCoordinating/" target="_blank"
-                        class="hover:text-gray-400">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        class="opacity-70 hover:opacity-100 transition-opacity">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                             <path
                                 d="M22.675 0H1.325C.593 0 0 .593 0 1.325v21.351C0 23.406.593 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.464.099 2.795.143v3.24l-1.918.001c-1.504 0-1.794.716-1.794 1.764v2.312h3.587l-.467 3.622h-3.12V24h6.116C23.406 24 24 23.406 24 22.676V1.325C24 .593 23.406 0 22.675 0z" />
                         </svg>
                     </a>
                     <a href="https://www.instagram.com/michaelhoevents/?hl=en" target="_blank"
-                        class="hover:text-gray-400">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        class="opacity-70 hover:opacity-100 transition-opacity">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                             <path
                                 d="M12 2.163c3.204 0 3.584.012 4.85.07 1.17.056 1.97.24 2.43.403a4.92 4.92 0 011.675 1.087 4.92 4.92 0 011.087 1.675c.163.46.347 1.26.403 2.43.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.056 1.17-.24 1.97-.403 2.43a4.918 4.918 0 01-1.087 1.675 4.918 4.918 0 01-1.675 1.087c-.46.163-1.26.347-2.43.403-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.17-.056-1.97-.24-2.43-.403a4.918 4.918 0 01-1.675-1.087 4.918 4.918 0 01-1.087-1.675c-.163-.46-.347-1.26-.403-2.43C2.175 15.747 2.163 15.367 2.163 12s.012-3.584.07-4.85c.056-1.17.24-1.97.403-2.43a4.92 4.92 0 011.087-1.675A4.92 4.92 0 015.398 2.636c.46-.163 1.26-.347 2.43-.403C8.416 2.175 8.796 2.163 12 2.163zm0-2.163C8.741 0 8.332.013 7.052.072 5.775.131 4.772.348 3.95.692a6.918 6.918 0 00-2.53 1.656A6.918 6.918 0 00.692 4.878c-.344.822-.561 1.825-.62 3.102C.013 8.332 0 8.741 0 12c0 3.259.013 3.668.072 4.948.059 1.277.276 2.28.62 3.102a6.918 6.918 0 001.656 2.53 6.918 6.918 0 002.53 1.656c.822.344 1.825.561 3.102.62C8.332 23.987 8.741 24 12 24s3.668-.013 4.948-.072c1.277-.059 2.28-.276 3.102-.62a6.918 6.918 0 002.53-1.656 6.918 6.918 0 001.656-2.53c.344-.822.561-1.825.62-3.102.059-1.28.072-1.689.072-4.948s-.013-3.668-.072-4.948c-.059-1.277-.276-2.28-.62-3.102a6.918 6.918 0 00-1.656-2.53A6.918 6.918 0 0019.05.692c-.822-.344-1.825-.561-3.102-.62C15.668.013 15.259 0 12 0z" />
                             <path
@@ -40,34 +77,39 @@
                         </svg>
                     </a>
                 </div>
-                <div class="hidden sm:flex items-center gap-6 text-xs">
+                <div class="hidden sm:flex items-center gap-8 uppercase tracking-wider font-light">
                     <span>michaelhoevents@gmail.com</span>
                     <span>+639173062531</span>
                 </div>
             </div>
         </div>
 
-        <!-- Navbar -->
-        <header id="navbar" class="bg-white shadow-sm">
-            <nav class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="py-5 flex items-center justify-between">
+        <!-- Navbar - Clean and minimal -->
+        <header id="navbar" class="bg-white border-b border-gray-100">
+            <nav class="mx-auto max-w-screen-xl px-6 lg:px-12">
+                <div class="py-6 flex items-center justify-between">
                     <a href="{{ url('/') }}">
-                        <img src="{{ asset('images/favicon.png') }}" alt="Logo" class="h-16">
+                        <img src="{{ asset('images/favicon.png') }}" alt="Logo" class="h-14">
                     </a>
-                    <div class="flex items-center gap-5 text-sm font-medium">
-                        <a href="{{ url('/') }}" class="hover:text-gray-600 transition-colors">Home</a>
+                    <div class="flex items-center gap-10 text-xs uppercase tracking-widest font-medium">
+                        <a href="{{ url('/') }}" class="text-gray-700 hover:text-black transition-colors duration-300">
+                            Home
+                        </a>
 
                         @foreach($categories as $category)
                         <a href="{{ route('services.category', $category) }}"
-                            class="hover:text-gray-600 transition-colors capitalize">
+                            class="text-gray-700 hover:text-black transition-colors duration-300">
                             {{ $category }}
                         </a>
                         @endforeach
 
-                        <a href="{{ route('services.index') }}"
-                            class="hover:text-gray-600 transition-colors">Services</a>
+                        <a href="{{ route('services.index') }}" class="text-black border-b-2 border-black pb-1">
+                            Services
+                        </a>
                         <a href="{{ Route::has('login') ? route('login') : '#' }}"
-                            class="hover:text-gray-600 transition-colors">Log in</a>
+                            class="text-gray-700 hover:text-black transition-colors duration-300">
+                            Account
+                        </a>
                     </div>
                 </div>
             </nav>
@@ -76,65 +118,61 @@
 
     <div id="navbar-spacer" class="h-0"></div>
 
-    <!-- PAGE HEADER -->
-    <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white py-12">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl sm:text-5xl font-bold mb-3 font-libre">Our Services</h1>
-            <p class="text-lg sm:text-xl font-style-script text-gray-300">
-                Crafting unforgettable moments for every occasion
+    <!-- PAGE HEADER - More elegant with subtle gradient -->
+    <div class="relative bg-gradient-to-b from-gray-50 to-white overflow-hidden">
+        <!-- Decorative element -->
+        <div class="absolute inset-0 opacity-5">
+            <div class="absolute top-0 left-0 w-96 h-96 bg-black transform -translate-x-1/2 -translate-y-1/2"></div>
+            <div class="absolute bottom-0 right-0 w-96 h-96 bg-black transform translate-x-1/2 translate-y-1/2"></div>
+        </div>
+
+        <div class="relative mx-auto max-w-screen-xl px-6 lg:px-12 py-20 text-center">
+            <h1 class="text-5xl sm:text-6xl font-light mb-4 tracking-tight"
+                style="font-family: 'Playfair Display', serif;">
+                Our <span class="italic font-normal">Services</span>
+            </h1>
+            <p class="text-lg text-gray-600 font-light tracking-wide" style="font-family: 'Cormorant Garamond', serif;">
+                Crafting unforgettable moments for every extraordinary occasion
             </p>
-            <div class="w-24 h-1 bg-white mx-auto mt-4"></div>
+            <!-- Elegant divider -->
+            <div class="mt-8 flex items-center justify-center">
+                <div class="h-px w-24 bg-gray-900"></div>
+                <div class="mx-3 w-1.5 h-1.5 bg-gray-900"></div>
+                <div class="h-px w-24 bg-gray-900"></div>
+            </div>
         </div>
     </div>
 
-    <!-- BUDGET FILTER -->
-    <div class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+    <!-- BUDGET FILTER - Elegant minimal design -->
+    <div class="bg-white border-b border-gray-100 sticky top-0 z-40">
+        <div class="mx-auto max-w-screen-xl px-6 lg:px-12 py-6">
             <form method="GET" action="{{ route('services.index') }}"
-                class="flex flex-col sm:flex-row items-center gap-4">
-                <div class="flex items-center gap-2 flex-1">
-                    <svg class="w-5 h-5 fill-gray-500" viewBox="0 0 36 36" version="1.1"
-                        preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"
-                        xmlns:xlink="http://www.w3.org/1999/xlink">
-                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-                        <g id="SVGRepo_iconCarrier">
-                            <title>peso-solid</title>
-                            <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z"
-                                class="clr-i-solid clr-i-solid-path-1"></path>
-                            <path d="M14.18,19.7h5.19a4.28,4.28,0,0,0,3.5-1.9H14.18Z"
-                                class="clr-i-solid clr-i-solid-path-2"></path>
-                            <path d="M19.37,10.51H14.18V12h8.37A4.21,4.21,0,0,0,19.37,10.51Z"
-                                class="clr-i-solid clr-i-solid-path-3"></path>
-                            <path
-                                d="M17.67,2a16,16,0,1,0,16,16A16,16,0,0,0,17.67,2Zm10.5,15.8H25.7a6.87,6.87,0,0,1-6.33,4.4H14.18v6.54a1.25,1.25,0,1,1-2.5,0V17.8H8.76a.9.9,0,1,1,0-1.8h2.92V13.8H8.76a.9.9,0,1,1,0-1.8h2.92V9.26A1.25,1.25,0,0,1,12.93,8h6.44a6.84,6.84,0,0,1,6.15,4h2.65a.9.9,0,0,1,0,1.8H26.09a6.91,6.91,0,0,1,.12,1.3,6.8,6.8,0,0,1-.06.9h2a.9.9,0,0,1,0,1.8Z"
-                                class="clr-i-solid clr-i-solid-path-4"></path>
-                            <rect x="0" y="0" width="36" height="36" fill-opacity="0"></rect>
-                        </g>
-                    </svg>
-                    <span class="text-sm font-semibold text-gray-700">Budget Range:</span>
+                class="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs uppercase tracking-widest text-gray-600 font-medium">Budget Range</span>
+                    <div class="h-4 w-px bg-gray-300"></div>
                 </div>
-                <div class="flex items-center gap-4 flex-wrap">
-                    <div class="flex items-center gap-2">
-                        <label for="min_budget" class="text-sm text-gray-600">Min:</label>
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₱</span>
                         <input type="number" name="min_budget" id="min_budget" value="{{ request('min_budget') }}"
-                            placeholder="0"
-                            class="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent">
+                            placeholder="Min"
+                            class="w-32 pl-8 pr-3 py-2 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors">
                     </div>
-                    <span class="text-gray-400">—</span>
-                    <div class="flex items-center gap-2">
-                        <label for="max_budget" class="text-sm text-gray-600">Max:</label>
+                    <div class="w-8 h-px bg-gray-300"></div>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₱</span>
                         <input type="number" name="max_budget" id="max_budget" value="{{ request('max_budget') }}"
-                            placeholder="500000"
-                            class="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent">
+                            placeholder="Max"
+                            class="w-32 pl-8 pr-3 py-2 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors">
                     </div>
                     <button type="submit"
-                        class="px-6 py-2 bg-gray-900 text-white font-semibold rounded-lg hover:bg-black transition-all">
-                        Filter
+                        class="px-6 py-2 bg-black text-white text-xs uppercase tracking-widest hover:bg-gray-900 transition-colors">
+                        Apply Filter
                     </button>
                     @if(request('min_budget') || request('max_budget'))
                     <a href="{{ route('services.index') }}"
-                        class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                        class="px-4 py-2 text-xs uppercase tracking-wider text-gray-600 hover:text-black transition-colors">
                         Clear
                     </a>
                     @endif
@@ -144,21 +182,26 @@
     </div>
 
     <!-- PACKAGES BY TYPE -->
-    <section class="py-10">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section class="py-20 bg-white">
+        <div class="mx-auto max-w-screen-xl px-6 lg:px-12">
 
             @forelse($packagesByType as $type => $packages)
-            <div id="{{ Str::slug($type) }}" class="mb-12 scroll-mt-20">
-                <!-- Type Header -->
-                <div class="text-center mb-8">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-2 font-libre capitalize">{{ $type }}</h2>
-                    <p class="text-sm text-gray-600">{{ $packages->count() }} package{{ $packages->count() > 1 ? 's' :
-                        '' }}
-                        available</p>
-                    <div class="w-16 h-1 bg-gray-900 mx-auto mt-3"></div>
+            <div id="{{ Str::slug($type) }}" class="mb-20 scroll-mt-20">
+                <!-- Type Header - Elegant minimal -->
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl font-light mb-3 capitalize" style="font-family: 'Playfair Display', serif;">
+                        {{ $type }} <span class="italic font-normal">Collection</span>
+                    </h2>
+                    <p class="text-xs uppercase tracking-widest text-gray-500">
+                        {{ $packages->count() }} exclusive package{{ $packages->count() > 1 ? 's' : '' }}
+                    </p>
+                    <!-- Elegant divider -->
+                    <div class="mt-6 flex items-center justify-center">
+                        <div class="h-px w-20 bg-gray-400"></div>
+                    </div>
                 </div>
 
-                <!-- Carousel -->
+                <!-- Carousel with elegant cards -->
                 <div x-data="{
                     currentSlide: 0,
                     totalSlides: {{ $packages->count() }},
@@ -188,79 +231,83 @@
 
                     <!-- Carousel Container -->
                     <div class="overflow-hidden">
-                        <div class="flex transition-transform duration-500 ease-out"
+                        <div class="flex transition-transform duration-700 ease-out"
                             :style="`transform: translateX(-${currentSlide * (100 / itemsPerView)}%)`">
                             @foreach($packages as $package)
                             <div class="w-full md:w-1/2 lg:w-1/3 flex-shrink-0 px-4">
-                                <div
-                                    class="group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 h-full">
-
-                                    <!-- Package Image -->
-                                    <div class="relative aspect-[4/3] overflow-hidden bg-gray-200">
+                                <div class="group h-full">
+                                    <!-- Package Image - No rounded corners -->
+                                    <div class="relative aspect-[3/4] overflow-hidden bg-gray-100 mb-6">
                                         @if($package->images->isNotEmpty())
                                         <img src="{{ asset('storage/' . $package->images->first()->path) }}"
                                             alt="{{ $package->name }}"
-                                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                         @else
                                         <div
-                                            class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                                            <svg class="w-20 h-20 text-gray-400" fill="none" stroke="currentColor"
+                                            class="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
+                                            <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                             </svg>
                                         </div>
                                         @endif
+
+                                        <!-- Elegant overlay gradient -->
                                         <div
-                                            class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent">
+                                            class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                                         </div>
 
-                                        <!-- Type Badge -->
+                                        <!-- Type Badge - Minimal elegant -->
                                         <div class="absolute top-4 left-4">
                                             <span
-                                                class="inline-block px-4 py-1.5 bg-white/90 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-wider text-gray-900">
+                                                class="inline-block px-3 py-1 bg-white/90 backdrop-blur-sm text-[10px] font-medium uppercase tracking-wider text-black">
                                                 {{ $package->type }}
                                             </span>
                                         </div>
                                     </div>
 
-                                    <!-- Package Content -->
-                                    <div class="p-5">
-                                        <h3
-                                            class="text-xl font-bold text-gray-900 mb-2 font-libre group-hover:text-gray-700 transition-colors">
+                                    <!-- Package Content - Clean and minimal -->
+                                    <div class="text-center">
+                                        <h3 class="text-2xl font-light mb-2"
+                                            style="font-family: 'Playfair Display', serif;">
                                             {{ $package->name }}
                                         </h3>
 
-                                        <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-                                            {{ $package->description ?? 'Complete event planning and coordination
-                                            services tailored to your needs.' }}
+                                        <!-- Price - Prominent -->
+                                        <p class="text-3xl font-light text-black mb-4">
+                                            ₱{{ number_format($package->price ?? 0, 0, ',', ',') }}
                                         </p>
 
-                                        <!-- Features Preview -->
+                                        <!-- Description -->
+                                        <p class="text-sm text-gray-600 leading-relaxed mb-6 line-clamp-2"
+                                            style="font-family: 'Inter', sans-serif;">
+                                            {{ $package->description ?? 'Complete event planning and coordination
+                                            services tailored for your special occasion.' }}
+                                        </p>
+
+                                        <!-- Features Preview - Elegant list -->
                                         @if($package->features)
-                                        <div class="mb-3 space-y-1">
-                                            @foreach(array_slice(explode("\n", $package->features), 0, 2) as $feature)
-                                            <div class="flex items-center gap-2 text-xs text-gray-600">
-                                                <svg class="w-3 h-3 text-green-500 flex-shrink-0" fill="none"
-                                                    stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2" d="M5 13l4 4L19 7" />
-                                                </svg>
-                                                <span class="line-clamp-1">{{ trim($feature) }}</span>
-                                            </div>
-                                            @endforeach
+                                        <div class="mb-6">
+                                            @php
+                                            $features = explode("\n", $package->features);
+                                            $previewFeatures = array_slice($features, 0, 2);
+                                            @endphp
+                                            <ul class="text-xs text-gray-600 space-y-1">
+                                                @foreach($previewFeatures as $feature)
+                                                <li class="flex items-center justify-center gap-2">
+                                                    <span class="w-1 h-1 bg-gray-400"></span>
+                                                    <span>{{ trim($feature) }}</span>
+                                                </li>
+                                                @endforeach
+                                            </ul>
                                         </div>
                                         @endif
 
-                                        <!-- View Details Button -->
+                                        <!-- CTA Button - Minimal elegant -->
                                         <a href="{{ route('services.show', $package) }}"
-                                            class="group/btn relative w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white font-semibold rounded-xl overflow-hidden transition-all hover:bg-black hover:shadow-lg">
-                                            <span class="relative z-10">View Details</span>
-                                            <svg class="w-5 h-5 relative z-10 transition-transform group-hover/btn:translate-x-1"
-                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                            </svg>
+                                            class="inline-block px-8 py-3 border border-black text-black text-xs uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-300">
+                                            View Details
                                         </a>
                                     </div>
                                 </div>
@@ -269,50 +316,55 @@
                         </div>
                     </div>
 
-                    <!-- Navigation Arrows -->
+                    <!-- Navigation Arrows - Elegant minimal -->
                     @if($packages->count() > 1)
                     <button @click="prev" :disabled="currentSlide === 0"
-                        :class="{ 'opacity-50 cursor-not-allowed': currentSlide === 0 }"
-                        class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition-all z-10">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        :class="{ 'opacity-30 cursor-not-allowed': currentSlide === 0 }"
+                        class="absolute left-0 top-1/3 -translate-y-1/2 -translate-x-4 bg-white border border-gray-200 p-3 hover:border-black transition-all z-10">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
 
                     <button @click="next" :disabled="currentSlide >= maxSlide"
-                        :class="{ 'opacity-50 cursor-not-allowed': currentSlide >= maxSlide }"
-                        class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition-all z-10">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        :class="{ 'opacity-30 cursor-not-allowed': currentSlide >= maxSlide }"
+                        class="absolute right-0 top-1/3 -translate-y-1/2 translate-x-4 bg-white border border-gray-200 p-3 hover:border-black transition-all z-10">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
                     @endif
 
-                    <!-- Dots Indicator -->
+                    <!-- Dots Indicator - Elegant minimal -->
                     @if($packages->count() > 1)
-                    <div class="flex justify-center gap-2 mt-8">
+                    <div class="flex justify-center gap-3 mt-10">
                         <template x-for="i in (maxSlide + 1)" :key="i">
                             <button @click="currentSlide = i - 1"
-                                :class="{ 'bg-gray-900 w-8': currentSlide === i - 1, 'bg-gray-300 w-3': currentSlide !== i - 1 }"
-                                class="h-3 rounded-full transition-all duration-300"></button>
+                                :class="{ 'bg-black w-8': currentSlide === i - 1, 'bg-gray-300 w-2': currentSlide !== i - 1 }"
+                                class="h-2 transition-all duration-300"></button>
                         </template>
                     </div>
                     @endif
                 </div>
             </div>
             @empty
-            <!-- Empty State -->
+            <!-- Empty State - Elegant -->
             <div class="text-center py-20">
-                <div class="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-6">
-                    <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                <div class="mb-8">
+                    <svg class="w-20 h-20 text-gray-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
                 </div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-2 font-libre">No Services Found</h3>
-                <p class="text-gray-600 mb-6">Try adjusting your budget filter.</p>
+                <h3 class="text-3xl font-light mb-3" style="font-family: 'Playfair Display', serif;">
+                    No Services Found
+                </h3>
+                <p class="text-gray-600 mb-8 max-w-md mx-auto">
+                    Please adjust your budget filter to view our available packages.
+                </p>
                 <a href="{{ route('services.index') }}"
-                    class="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-black transition-all">
+                    class="inline-block px-8 py-3 bg-black text-white text-xs uppercase tracking-widest hover:bg-gray-900 transition-colors">
                     Clear Filters
                 </a>
             </div>
@@ -321,58 +373,115 @@
         </div>
     </section>
 
-    <!-- CTA SECTION -->
-    <section class="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white py-20">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-4xl sm:text-5xl font-bold mb-4 font-libre">Ready to Plan Your Event?</h2>
-            <p class="text-xl text-gray-300 mb-8 font-style-script">
-                Let's create something unforgettable together
+    <!-- CTA Section - Elegant minimal design -->
+    <section class="py-20 bg-gray-50 border-t border-gray-100">
+        <div class="mx-auto max-w-screen-xl px-6 lg:px-12 text-center">
+            <h2 class="text-4xl font-light mb-4" style="font-family: 'Playfair Display', serif;">
+                Ready to Begin Your <span class="italic">Journey?</span>
+            </h2>
+            <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto font-light">
+                Let's create an extraordinary celebration that reflects your unique vision
             </p>
-            <a href="{{ Route::has('login') ? route('login') : '#' }}"
-                class="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-900 font-bold rounded-xl hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                Get Started
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-            </a>
+            <div class="flex items-center justify-center gap-4">
+                <a href="{{ Route::has('login') ? route('login') : '#' }}"
+                    class="px-8 py-3 bg-black text-white text-xs uppercase tracking-widest hover:bg-gray-900 transition-colors">
+                    Get Started
+                </a>
+                <a href="tel:+639173062531"
+                    class="px-8 py-3 border border-black text-black text-xs uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-300">
+                    Call Us
+                </a>
+            </div>
         </div>
     </section>
 
-    <!-- FOOTER -->
-    <footer class="bg-gray-950 text-gray-400 py-12">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+    <!-- FOOTER - Clean and minimal -->
+    <footer class="bg-black text-white py-16">
+        <div class="mx-auto max-w-screen-xl px-6 lg:px-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+
+                <!-- Column 1: Brand -->
                 <div>
-                    <img src="{{ asset('images/favicon.png') }}" alt="Logo" class="h-16 mb-4">
-                    <p class="text-sm leading-relaxed">
-                        Creating unforgettable moments for weddings, birthdays, corporate events, and more.
+                    <h3 class="text-2xl font-light mb-4" style="font-family: 'Playfair Display', serif;">
+                        Michael Ho Events
+                    </h3>
+                    <p class="text-sm text-gray-400 leading-relaxed mb-6">
+                        Creating unforgettable celebrations with impeccable attention to detail and timeless elegance.
                     </p>
+                    <div class="flex items-center gap-4">
+                        <a href="https://www.facebook.com/MichaelHoEventsPlanningandCoordinating/" target="_blank"
+                            class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M22.675 0H1.325C.593 0 0 .593 0 1.325v21.351C0 23.406.593 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.464.099 2.795.143v3.24l-1.918.001c-1.504 0-1.794.716-1.794 1.764v2.312h3.587l-.467 3.622h-3.12V24h6.116C23.406 24 24 23.406 24 22.676V1.325C24 .593 23.406 0 22.675 0z" />
+                            </svg>
+                        </a>
+                        <a href="https://www.instagram.com/michaelhoevents/?hl=en" target="_blank"
+                            class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M12 2.163c3.204 0 3.584.012 4.85.07 1.17.056 1.97.24 2.43.403a4.92 4.92 0 011.675 1.087 4.92 4.92 0 011.087 1.675c.163.46.347 1.26.403 2.43.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.056 1.17-.24 1.97-.403 2.43a4.918 4.918 0 01-1.087 1.675 4.918 4.918 0 01-1.675 1.087c-.46.163-1.26.347-2.43.403-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.17-.056-1.97-.24-2.43-.403a4.918 4.918 0 01-1.675-1.087 4.918 4.918 0 01-1.087-1.675c-.163-.46-.347-1.26-.403-2.43C2.175 15.747 2.163 15.367 2.163 12s.012-3.584.07-4.85c.056-1.17.24-1.97.403-2.43a4.92 4.92 0 011.087-1.675A4.92 4.92 0 015.398 2.636c.46-.163 1.26-.347 2.43-.403C8.416 2.175 8.796 2.163 12 2.163zm0-2.163C8.741 0 8.332.013 7.052.072 5.775.131 4.772.348 3.95.692a6.918 6.918 0 00-2.53 1.656A6.918 6.918 0 00.692 4.878c-.344.822-.561 1.825-.62 3.102C.013 8.332 0 8.741 0 12c0 3.259.013 3.668.072 4.948.059 1.277.276 2.28.62 3.102a6.918 6.918 0 001.656 2.53 6.918 6.918 0 002.53 1.656c.822.344 1.825.561 3.102.62C8.332 23.987 8.741 24 12 24s3.668-.013 4.948-.072c1.277-.059 2.28-.276 3.102-.62a6.918 6.918 0 002.53-1.656 6.918 6.918 0 001.656-2.53c.344-.822.561-1.825.62-3.102.059-1.28.072-1.689.072-4.948s-.013-3.668-.072-4.948c-.059-1.277-.276-2.28-.62-3.102a6.918 6.918 0 00-1.656-2.53A6.918 6.918 0 0020.05.692c-.822-.344-1.825-.561-3.102-.62C15.668.013 15.259 0 12 0z" />
+                                <path
+                                    d="M12 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zm0 10.162a3.999 3.999 0 110-7.998 3.999 3.999 0 010 7.998z" />
+                                <circle cx="18.406" cy="5.594" r="1.44" />
+                            </svg>
+                        </a>
+                    </div>
                 </div>
+
+                <!-- Column 2: Quick Links -->
                 <div>
-                    <h4 class="text-lg font-semibold text-white mb-4">Quick Links</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="{{ url('/') }}" class="hover:text-white transition-colors">Home</a></li>
-                        <li><a href="{{ route('services.index') }}"
-                                class="hover:text-white transition-colors">Services</a></li>
-                        <li><a href="{{ Route::has('login') ? route('login') : '#' }}"
-                                class="hover:text-white transition-colors">Log in</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="text-lg font-semibold text-white mb-4">Get In Touch</h4>
+                    <h4 class="text-xs uppercase tracking-widest mb-6 text-gray-400">Navigation</h4>
                     <ul class="space-y-3 text-sm">
-                        <li><a href="mailto:michaelhoevents@gmail.com"
-                                class="hover:text-white transition-colors">michaelhoevents@gmail.com</a></li>
-                        <li><a href="tel:+639173062531" class="hover:text-white transition-colors">+63 917 306 2531</a>
+                        <li>
+                            <a href="{{ url('/') }}" class="text-gray-300 hover:text-white transition-colors">
+                                Home
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('services.index') }}"
+                                class="text-gray-300 hover:text-white transition-colors">
+                                Services
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ Route::has('login') ? route('login') : '#' }}"
+                                class="text-gray-300 hover:text-white transition-colors">
+                                Account
+                            </a>
                         </li>
                     </ul>
                 </div>
+
+                <!-- Column 3: Contact -->
+                <div>
+                    <h4 class="text-xs uppercase tracking-widest mb-6 text-gray-400">Contact</h4>
+                    <ul class="space-y-4 text-sm">
+                        <li>
+                            <a href="mailto:michaelhoevents@gmail.com"
+                                class="text-gray-300 hover:text-white transition-colors">
+                                michaelhoevents@gmail.com
+                            </a>
+                        </li>
+                        <li>
+                            <a href="tel:+639173062531" class="text-gray-300 hover:text-white transition-colors">
+                                +63 917 306 2531
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
             </div>
+
+            <!-- Bottom Bar -->
             <div class="pt-8 border-t border-gray-800">
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-                    <p>© {{ date('Y') }} Michael Ho Events. All rights reserved.</p>
-                    <p class="font-style-script text-base">Creating memories, one event at a time</p>
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">
+                        © {{ date('Y') }} Michael Ho Events. All rights reserved.
+                    </p>
+                    <p class="text-xs text-gray-400 italic" style="font-family: 'Cormorant Garamond', serif;">
+                        Creating memories, one event at a time
+                    </p>
                 </div>
             </div>
         </div>
