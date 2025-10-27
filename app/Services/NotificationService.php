@@ -146,6 +146,7 @@ class NotificationService
         ]);
     }
 
+
     /**
      * Notify staff of new schedule assignment
      */
@@ -265,5 +266,41 @@ class NotificationService
                 'link' => route('admin.events.show', $event),
             ]);
         }
+    }
+
+
+    /**
+     * Notify customer when event inclusions are updated
+     * 
+     * @param Event $event The event that was updated
+     * @param float $oldTotal The previous total amount
+     * @param float $newTotal The new total amount
+     * @return void
+     */
+    public function notifyCustomerInclusionsUpdated(Event $event, float $oldTotal, float $newTotal): void
+    {
+        $user = $event->customer->user;
+
+        if (!$user) return;
+
+        // Calculate the difference
+        $difference = $newTotal - $oldTotal;
+
+        // Format the change text with appropriate symbol
+        if ($difference > 0) {
+            $changeText = '+₱' . number_format($difference, 2);
+        } elseif ($difference < 0) {
+            $changeText = '-₱' . number_format(abs($difference), 2);
+        } else {
+            $changeText = 'No change in total';
+        }
+
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => 'inclusions_updated',
+            'title' => 'Event Inclusions Updated',
+            'message' => "Your event inclusions have been updated. New total: ₱" . number_format($newTotal, 2) . " ({$changeText})",
+            'link' => route('customer.events.show', $event),
+        ]);
     }
 }

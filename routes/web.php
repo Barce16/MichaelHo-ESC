@@ -241,6 +241,9 @@ Route::middleware('auth')->group(function () {
             // Events
             Route::resource('events', AdminEventController::class)->only(['index', 'show', 'update', 'destroy']);
 
+            Route::get('events/{event}/inclusions/edit', [AdminEventController::class, 'editInclusions'])->name('events.editInclusions');
+            Route::put('events/{event}/inclusions', [AdminEventController::class, 'updateInclusions'])->name('events.updateInclusions');
+
             Route::post('/events/{event}/complete-meeting', [AdminEventController::class, 'completeMeeting'])
                 ->name('events.completeMeeting');
 
@@ -286,6 +289,7 @@ Route::middleware('auth')->group(function () {
 
             // Payment list (all payments from all events)
             Route::get('payments', [CustomerPaymentController::class, 'index'])->name('payments.index');
+            Route::get('payments/{payment}', [CustomerPaymentController::class, 'show'])->name('payments.show');
             Route::post('payments/{paymentId}/approve', [CustomerPaymentController::class, 'approve'])->name('payments.approve');
             Route::post('payments/{paymentId}/reject', [CustomerPaymentController::class, 'reject'])->name('payments.reject');
 

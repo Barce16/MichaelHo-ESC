@@ -148,6 +148,18 @@
                                 </svg>
                                 Payment Amount <span class="text-rose-500">*</span>
                             </label>
+
+                            {{-- Pay in Full Option --}}
+                            <div
+                                class="mb-3 flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                                <input type="checkbox" id="pay_full"
+                                    class="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                                    onchange="document.getElementById('amount').value = this.checked ? {{ $amount }} : ''; document.getElementById('amount').readOnly = this.checked;">
+                                <label for="pay_full" class="text-sm font-medium text-emerald-900 cursor-pointer">
+                                    Pay Full Balance (₱{{ number_format($amount, 2) }})
+                                </label>
+                            </div>
+
                             <div class="relative">
                                 <span
                                     class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
@@ -160,7 +172,7 @@
                             </div>
                             @if($paymentType === 'balance')
                             <p class="mt-1 text-xs text-gray-500">Enter amount between ₱100 and ₱{{
-                                number_format($amount, 2) }}</p>
+                                number_format($amount, 2) }} or check "Pay Full Balance" above</p>
                             @else
                             <p class="mt-1 text-xs text-gray-500">Amount is fixed for this payment type</p>
                             @endif
@@ -193,12 +205,42 @@
                                 <option value="">Select payment method</option>
                                 <option value="bank_transfer" {{ old('payment_method')=='bank_transfer' ? 'selected'
                                     : '' }}>🏦 Bank Transfer</option>
+                                <option value="bpi" {{ old('payment_method')=='bpi' ? 'selected' : '' }}>🏦 BPI</option>
                                 <option value="gcash" {{ old('payment_method')=='gcash' ? 'selected' : '' }}>💳 GCash
                                 </option>
                                 <option value="cash" {{ old('payment_method')=='cash' ? 'selected' : '' }}>💵 Cash
                                 </option>
                             </select>
                             @error('payment_method')
+                            <p class="mt-2 text-sm text-rose-600 flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                {{ $message }}
+                            </p>
+                            @enderror
+                        </div>
+
+                        {{-- Reference Number --}}
+                        <div>
+                            <label for="reference_number"
+                                class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                                </svg>
+                                Reference Number
+                            </label>
+                            <input id="reference_number" name="reference_number" type="text"
+                                value="{{ old('reference_number') }}"
+                                class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition"
+                                placeholder="e.g., TXN123456789, REF-2024-001" />
+                            <p class="mt-1 text-xs text-gray-500">Enter transaction or reference number if available
+                                (GCash Ref No., Bank Ref, etc.)</p>
+                            @error('reference_number')
                             <p class="mt-2 text-sm text-rose-600 flex items-center gap-1">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"

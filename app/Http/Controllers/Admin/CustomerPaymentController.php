@@ -24,7 +24,7 @@ class CustomerPaymentController extends Controller
 
     public function index(Request $request)
     {
-        $status = $request->get('status', 'pending');
+        $status = $request->get('status');
         $paymentType = $request->get('payment_type');
 
         $payments = Payment::with(['billing.event.customer', 'event'])

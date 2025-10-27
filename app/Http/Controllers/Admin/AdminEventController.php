@@ -731,4 +731,99 @@ class AdminEventController extends Controller
 
         return back()->with('success', 'Meeting marked as complete. Event is now SCHEDULED. You can now add Staffs.');
     }
+
+
+    /**
+     * Show edit inclusions page
+     */
+    public function editInclusions(Event $event)
+    {
+        $event->load(['package', 'customer', 'inclusions']);
+
+        // Get all available inclusions for the package
+        $availableInclusions = $event->package->inclusions()
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get();
+
+        // Get currently selected inclusion IDs
+        $selectedInclusionIds = $event->inclusions->pluck('id');
+
+        return view('admin.events.edit-inclusions', compact('event', 'availableInclusions', 'selectedInclusionIds'));
+    }
+
+    /**
+     * Update event inclusions and recalculate billing
+     */
+    public function updateInclusions(Request $request, Event $event)
+    {
+        $request->validate([
+            'inclusions' => 'nullable|array',
+            'inclusions.*' => 'exists:inclusions,id',
+        ]);
+
+        // Store old total before updating
+        $oldTotal = $event->billing ? $event->billing->total_amount : 0;
+
+        $selectedInclusionIds = $request->input('inclusions', []);
+
+        // Get the inclusions with their prices
+        $inclusions = \App\Models\Inclusion::whereIn('id', $selectedInclusionIds)->get();
+
+        // Prepare sync data with price snapshots
+        $syncData = [];
+        foreach ($inclusions as $inclusion) {
+            $syncData[$inclusion->id] = [
+                'price_snapshot' => $inclusion->price,
+            ];
+        }
+
+        // Sync inclusions
+        $event->inclusions()->sync($syncData);
+
+        // Recalculate billing
+        $this->recalculateBilling($event);
+
+        // Refresh event to get updated billing
+        $event->refresh();
+        $newTotal = $event->billing->total_amount;
+
+        // Send notification to customer
+        $customer = $event->customer;
+        if ($customer->user) {
+            $customer->user->notify(new \App\Notifications\InclusionsUpdatedNotification($event, $oldTotal, $newTotal));
+        }
+
+        // Create in-app notification
+        $this->notificationService->notifyCustomerInclusionsUpdated($event, $oldTotal, $newTotal);
+
+        return redirect()
+            ->route('admin.events.show', $event)
+            ->with('success', 'Event inclusions updated successfully. Customer has been notified via email.');
+    }
+
+    /**
+     * Recalculate billing based on package and inclusions
+     */
+    protected function recalculateBilling(Event $event)
+    {
+        $event->load(['package', 'inclusions', 'billing']);
+
+        // Calculate total from package + inclusions
+        $packagePrice = $event->package->price;
+        $inclusionsTotal = $event->inclusions->sum('pivot.price_snapshot');
+        $newTotal = $packagePrice + $inclusionsTotal;
+
+        // Get or create billing
+        $billing = $event->billing;
+        if (!$billing) {
+            $billing = new Billing();
+            $billing->event_id = $event->id;
+        }
+
+        // Update billing total only
+        $billing->total_amount = $newTotal;
+
+        $billing->save();
+    }
 }

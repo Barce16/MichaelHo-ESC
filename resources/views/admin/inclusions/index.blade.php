@@ -111,7 +111,7 @@
             </form>
         </div>
 
-        {{-- Inclusions Grid --}}
+        {{-- Inclusions Table --}}
         @if($inclusions->isEmpty())
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,124 +134,161 @@
             </p>
         </div>
         @else
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach($inclusions as $i)
-            @php
-            $imageUrl = $i->image_url; // Uses the accessor
-            $imageAlt = $i->name;
-            @endphp
-            <div
-                class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition group">
-                {{-- Image --}}
-                <div class="relative w-full aspect-[4/3] overflow-hidden bg-slate-100">
-                    <img src="{{ $imageUrl }}" alt="{{ $imageAlt }}"
-                        class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-slate-50 border-b border-gray-200">
+                        <tr>
+                            <th
+                                class="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Inclusion
+                            </th>
+                            <th
+                                class="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Category
+                            </th>
+                            <th
+                                class="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Price
+                            </th>
+                            <th
+                                class="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Contact
+                            </th>
+                            <th
+                                class="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th
+                                class="px-3 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        @foreach($inclusions as $i)
+                        @php
+                        $imageUrl = $i->image_url; // Uses the accessor
+                        $imageAlt = $i->name;
+                        @endphp
+                        <tr class="hover:bg-gray-50 transition">
+                            {{-- Name & Image --}}
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-16 h-16 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+                                        <img src="{{ $imageUrl }}" alt="{{ $imageAlt }}"
+                                            class="w-full h-full object-cover" loading="lazy">
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-semibold text-gray-900 truncate">{{ $i->name }}</div>
+                                    </div>
+                                </div>
+                            </td>
 
-                    {{-- Status Badge Overlay --}}
-                    <div class="absolute top-3 right-3">
-                        @if($i->is_active)
-                        <span
-                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/90 text-white backdrop-blur-sm">
-                            <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
-                            Active
-                        </span>
-                        @else
-                        <span
-                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-500/90 text-white backdrop-blur-sm">
-                            <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
-                            Inactive
-                        </span>
-                        @endif
-                    </div>
+                            {{-- Category --}}
+                            <td class="px-3 py-4">
+                                @if($i->category)
+                                <span
+                                    class="inline-block px-2.5 py-1 bg-sky-100 text-sky-700 rounded-full text-xs font-medium">
+                                    {{ $i->category }}
+                                </span>
+                                @else
+                                <span class="text-gray-400 text-xs italic">No category</span>
+                                @endif
+                            </td>
 
-                    {{-- Category Badge Overlay --}}
-                    @if($i->category)
-                    <div class="absolute top-3 left-3">
-                        <span
-                            class="inline-block px-2.5 py-1 bg-sky-500/90 text-white backdrop-blur-sm border border-white/20 rounded-full text-xs font-semibold">
-                            {{ $i->category }}
-                        </span>
-                    </div>
-                    @endif
-                </div>
+                            {{-- Price --}}
+                            <td class="px-3 py-4">
+                                <div class="text-sm font-bold text-gray-900">₱{{ number_format($i->price, 0) }}</div>
+                            </td>
 
-                {{-- Content --}}
-                <div class="p-5 pb-4">
-                    <h4 class="text-lg font-bold text-gray-900 mb-3 line-clamp-2">{{ $i->name }}</h4>
+                            {{-- Contact --}}
+                            <td class="px-3 py-4">
+                                <div class="space-y-1">
+                                    @if($i->contact_person)
+                                    <div class="flex items-center gap-1.5 text-xs text-gray-600">
+                                        <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                        <span class="truncate max-w-[150px]">{{ $i->contact_person }}</span>
+                                    </div>
+                                    @endif
+                                    @if($i->contact_email)
+                                    <div class="flex items-center gap-1.5 text-xs text-gray-600">
+                                        <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        <span class="truncate max-w-[150px]">{{ $i->contact_email }}</span>
+                                    </div>
+                                    @endif
+                                    @if($i->contact_phone)
+                                    <div class="flex items-center gap-1.5 text-xs text-gray-600">
+                                        <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                        </svg>
+                                        <span>{{ $i->contact_phone }}</span>
+                                    </div>
+                                    @endif
+                                    @if(!$i->contact_person && !$i->contact_email && !$i->contact_phone)
+                                    <span class="text-gray-400 text-xs italic">No contact</span>
+                                    @endif
+                                </div>
+                            </td>
 
-                    {{-- Price --}}
-                    <div class="bg-slate-50 rounded-lg p-3 mb-3">
-                        <div class="flex items-baseline gap-2">
-                            <span class="text-2xl font-bold text-gray-900">₱{{ number_format($i->price, 0) }}</span>
-                        </div>
-                    </div>
+                            {{-- Status --}}
+                            <td class="px-3 py-4">
+                                @if($i->is_active)
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    Active
+                                </span>
+                                @else
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                                    Inactive
+                                </span>
+                                @endif
+                            </td>
 
-                    {{-- Contact Info --}}
-                    @if($i->contact_person || $i->contact_email || $i->contact_phone)
-                    <div class="space-y-1.5">
-                        @if($i->contact_person)
-                        <div class="flex items-center gap-2 text-xs text-gray-600">
-                            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span>{{ $i->contact_person }}</span>
-                        </div>
-                        @endif
-                        @if($i->contact_email)
-                        <div class="flex items-center gap-2 text-xs text-gray-600 truncate">
-                            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            <span class="truncate">{{ $i->contact_email }}</span>
-                        </div>
-                        @endif
-                        @if($i->contact_phone)
-                        <div class="flex items-center gap-2 text-xs text-gray-600">
-                            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                            </svg>
-                            <span>{{ $i->contact_phone }}</span>
-                        </div>
-                        @endif
-                    </div>
-                    @else
-                    <div class="text-xs text-gray-400 italic">No contact information</div>
-                    @endif
-                </div>
+                            {{-- Actions --}}
+                            <td class="px-3 py-4 whitespace-nowrap">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="{{ route('admin.management.inclusions.show', $i) }}"
+                                        class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-gray-200 rounded-lg hover:bg-slate-50 transition whitespace-nowrap"
+                                        title="View">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        View
+                                    </a>
 
-                {{-- Actions --}}
-                <div class="border-t border-gray-200 bg-slate-50 px-5 py-3">
-                    <div class="flex items-center justify-between gap-2">
-                        <a href="{{ route('admin.management.inclusions.show', $i) }}"
-                            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-gray-200 rounded-lg hover:bg-slate-50 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            View
-                        </a>
-
-                        <a href="{{ route('admin.management.inclusions.edit', $i) }}"
-                            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-violet-700 bg-violet-100 rounded-lg hover:bg-violet-200 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            Edit
-                        </a>
-                    </div>
-                </div>
+                                    <a href="{{ route('admin.management.inclusions.edit', $i) }}"
+                                        class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-violet-700 bg-violet-100 rounded-lg hover:bg-violet-200 transition whitespace-nowrap"
+                                        title="Edit">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Edit
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
-            @endforeach
         </div>
 
         {{-- Pagination --}}

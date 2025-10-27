@@ -409,6 +409,16 @@
                                     <h4 class="font-semibold text-gray-800">Selected Inclusions</h4>
                                     <span class="ml-auto text-xs text-gray-500">{{ $event->inclusions->count() }}
                                         items</span>
+
+                                    {{-- Edit Button --}}
+                                    <a href="{{ route('admin.events.editInclusions', $event) }}"
+                                        class="ml-2 inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Edit
+                                    </a>
                                 </div>
 
                                 @if($event->inclusions->isEmpty())
@@ -724,274 +734,433 @@
                     </div>
                 </div>
             </div>
-            {{-- Approve Event Panel --}}
-            <div x-show="showApprove" x-transition x-cloak
-                class="bg-emerald-50 border border-emerald-200 rounded-xl shadow-sm">
-                <form method="POST" action="{{ route('admin.events.approve', $event) }}" class="p-6">
-                    @csrf
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 13l4 4L19 7" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-emerald-900">Approve Event</h3>
-                            <p class="text-sm text-emerald-700">Customer will be asked to pay ₱15,000 introductory
-                                payment</p>
-                        </div>
-                    </div>
+            {{-- Approve Event Modal --}}
+            <div x-show="showApprove" x-cloak @click.self="showApprove=false"
+                class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-                    <div class="bg-white rounded-lg p-4 border border-emerald-200 mb-6">
-                        <div class="grid grid-cols-2 gap-4 text-center">
-                            <div>
-                                <div class="text-xs text-gray-500 mb-1">Total Event Cost</div>
-                                <div class="text-xl font-bold text-gray-900">₱<span x-text="fmt(grandTotal)"></span>
+                <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform scale-90"
+                    x-transition:enter-end="opacity-100 transform scale-100"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100 transform scale-100"
+                    x-transition:leave-end="opacity-0 transform scale-90">
+
+                    <form method="POST" action="{{ route('admin.events.approve', $event) }}">
+                        @csrf
+
+                        {{-- Modal Header --}}
+                        <div class="bg-emerald-50 border-b border-emerald-100 p-6 rounded-t-2xl">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-emerald-900">Approve Event</h3>
+                                        <p class="text-sm text-emerald-700">Customer will be asked to pay ₱15,000
+                                            introductory payment</p>
+                                    </div>
+                                </div>
+                                <button type="button" @click="showApprove=false"
+                                    class="text-gray-400 hover:text-gray-600 transition">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Modal Body --}}
+                        <div class="p-6 space-y-6">
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div class="grid grid-cols-2 gap-4 text-center">
+                                    <div>
+                                        <div class="text-xs text-gray-500 mb-1">Total Event Cost</div>
+                                        <div class="text-xl font-bold text-gray-900">₱<span
+                                                x-text="fmt(grandTotal)"></span></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-gray-500 mb-1">Intro Payment Required</div>
+                                        <div class="text-xl font-bold text-emerald-600">₱15,000.00</div>
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <div class="text-xs text-gray-500 mb-1">Intro Payment Required</div>
-                                <div class="text-xl font-bold text-emerald-600">₱15,000.00</div>
+
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div class="flex gap-3">
+                                    <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div class="text-sm text-blue-900">
+                                        <p class="font-medium mb-1">What happens next?</p>
+                                        <ul class="text-xs text-blue-800 space-y-1">
+                                            <li>• Customer account will be created automatically</li>
+                                            <li>• Customer will receive login credentials via email</li>
+                                            <li>• Customer must pay ₱15,000 introductory payment</li>
+                                            <li>• After payment verification, you can request downpayment</li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                        <div class="flex gap-3">
-                            <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <div class="text-sm text-blue-900">
-                                <p class="font-medium mb-1">What happens next?</p>
-                                <ul class="text-xs text-blue-800 space-y-1">
-                                    <li>• Customer account will be created automatically</li>
-                                    <li>• Customer will receive login credentials via email</li>
-                                    <li>• Customer must pay ₱15,000 introductory payment</li>
-                                    <li>• After payment verification, you can request downpayment</li>
-                                </ul>
-                            </div>
+                        {{-- Modal Footer --}}
+                        <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
+                            <button type="button" @click="showApprove=false"
+                                class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                class="px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition shadow-lg shadow-emerald-200">
+                                Approve & Notify Customer
+                            </button>
                         </div>
-                    </div>
-
-                    <div class="flex justify-end gap-3">
-                        <button type="button" @click="showApprove=false"
-                            class="px-4 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="px-6 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition">
-                            Approve & Notify Customer
-                        </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
 
-            {{-- Reject Event Panel --}}
-            <div x-show="showReject" x-transition x-cloak
-                class="bg-rose-50 border border-rose-200 rounded-xl shadow-sm">
-                <form method="POST" action="{{ route('admin.events.reject', $event) }}" class="p-6">
-                    @csrf
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-rose-900">Reject Event</h3>
-                            <p class="text-sm text-rose-700">Provide reason for rejection</p>
-                        </div>
-                    </div>
+            {{-- Reject Event Modal --}}
+            <div x-show="showReject" x-cloak @click.self="showReject=false"
+                class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-                    <div class="bg-white rounded-lg p-4 border border-rose-200 mb-6">
-                        <label for="rejection_reason" class="block text-sm font-medium text-gray-700 mb-2">
-                            Rejection Reason (Optional)
-                        </label>
-                        <textarea id="rejection_reason" name="rejection_reason" rows="4"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
-                            placeholder="Explain why this event is being rejected..."></textarea>
-                    </div>
+                <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform scale-90"
+                    x-transition:enter-end="opacity-100 transform scale-100"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100 transform scale-100"
+                    x-transition:leave-end="opacity-0 transform scale-90">
 
-                    <div class="flex justify-end gap-3">
-                        <button type="button" @click="showReject=false"
-                            class="px-4 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="px-6 py-2 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition">
-                            Confirm Rejection
-                        </button>
-                    </div>
-                </form>
-            </div>
+                    <form method="POST" action="{{ route('admin.events.reject', $event) }}">
+                        @csrf
 
-            {{-- Request Downpayment Panel --}}
-            <div x-show="showRequestDownpayment" x-transition x-cloak
-                class="bg-blue-50 border border-blue-200 rounded-xl shadow-sm">
-                <form method="POST" action="{{ route('admin.events.requestDownpayment', $event) }}" class="p-6">
-                    @csrf
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-blue-900">Request Downpayment</h3>
-                            <p class="text-sm text-blue-700">Set the downpayment amount for this event</p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div class="bg-white rounded-lg p-4 border border-blue-200">
-                            <div class="text-xs text-gray-500 mb-1">Total Cost</div>
-                            <div class="text-xl font-bold text-gray-900">₱<span x-text="fmt(grandTotal)"></span></div>
-                        </div>
-
-                        <div class="bg-white rounded-lg p-4 border border-blue-200">
-                            <div class="text-xs text-gray-500 mb-1">Intro Paid</div>
-                            <div class="text-xl font-bold text-emerald-600">₱15,000.00</div>
-                        </div>
-
-                        <div class="bg-white rounded-lg p-4 border border-gray-200">
-                            <div class="text-xs text-gray-500 mb-1">Remaining</div>
-                            <div class="text-xl font-bold text-gray-700">₱<span x-text="fmt(grandTotal - 15000)"></span>
+                        {{-- Modal Header --}}
+                        <div class="bg-rose-50 border-b border-rose-100 p-6 rounded-t-2xl">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-rose-900">Reject Event</h3>
+                                        <p class="text-sm text-rose-700">Provide reason for rejection</p>
+                                    </div>
+                                </div>
+                                <button type="button" @click="showReject=false"
+                                    class="text-gray-400 hover:text-gray-600 transition">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="bg-white rounded-lg p-4 border border-blue-200 mb-4">
-                        <label for="downpayment_amount" class="block text-sm font-medium text-gray-700 mb-2">
-                            Downpayment Amount <span class="text-rose-500">*</span>
-                        </label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₱</span>
-                            <input type="number" step="0.01" min="0" x-model.number="downpaymentAmount"
-                                name="downpayment_amount" id="downpayment_amount" required
-                                class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                        {{-- Modal Body --}}
+                        <div class="p-6">
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <label for="rejection_reason" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Rejection Reason (Optional)
+                                </label>
+                                <textarea id="rejection_reason" name="rejection_reason" rows="4"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+                                    placeholder="Explain why this event is being rejected..."></textarea>
+                            </div>
                         </div>
-                        <p class="text-xs text-gray-500 mt-2">
-                            Customer will pay: <span class="font-semibold text-gray-700">₱<span
-                                    x-text="fmt(Math.max(downpaymentAmount - 15000, 0))"></span></span>
-                            (₱15,000 already paid as intro payment)
-                        </p>
-                        <p class="text-xs text-gray-500 mt-1">Default: 50% of total (₱<span
-                                x-text="fmt(grandTotal * 0.5)"></span>)</p>
-                    </div>
 
-                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-                        <div class="flex gap-3">
-                            <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <div class="text-sm text-amber-900">
-                                <p class="font-medium mb-1">Important Note:</p>
-                                <p class="text-xs text-amber-800">
-                                    The downpayment amount you enter should include the ₱15,000 introductory payment.
-                                    The customer will only pay the difference.
+                        {{-- Modal Footer --}}
+                        <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
+                            <button type="button" @click="showReject=false"
+                                class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                class="px-6 py-2.5 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition shadow-lg shadow-rose-200">
+                                Confirm Rejection
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {{-- Request Downpayment Modal --}}
+            <div x-show="showRequestDownpayment" x-cloak @click.self="showRequestDownpayment=false"
+                class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+                <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform scale-90"
+                    x-transition:enter-end="opacity-100 transform scale-100"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100 transform scale-100"
+                    x-transition:leave-end="opacity-0 transform scale-90">
+
+                    <form method="POST" action="{{ route('admin.events.requestDownpayment', $event) }}">
+                        @csrf
+
+                        {{-- Modal Header --}}
+                        <div class="bg-blue-50 border-b border-blue-100 p-6 rounded-t-2xl">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-blue-900">Request Downpayment</h3>
+                                        <p class="text-sm text-blue-700">Set the downpayment amount for this event</p>
+                                    </div>
+                                </div>
+                                <button type="button" @click="showRequestDownpayment=false"
+                                    class="text-gray-400 hover:text-gray-600 transition">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Modal Body --}}
+                        <div class="p-6 space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <div class="text-xs text-gray-500 mb-1">Total Cost</div>
+                                    <div class="text-xl font-bold text-gray-900">₱<span x-text="fmt(grandTotal)"></span>
+                                    </div>
+                                </div>
+
+                                <div class="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
+                                    <div class="text-xs text-emerald-600 mb-1">Intro Paid</div>
+                                    <div class="text-xl font-bold text-emerald-600">₱15,000.00</div>
+                                </div>
+
+                                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <div class="text-xs text-gray-500 mb-1">Remaining</div>
+                                    <div class="text-xl font-bold text-gray-700">₱<span
+                                            x-text="fmt(grandTotal - 15000)"></span></div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <label for="downpayment_amount" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Downpayment Amount <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span
+                                        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₱</span>
+                                    <input type="number" step="0.01" min="0" x-model.number="downpaymentAmount"
+                                        name="downpayment_amount" id="downpayment_amount" required
+                                        class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    Customer will pay: <span class="font-semibold text-gray-700">₱<span
+                                            x-text="fmt(Math.max(downpaymentAmount - 15000, 0))"></span></span>
+                                    (₱15,000 already paid as intro payment)
                                 </p>
+                                <p class="text-xs text-gray-500 mt-1">Default: 50% of total (₱<span
+                                        x-text="fmt(grandTotal * 0.5)"></span>)</p>
+                            </div>
+
+                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                <div class="flex gap-3">
+                                    <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div class="text-sm text-amber-900">
+                                        <p class="font-medium mb-1">Important Note:</p>
+                                        <p class="text-xs text-amber-800">
+                                            The downpayment amount you enter should include the ₱15,000 introductory
+                                            payment.
+                                            The customer will only pay the difference.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="flex justify-end gap-3">
-                        <button type="button" @click="showRequestDownpayment=false"
-                            class="px-4 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
-                            Request Downpayment
-                        </button>
-                    </div>
-                </form>
+                        {{-- Modal Footer --}}
+                        <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
+                            <button type="button" @click="showRequestDownpayment=false"
+                                class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                class="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                                Request Downpayment
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
-            {{-- Reject Intro Payment Panel --}}
-            <div x-show="showRejectIntro" x-transition x-cloak
-                class="bg-rose-50 border border-rose-200 rounded-xl shadow-sm">
-                <form method="POST" action="{{ route('admin.events.rejectIntroPayment', $event) }}" class="p-6">
-                    @csrf
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-rose-900">Reject Introductory Payment</h3>
-                            <p class="text-sm text-rose-700">Provide reason for rejection</p>
-                        </div>
-                    </div>
+            {{-- Reject Intro Payment Modal --}}
+            <div x-show="showRejectIntro" x-cloak @click.self="showRejectIntro=false"
+                class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-                    <div class="bg-white rounded-lg p-4 border border-rose-200 mb-6">
-                        <label for="rejection_reason_intro" class="block text-sm font-medium text-gray-700 mb-2">
-                            Rejection Reason
-                        </label>
-                        <textarea id="rejection_reason_intro" name="rejection_reason" rows="3"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
-                            placeholder="E.g., Proof of payment is unclear, wrong amount, etc."></textarea>
-                    </div>
+                <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform scale-90"
+                    x-transition:enter-end="opacity-100 transform scale-100"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100 transform scale-100"
+                    x-transition:leave-end="opacity-0 transform scale-90">
 
-                    <div class="flex justify-end gap-3">
-                        <button type="button" @click="showRejectIntro=false"
-                            class="px-4 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="px-6 py-2 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition">
-                            Reject Payment
-                        </button>
-                    </div>
-                </form>
+                    <form method="POST" action="{{ route('admin.events.rejectIntroPayment', $event) }}">
+                        @csrf
+
+                        {{-- Modal Header --}}
+                        <div class="bg-rose-50 border-b border-rose-100 p-6 rounded-t-2xl">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-rose-900">Reject Introductory Payment</h3>
+                                        <p class="text-sm text-rose-700">Provide reason for rejection</p>
+                                    </div>
+                                </div>
+                                <button type="button" @click="showRejectIntro=false"
+                                    class="text-gray-400 hover:text-gray-600 transition">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Modal Body --}}
+                        <div class="p-6">
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <label for="rejection_reason_intro"
+                                    class="block text-sm font-medium text-gray-700 mb-2">
+                                    Rejection Reason
+                                </label>
+                                <textarea id="rejection_reason_intro" name="rejection_reason" rows="3"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+                                    placeholder="E.g., Proof of payment is unclear, wrong amount, etc."></textarea>
+                            </div>
+                        </div>
+
+                        {{-- Modal Footer --}}
+                        <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
+                            <button type="button" @click="showRejectIntro=false"
+                                class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                class="px-6 py-2.5 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition shadow-lg shadow-rose-200">
+                                Reject Payment
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
-            {{-- Reject Downpayment Panel --}}
-            <div x-show="showRejectDown" x-transition x-cloak
-                class="bg-rose-50 border border-rose-200 rounded-xl shadow-sm">
-                <form method="POST" action="{{ route('admin.events.rejectDownpayment', $event) }}" class="p-6">
-                    @csrf
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-rose-900">Reject Downpayment</h3>
-                            <p class="text-sm text-rose-700">Provide reason for rejection</p>
-                        </div>
-                    </div>
+            {{-- Reject Downpayment Modal --}}
+            <div x-show="showRejectDown" x-cloak @click.self="showRejectDown=false"
+                class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-                    <div class="bg-white rounded-lg p-4 border border-rose-200 mb-6">
-                        <label for="rejection_reason_down" class="block text-sm font-medium text-gray-700 mb-2">
-                            Rejection Reason
-                        </label>
-                        <textarea id="rejection_reason_down" name="rejection_reason" rows="3"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
-                            placeholder="E.g., Proof of payment is unclear, wrong amount, etc."></textarea>
-                    </div>
+                <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform scale-90"
+                    x-transition:enter-end="opacity-100 transform scale-100"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100 transform scale-100"
+                    x-transition:leave-end="opacity-0 transform scale-90">
 
-                    <div class="flex justify-end gap-3">
-                        <button type="button" @click="showRejectDown=false"
-                            class="px-4 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="px-6 py-2 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition">
-                            Reject Payment
-                        </button>
-                    </div>
-                </form>
+                    <form method="POST" action="{{ route('admin.events.rejectDownpayment', $event) }}">
+                        @csrf
+
+                        {{-- Modal Header --}}
+                        <div class="bg-rose-50 border-b border-rose-100 p-6 rounded-t-2xl">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-rose-900">Reject Downpayment</h3>
+                                        <p class="text-sm text-rose-700">Provide reason for rejection</p>
+                                    </div>
+                                </div>
+                                <button type="button" @click="showRejectDown=false"
+                                    class="text-gray-400 hover:text-gray-600 transition">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Modal Body --}}
+                        <div class="p-6">
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <label for="rejection_reason_down" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Rejection Reason
+                                </label>
+                                <textarea id="rejection_reason_down" name="rejection_reason" rows="3"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+                                    placeholder="E.g., Proof of payment is unclear, wrong amount, etc."></textarea>
+                            </div>
+                        </div>
+
+                        {{-- Modal Footer --}}
+                        <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
+                            <button type="button" @click="showRejectDown=false"
+                                class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                class="px-6 py-2.5 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition shadow-lg shadow-rose-200">
+                                Reject Payment
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
         </div>

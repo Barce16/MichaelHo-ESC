@@ -14,6 +14,12 @@ class Payment extends Model
     const TYPE_DOWNPAYMENT = 'downpayment';
     const TYPE_BALANCE = 'balance';
 
+    // Payment Method Constants
+    const METHOD_BANK_TRANSFER = 'bank_transfer';
+    const METHOD_GCASH = 'gcash';
+    const METHOD_BPI = 'bpi';
+    const METHOD_CASH = 'cash';
+
     // Status Constants
     const STATUS_PENDING = 'pending';
     const STATUS_APPROVED = 'approved';
@@ -25,6 +31,7 @@ class Payment extends Model
         'payment_type',
         'amount',
         'payment_method',
+        'reference_number',
         'payment_date',
         'payment_image',
         'status',
@@ -63,6 +70,27 @@ class Payment extends Model
         return $this->payment_type === self::TYPE_BALANCE;
     }
 
+    // Payment Method Check Methods
+    public function isBankTransfer(): bool
+    {
+        return $this->payment_method === self::METHOD_BANK_TRANSFER;
+    }
+
+    public function isGcash(): bool
+    {
+        return $this->payment_method === self::METHOD_GCASH;
+    }
+
+    public function isBPI(): bool
+    {
+        return $this->payment_method === self::METHOD_BPI;
+    }
+
+    public function isCash(): bool
+    {
+        return $this->payment_method === self::METHOD_CASH;
+    }
+
     // Status Check Methods
     public function isPending(): bool
     {
@@ -90,6 +118,18 @@ class Payment extends Model
         };
     }
 
+    // Get payment method label
+    public function getMethodLabel(): string
+    {
+        return match ($this->payment_method) {
+            self::METHOD_BANK_TRANSFER => 'Bank Transfer',
+            self::METHOD_GCASH => 'GCash',
+            self::METHOD_BPI => 'BPI',
+            self::METHOD_CASH => 'Cash',
+            default => ucfirst(str_replace('_', ' ', $this->payment_method)),
+        };
+    }
+
     // Get payment image URL
     public function getImageUrlAttribute(): ?string
     {
@@ -107,6 +147,11 @@ class Payment extends Model
         return $query->where('payment_type', self::TYPE_DOWNPAYMENT);
     }
 
+    public function scopeBalance($query)
+    {
+        return $query->where('payment_type', self::TYPE_BALANCE);
+    }
+
     public function scopePending($query)
     {
         return $query->where('status', self::STATUS_PENDING);
@@ -115,5 +160,15 @@ class Payment extends Model
     public function scopeApproved($query)
     {
         return $query->where('status', self::STATUS_APPROVED);
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('status', self::STATUS_REJECTED);
+    }
+
+    public function scopeByPaymentMethod($query, string $method)
+    {
+        return $query->where('payment_method', $method);
     }
 }

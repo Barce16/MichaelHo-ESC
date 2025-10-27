@@ -86,6 +86,9 @@
                                     Method</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Reference</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                     Date</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -119,9 +122,12 @@
                                         {{ ucwords(str_replace('_', ' ', $payment->payment_method)) }}
                                     </div>
                                 </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{
+                                    $payment->reference_number ?? 'N/A' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                     {{ \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y') }}
                                 </td>
+
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @php
                                     $statusConfig = match($payment->status) {
