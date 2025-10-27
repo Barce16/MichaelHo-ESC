@@ -250,7 +250,7 @@
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('events.index') }}"
+                            <a href="{{ route('events-showcase.index') }}"
                                 class="hover:text-white transition-colors flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
                                     viewBox="0 0 24 24">
