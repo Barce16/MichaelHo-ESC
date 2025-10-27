@@ -129,7 +129,7 @@
                             @if($hasImages)
                             @foreach($galleryImages as $index => $image)
                             <div class="gallery-slide {{ $index === 0 ? 'active' : '' }} absolute inset-0">
-                                <img src="{{ asset('storage/' . $image->image_path) }}"
+                                <img src="{{ asset('storage/' . $image->path) }}"
                                     alt="{{ $package->name }} - Image {{ $index + 1 }}"
                                     class="w-full h-full object-cover">
                             </div>

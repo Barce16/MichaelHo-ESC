@@ -77,13 +77,13 @@
     <div id="navbar-spacer" class="h-0"></div>
 
     <!-- PAGE HEADER -->
-    <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white py-20">
+    <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white py-12">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-5xl sm:text-6xl font-bold mb-4 font-libre">Our Services</h1>
-            <p class="text-xl sm:text-2xl font-style-script text-gray-300">
+            <h1 class="text-4xl sm:text-5xl font-bold mb-3 font-libre">Our Services</h1>
+            <p class="text-lg sm:text-xl font-style-script text-gray-300">
                 Crafting unforgettable moments for every occasion
             </p>
-            <div class="w-24 h-1 bg-white mx-auto mt-6"></div>
+            <div class="w-24 h-1 bg-white mx-auto mt-4"></div>
         </div>
     </div>
 
@@ -144,17 +144,18 @@
     </div>
 
     <!-- PACKAGES BY TYPE -->
-    <section class="py-16">
+    <section class="py-10">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
             @forelse($packagesByType as $type => $packages)
-            <div id="{{ Str::slug($type) }}" class="mb-20 scroll-mt-20">
+            <div id="{{ Str::slug($type) }}" class="mb-12 scroll-mt-20">
                 <!-- Type Header -->
-                <div class="text-center mb-12">
-                    <h2 class="text-4xl font-bold text-gray-900 mb-2 font-libre capitalize">{{ $type }}</h2>
-                    <p class="text-gray-600">{{ $packages->count() }} package{{ $packages->count() > 1 ? 's' : '' }}
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2 font-libre capitalize">{{ $type }}</h2>
+                    <p class="text-sm text-gray-600">{{ $packages->count() }} package{{ $packages->count() > 1 ? 's' :
+                        '' }}
                         available</p>
-                    <div class="w-16 h-1 bg-gray-900 mx-auto mt-4"></div>
+                    <div class="w-16 h-1 bg-gray-900 mx-auto mt-3"></div>
                 </div>
 
                 <!-- Carousel -->
@@ -196,8 +197,9 @@
 
                                     <!-- Package Image -->
                                     <div class="relative aspect-[4/3] overflow-hidden bg-gray-200">
-                                        @if($package->image_url)
-                                        <img src="{{ $package->image_url }}" alt="{{ $package->name }}"
+                                        @if($package->images->isNotEmpty())
+                                        <img src="{{ asset('storage/' . $package->images->first()->path) }}"
+                                            alt="{{ $package->name }}"
                                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                                         @else
                                         <div
@@ -223,23 +225,23 @@
                                     </div>
 
                                     <!-- Package Content -->
-                                    <div class="p-6">
+                                    <div class="p-5">
                                         <h3
-                                            class="text-2xl font-bold text-gray-900 mb-2 font-libre group-hover:text-gray-700 transition-colors">
+                                            class="text-xl font-bold text-gray-900 mb-2 font-libre group-hover:text-gray-700 transition-colors">
                                             {{ $package->name }}
                                         </h3>
 
-                                        <p class="text-gray-600 text-sm mb-4 line-clamp-3">
+                                        <p class="text-gray-600 text-sm mb-3 line-clamp-2">
                                             {{ $package->description ?? 'Complete event planning and coordination
                                             services tailored to your needs.' }}
                                         </p>
 
                                         <!-- Features Preview -->
                                         @if($package->features)
-                                        <div class="mb-4 space-y-1">
-                                            @foreach(array_slice(explode("\n", $package->features), 0, 3) as $feature)
-                                            <div class="flex items-center gap-2 text-sm text-gray-600">
-                                                <svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none"
+                                        <div class="mb-3 space-y-1">
+                                            @foreach(array_slice(explode("\n", $package->features), 0, 2) as $feature)
+                                            <div class="flex items-center gap-2 text-xs text-gray-600">
+                                                <svg class="w-3 h-3 text-green-500 flex-shrink-0" fill="none"
                                                     stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         stroke-width="2" d="M5 13l4 4L19 7" />
