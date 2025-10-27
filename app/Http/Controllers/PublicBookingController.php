@@ -3,132 +3,140 @@
 namespace App\Http\Controllers;
 
 use App\Models\Package;
-use App\Models\Event;
 use App\Models\Customer;
+use App\Models\Event;
 use App\Models\Inclusion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Services\NotificationService;
 
 class PublicBookingController extends Controller
 {
-
     protected $notificationService;
 
-    public function __construct(NotificationService $notificationService)
+    public function __construct(\App\Services\NotificationService $notificationService)
     {
         $this->notificationService = $notificationService;
     }
 
-    public function show(Package $package)
+    /**
+     * Step 1: Store event details in session and show customer form
+     */
+    public function showBookingForm(Request $request, Package $package)
     {
-
-        $package->load(['inclusions' => function ($query) {
-            $query->where('is_active', true);
-        }]);
-
-
-        $allInclusions = Inclusion::where('is_active', true)
-            ->where(function ($query) use ($package) {
-                $query->where('package_type', $package->type)
-                    ->orWhereNull('package_type');
-            })
-            ->orderBy('category')
-            ->orderBy('name')
-            ->get()
-            ->groupBy('category');
-
-        return view('booking.create', compact('package', 'allInclusions'));
-    }
-
-    public function store(Request $request, Package $package)
-    {
-        $data = $request->validate([
-            // Event details
+        // Validate event details
+        $eventData = $request->validate([
             'event_name' => ['required', 'string', 'max:150'],
             'event_date' => ['required', 'date', 'after:today'],
-            'venue' => ['required', 'string', 'max:255'],
+            'venue' => ['required', 'string', 'min:10', 'max:255'],
             'theme' => ['nullable', 'string', 'max:255'],
-            'budget' => ['nullable', 'numeric', 'min:0'],
-            'guests' => ['nullable', 'string', 'max:5000'],
-            'notes' => ['nullable', 'string', 'max:5000'],
-
-            // Customer details
-            'customer_name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email', 'max:120'],
-            'phone' => ['required', 'string', 'max:30'],
-            'address' => ['nullable', 'string', 'max:255'],
-
-            // Inclusions - now array format from radio buttons
-            'inclusions' => ['required', 'array'],
-            'inclusions.*' => ['required', 'integer', 'exists:inclusions,id'],
+            'inclusions' => ['nullable', 'array'],
+            'inclusions.*' => ['integer', 'exists:inclusions,id'],
         ]);
 
-        // Get selected inclusion IDs from the array values
-        $selectedIds = collect($data['inclusions'] ?? [])->values()->filter()->unique();
+        // Store event data in session
+        session(['booking_event_data' => $eventData]);
 
-        if ($selectedIds->isEmpty()) {
-            return back()
-                ->with('error', 'Please select at least one inclusion from each category.')
-                ->withInput();
+        // Show booking form with customer details
+        return view('book', [
+            'package' => $package,
+            'eventData' => $eventData
+        ]);
+    }
+
+    /**
+     * Step 2: Complete booking with customer details
+     */
+    public function store(Request $request, Package $package)
+    {
+        // Get event data from session
+        $eventData = session('booking_event_data');
+
+        if (!$eventData) {
+            return redirect()
+                ->route('services.show', $package)
+                ->with('error', 'Session expired. Please start over.');
         }
 
-        // Get inclusion prices
-        $inclusionPrices = Inclusion::whereIn('id', $selectedIds)->pluck('price', 'id');
+        // Validate customer details
+        $customerData = $request->validate([
+            'customer_name' => ['required', 'string', 'min:2', 'max:100'],
+            'email' => ['required', 'email', 'max:120'],
+            'phone' => ['required', 'string', 'min:10', 'max:12'],
+            'address' => ['nullable', 'string', 'min:10', 'max:255'],
+            'guests' => ['nullable', 'integer', 'min:1'],
+            'notes' => ['nullable', 'string', 'max:5000'],
+        ]);
 
         try {
-            DB::transaction(function () use ($data, $package, $selectedIds, $inclusionPrices) {
+            DB::transaction(function () use ($eventData, $customerData, $package) {
                 // Find existing customer by email or create new one
-                $customer = Customer::where('email', $data['email'])->first();
+                $customer = Customer::where('email', $customerData['email'])->first();
 
                 if (!$customer) {
                     $customer = Customer::create([
-                        'customer_name' => $data['customer_name'],
-                        'email' => $data['email'],
-                        'phone' => $data['phone'],
-                        'address' => $data['address'] ?? null,
+                        'customer_name' => $customerData['customer_name'],
+                        'email' => $customerData['email'],
+                        'phone' => $customerData['phone'],
+                        'address' => $customerData['address'] ?? null,
                         'user_id' => null,
                     ]);
                 } else {
                     // Update existing customer info
                     $customer->update([
-                        'customer_name' => $data['customer_name'],
-                        'phone' => $data['phone'],
-                        'address' => $data['address'] ?? null,
+                        'customer_name' => $customerData['customer_name'],
+                        'phone' => $customerData['phone'],
+                        'address' => $customerData['address'] ?? null,
                     ]);
                 }
 
                 // Create event
                 $event = Event::create([
                     'customer_id' => $customer->id,
-                    'name' => $data['event_name'],
-                    'event_date' => $data['event_date'],
+                    'name' => $eventData['event_name'],
+                    'event_date' => $eventData['event_date'],
                     'package_id' => $package->id,
-                    'venue' => $data['venue'],
-                    'theme' => $data['theme'] ?? null,
-                    'budget' => $data['budget'] ?? null,
-                    'guests' => $data['guests'] ?? null,
-                    'notes' => $data['notes'] ?? null,
+                    'venue' => $eventData['venue'],
+                    'theme' => $eventData['theme'] ?? null,
+                    'guests' => $customerData['guests'] ?? null,
+                    'notes' => $customerData['notes'] ?? null,
                     'status' => 'requested',
                 ]);
 
+                // Attach selected inclusions with price snapshot
+                $selectedInclusionIds = $eventData['inclusions'] ?? [];
 
-                // Attach inclusions with price snapshot
-                if ($selectedIds->isNotEmpty()) {
+                if (!empty($selectedInclusionIds)) {
+                    $inclusions = Inclusion::whereIn('id', $selectedInclusionIds)->get();
                     $attach = [];
-                    foreach ($selectedIds as $incId) {
-                        $attach[$incId] = ['price_snapshot' => (float) ($inclusionPrices[$incId] ?? 0)];
+
+                    foreach ($inclusions as $inclusion) {
+                        $attach[$inclusion->id] = ['price_snapshot' => (float) $inclusion->price];
                     }
+
                     $event->inclusions()->attach($attach);
+                } else {
+                    // If no custom inclusions, use package default inclusions
+                    $packageInclusions = $package->inclusions()->where('is_active', true)->get();
+
+                    if ($packageInclusions->isNotEmpty()) {
+                        $attach = [];
+                        foreach ($packageInclusions as $inclusion) {
+                            $attach[$inclusion->id] = ['price_snapshot' => (float) $inclusion->price];
+                        }
+                        $event->inclusions()->attach($attach);
+                    }
                 }
 
+                // Send notification to admin
                 $this->notificationService->notifyAdminNewEventRequest($event);
             });
 
+            // Clear session data
+            session()->forget('booking_event_data');
 
             return redirect()
                 ->route('booking.success')
-                ->with('success', 'Your booking request has been submitted successfully! We will contact you at ' . $data['email'] . ' shortly.');
+                ->with('success', 'Your booking request has been submitted successfully! We will contact you at ' . $customerData['email'] . ' shortly.');
         } catch (\Exception $e) {
             return back()
                 ->with('error', 'An error occurred: ' . $e->getMessage())

@@ -225,8 +225,7 @@
                                     <div class="flex items-center gap-3">
                                         <div
                                             class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-gray-200">
-                                            @if($payment->payment_method === 'gcash' || $payment->payment_method
-                                            === 'paymaya')
+                                            @if($payment->payment_method === 'gcash')
                                             <span class="text-lg">💳</span>
                                             @elseif($payment->payment_method === 'bank_transfer')
                                             <span class="text-lg">🏦</span>

@@ -205,7 +205,7 @@
                         class="px-8 py-3 bg-slate-600 text-white font-semibold rounded-lg hover:bg-slate-700 transition shadow-md">
                         Back to Home
                     </a>
-                    <a href="{{ route('events.index') }}"
+                    <a href="{{ route('services.index') }}"
                         class="px-8 py-3 bg-white text-slate-700 font-semibold rounded-lg hover:bg-gray-50 transition shadow-md border-2 border-slate-300">
                         View All Packages
                     </a>

@@ -44,7 +44,9 @@
 
             <!-- Month Navigation -->
             <div class="flex items-center justify-between mb-4 pr-8">
-                <button type="button" @click="previousMonth()" class="p-2 rounded-lg hover:bg-gray-100 transition">
+                <button type="button" @click="previousMonth()" :disabled="!canGoPrevious()"
+                    :class="{ 'opacity-50 cursor-not-allowed': !canGoPrevious() }"
+                    class="p-2 rounded-lg hover:bg-gray-100 transition">
                     <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
@@ -57,6 +59,13 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
+            </div>
+
+            <!-- 3 Month Notice -->
+            <div class="mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <p class="text-xs text-blue-700 text-center">
+                    📅 Events must be booked at least 3 months in advance
+                </p>
             </div>
 
             <!-- Day Headers -->
@@ -75,17 +84,18 @@
                 <template x-for="(day, index) in calendarDays" :key="index">
                     <div>
                         <button type="button" x-show="day.inCurrentMonth" @click="selectDate(day)"
-                            :disabled="day.status === 'past' || day.status === 'full'" :class="{
+                            :disabled="day.status === 'past' || day.status === 'full' || day.status === 'too_soon'"
+                            :class="{
                                     'bg-emerald-50 text-emerald-900 border-2 border-emerald-200 hover:bg-emerald-100': day.status === 'available',
                                     'bg-amber-50 text-amber-900 border-2 border-amber-300 hover:bg-amber-100': day.status === 'partial',
                                     'bg-rose-100 text-rose-400 border-2 border-rose-200 cursor-not-allowed': day.status === 'full',
-                                    'bg-gray-100 text-gray-400 cursor-not-allowed': day.status === 'past',
+                                    'bg-gray-100 text-gray-400 cursor-not-allowed': day.status === 'past' || day.status === 'too_soon',
                                     'ring-4 ring-violet-400 ring-opacity-50': day.isToday,
                                     '!bg-violet-500 !text-white !border-2 !border-violet-600 hover:!bg-violet-600': day.isSelected
                                 }"
                             class="w-full aspect-square flex flex-col items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 relative">
                             <span x-text="day.day"></span>
-                            <template x-if="day.count > 0">
+                            <template x-if="day.count > 0 && day.status !== 'past' && day.status !== 'too_soon'">
                                 <div class="absolute bottom-1 flex gap-0.5">
                                     <template x-for="i in day.count">
                                         <span class="w-1 h-1 rounded-full" :class="{
@@ -137,12 +147,32 @@
         availabilityData: {},
         calendarDays: [],
         currentMonthDisplay: '',
+        minAllowedDate: null,
 
         async initCalendar(name, initialValue) {
             this.inputName = name;
             this.selectedDate = initialValue || '';
+            
+            // Calculate minimum allowed date (3 months from now, first day of that month)
+            const today = new Date();
+            this.minAllowedDate = new Date(today.getFullYear(), today.getMonth() + 3, 1);
+            
+            // If opening calendar, start at minimum allowed month
+            if (!this.selectedDate) {
+                this.currentDate = new Date(this.minAllowedDate);
+            }
+            
             await this.loadAvailability();
             this.renderCalendar();
+        },
+
+        canGoPrevious() {
+            const currentYear = this.currentDate.getFullYear();
+            const currentMonth = this.currentDate.getMonth();
+            const minYear = this.minAllowedDate.getFullYear();
+            const minMonth = this.minAllowedDate.getMonth();
+            
+            return (currentYear > minYear) || (currentYear === minYear && currentMonth > minMonth);
         },
 
         async loadAvailability() {
@@ -160,6 +190,8 @@
         },
 
         async previousMonth() {
+            if (!this.canGoPrevious()) return;
+            
             this.currentDate.setMonth(this.currentDate.getMonth() - 1);
             await this.loadAvailability();
             this.renderCalendar();
@@ -207,11 +239,17 @@
                 const dateString = this.formatDate(date);
                 const dayData = this.availabilityData[dateString] || { status: 'available', count: 0, available: 2 };
 
+                // Check if date is before minimum allowed date (3 months from today)
+                let status = dayData.status;
+                if (date < this.minAllowedDate) {
+                    status = 'too_soon';
+                }
+
                 this.calendarDays.push({
                     day: day,
                     date: dateString,
                     inCurrentMonth: true,
-                    status: dayData.status,
+                    status: status,
                     count: dayData.count,
                     available: dayData.available,
                     isToday: date.toDateString() === today.toDateString(),
@@ -221,7 +259,7 @@
         },
 
         selectDate(day) {
-            if (day.status === 'past' || day.status === 'full' || !day.inCurrentMonth) {
+            if (day.status === 'past' || day.status === 'full' || day.status === 'too_soon' || !day.inCurrentMonth) {
                 return;
             }
 

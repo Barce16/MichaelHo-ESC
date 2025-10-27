@@ -377,11 +377,11 @@
                     <h4>📱 GCash</h4>
                     <div class="payment-detail">
                         <span class="payment-detail-label">Account Name:</span>
-                        <span class="payment-detail-value">[GCASH NAME HERE]</span>
+                        <span class="payment-detail-value">Michael Ho</span>
                     </div>
                     <div class="payment-detail">
                         <span class="payment-detail-label">Mobile Number:</span>
-                        <span class="payment-detail-value">[GCASH NUMBER HERE]</span>
+                        <span class="payment-detail-value">0917-306-2531</span>
                     </div>
                 </div>
 
@@ -390,28 +390,15 @@
                     <h4>🏦 Bank Transfer</h4>
                     <div class="payment-detail">
                         <span class="payment-detail-label">Bank Name:</span>
-                        <span class="payment-detail-value">[BANK NAME HERE]</span>
+                        <span class="payment-detail-value">Bank of the Philippine Islands</span>
                     </div>
                     <div class="payment-detail">
                         <span class="payment-detail-label">Account Name:</span>
-                        <span class="payment-detail-value">[ACCOUNT NAME HERE]</span>
+                        <span class="payment-detail-value">Michael Ho</span>
                     </div>
                     <div class="payment-detail">
                         <span class="payment-detail-label">Account Number:</span>
-                        <span class="payment-detail-value">[ACCOUNT NUMBER HERE]</span>
-                    </div>
-                </div>
-
-                <!-- PayMaya -->
-                <div class="payment-method">
-                    <h4>💳 PayMaya</h4>
-                    <div class="payment-detail">
-                        <span class="payment-detail-label">Account Name:</span>
-                        <span class="payment-detail-value">[PAYMAYA NAME HERE]</span>
-                    </div>
-                    <div class="payment-detail">
-                        <span class="payment-detail-label">Mobile Number:</span>
-                        <span class="payment-detail-value">[PAYMAYA NUMBER HERE]</span>
+                        <span class="payment-detail-value">2060-0023-74</span>
                     </div>
                 </div>
 

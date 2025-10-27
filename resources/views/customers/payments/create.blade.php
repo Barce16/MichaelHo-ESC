@@ -195,8 +195,6 @@
                                     : '' }}>🏦 Bank Transfer</option>
                                 <option value="gcash" {{ old('payment_method')=='gcash' ? 'selected' : '' }}>💳 GCash
                                 </option>
-                                <option value="paymaya" {{ old('payment_method')=='paymaya' ? 'selected' : '' }}>💳
-                                    PayMaya</option>
                                 <option value="cash" {{ old('payment_method')=='cash' ? 'selected' : '' }}>💵 Cash
                                 </option>
                             </select>

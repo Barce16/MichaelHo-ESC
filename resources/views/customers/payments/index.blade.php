@@ -111,8 +111,6 @@
                                     <div class="flex items-center gap-2 text-sm text-gray-700">
                                         @if($payment->payment_method === 'gcash')
                                         <span>💳</span>
-                                        @elseif($payment->payment_method === 'paymaya')
-                                        <span>💳</span>
                                         @elseif($payment->payment_method === 'bank_transfer')
                                         <span>🏦</span>
                                         @else

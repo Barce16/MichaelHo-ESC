@@ -5,19 +5,22 @@ use App\Http\Controllers\CustomerFeedbackController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PublicBookingController;
+use App\Http\Controllers\EventShowcaseController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\Admin\FeedbackController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Customer\BillingPageController;
 use App\Http\Controllers\Customer\PaymentController;
+
 use App\Http\Controllers\Customer\EventController as CustomerEventController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\CustomerPaymentController;
 use App\Http\Controllers\Admin\AdminEventController;
-use App\Http\Controllers\Admin\EventShowcaseController;
+use App\Http\Controllers\Admin\EventShowcaseController as AdminEventShowcaseController;
 use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\InclusionController;
 use App\Http\Controllers\Admin\ReportController;
@@ -31,37 +34,39 @@ use App\Models\Feedback;
 use App\Models\EventShowcase;
 
 
+
+
 Route::get('/', function () {
+    // Get event showcases for display
+    $eventShowcases = EventShowcase::latest()->take(6)->get();
 
-    $eventShowcases = EventShowcase::where('is_published', true)
-        ->orderBy('display_order')
-        ->limit(3)
-        ->get();
+    // Get package categories for navigation
+    $categories = Package::select('type')
+        ->distinct()
+        ->pluck('type')
+        ->filter()
+        ->sort()
+        ->values();
 
+    // Get published feedback for reviews section
     $publishedFeedback = Feedback::with(['customer', 'event'])
         ->where('is_published', true)
-        ->orderBy('published_at', 'desc')
-        ->limit(6)
+        ->latest()
+        ->take(6)
         ->get();
 
-    return view('welcome', compact('publishedFeedback', 'eventShowcases'));
-})->name('welcome');
+    return view('welcome', compact('eventShowcases', 'categories', 'publishedFeedback'));
+});
 
-Route::get('/events', function () {
-    $packages = Package::with(['images', 'inclusions'])
-        ->where('is_active', true)
-        ->orderBy('type')
-        ->orderBy('price')
-        ->get()
-        ->groupBy(function ($package) {
-            if ($package->type instanceof \App\Enums\PackageType) {
-                return $package->type->value;
-            }
-            return $package->type;
-        });
 
-    return view('events', compact('packages'));
-})->name('events.index');
+// Services/Packages Routes (Public)
+Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
+Route::get('/services/category/{category}', [ServiceController::class, 'category'])->name('services.category');
+Route::get('/services/{package}', [ServiceController::class, 'show'])->name('services.show');
+
+// Event Showcase Routes
+Route::get('/events-showcase', [EventShowcaseController::class, 'index'])->name('events-showcase.index');
+Route::get('/events-showcase/{eventShowcase}', [EventShowcaseController::class, 'show'])->name('events-showcase.show');
 
 Route::get('/booking-success', function () {
 
@@ -72,8 +77,11 @@ Route::get('/booking-success', function () {
 })->name('booking.success');
 
 
-Route::get('/book/{package}', [PublicBookingController::class, 'show'])->name('book.package');
-Route::post('/book/{package}', [PublicBookingController::class, 'store'])->name('book.store');
+Route::post('/book/{package}/form', [PublicBookingController::class, 'showBookingForm'])
+    ->name('book.form');
+
+Route::post('/book/{package}', [PublicBookingController::class, 'store'])
+    ->name('book.store');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
@@ -294,14 +302,14 @@ Route::middleware('auth')->group(function () {
                 Route::post('/feedback/{feedback}/unpublish', [FeedbackController::class, 'unpublish'])->name('feedback.unpublish');
                 Route::delete('/feedback/{feedback}', [FeedbackController::class, 'destroy'])->name('feedback.destroy');
 
-                Route::get('/showcases', [EventShowcaseController::class, 'index'])->name('showcases.index');
-                Route::get('/showcases/create', [EventShowcaseController::class, 'create'])->name('showcases.create');
-                Route::post('/showcases', [EventShowcaseController::class, 'store'])->name('showcases.store');
-                Route::get('/showcases/{showcase}/edit', [EventShowcaseController::class, 'edit'])->name('showcases.edit');
-                Route::put('/showcases/{showcase}', [EventShowcaseController::class, 'update'])->name('showcases.update');
-                Route::delete('/showcases/{showcase}', [EventShowcaseController::class, 'destroy'])->name('showcases.destroy');
-                Route::post('/showcases/{showcase}/publish', [EventShowcaseController::class, 'publish'])->name('showcases.publish');
-                Route::post('/showcases/{showcase}/unpublish', [EventShowcaseController::class, 'unpublish'])->name('showcases.unpublish');
+                Route::get('/showcases', [AdminEventShowcaseController::class, 'index'])->name('showcases.index');
+                Route::get('/showcases/create', [AdminEventShowcaseController::class, 'create'])->name('showcases.create');
+                Route::post('/showcases', [AdminEventShowcaseController::class, 'store'])->name('showcases.store');
+                Route::get('/showcases/{showcase}/edit', [AdminEventShowcaseController::class, 'edit'])->name('showcases.edit');
+                Route::put('/showcases/{showcase}', [AdminEventShowcaseController::class, 'update'])->name('showcases.update');
+                Route::delete('/showcases/{showcase}', [AdminEventShowcaseController::class, 'destroy'])->name('showcases.destroy');
+                Route::post('/showcases/{showcase}/publish', [AdminEventShowcaseController::class, 'publish'])->name('showcases.publish');
+                Route::post('/showcases/{showcase}/unpublish', [AdminEventShowcaseController::class, 'unpublish'])->name('showcases.unpublish');
             });
 
             // ---- Payroll ----
