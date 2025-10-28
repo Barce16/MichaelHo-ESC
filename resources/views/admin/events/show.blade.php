@@ -645,7 +645,8 @@
                                     </svg>
                                     Request Downpayment
                                 </button>
-                                @elseif($event->billing->downpayment_amount && !$pendingDownpayment)
+                                @elseif($event->billing->downpayment_amount && !$pendingDownpayment &&
+                                !$hasDownpaymentPaid)
                                 <div class="text-center py-4 bg-blue-50 rounded-lg border border-blue-200">
                                     <svg class="w-8 h-8 text-blue-500 mx-auto mb-2" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">

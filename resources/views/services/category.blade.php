@@ -30,6 +30,10 @@
         .border-elegant {
             border: 1px solid #e5e5e5;
         }
+
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
 </head>
 
@@ -66,7 +70,7 @@
             </div>
         </div>
 
-        <!-- Navbar - Clean and minimal -->
+        <!-- Navbar -  -->
         <header id="navbar" class="bg-white border-b border-gray-100">
             <nav class="mx-auto max-w-screen-xl px-6 lg:px-12">
                 <div class="py-6 flex items-center justify-between">
@@ -78,17 +82,45 @@
                             Home
                         </a>
 
-                        @foreach($categories as $cat)
-                        <a href="{{ route('services.category', $cat) }}"
-                            class="transition-colors duration-300 {{ $cat === $category ? 'text-black border-b-2 border-black pb-1' : 'text-gray-700 hover:text-black' }}">
-                            {{ $cat }}
-                        </a>
-                        @endforeach
+                        <!-- Services Dropdown -->
+                        <div class="relative" x-data="{ open: false }" @mouseenter="open = true"
+                            @mouseleave="open = false">
+                            <button @click="open = !open"
+                                class="flex items-center text-xs uppercase gap-1 text-gray-700 hover:text-black transition-colors duration-300">
+                                SERVICES
+                                <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-180': open }" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
 
-                        <a href="{{ route('services.index') }}"
-                            class="text-gray-700 hover:text-black transition-colors duration-300">
-                            Services
-                        </a>
+                            <!-- Dropdown Menu -->
+                            <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0 transform scale-95"
+                                x-transition:enter-end="opacity-100 transform scale-100"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100 transform scale-100"
+                                x-transition:leave-end="opacity-0 transform scale-95"
+                                class="absolute top-full left-0 mt-2 w-56 bg-white border border-gray-200 shadow-lg"
+                                style="display: none;">
+
+                                <a href="{{ route('services.index') }}"
+                                    class="block px-6 py-3 text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200">
+                                    All Services
+                                </a>
+
+                                <div class="border-t border-gray-100"></div>
+
+                                @foreach($categories as $cat)
+                                <a href="{{ route('services.category', $cat) }}"
+                                    class="block px-6 py-3 text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200 {{ $cat === $category ? 'bg-gray-50 text-black font-semibold' : '' }}">
+                                    {{ ucfirst($cat) }}
+                                </a>
+                                @endforeach
+                            </div>
+                        </div>
+
                         <a href="{{ Route::has('login') ? route('login') : '#' }}"
                             class="text-gray-700 hover:text-black transition-colors duration-300">
                             Account
@@ -101,9 +133,9 @@
 
     <div id="navbar-spacer" class="h-0"></div>
 
-    <!-- PAGE HEADER - More elegant with subtle gradient -->
+    <!-- PAGE HEADER -  -->
     <div class="relative bg-gradient-to-b from-gray-50 to-white overflow-hidden">
-        <!-- Decorative element -->
+        <!--  element -->
         <div class="absolute inset-0 opacity-5">
             <div class="absolute top-0 left-0 w-96 h-96 bg-black transform -translate-x-1/2 -translate-y-1/2"></div>
             <div class="absolute bottom-0 right-0 w-96 h-96 bg-black transform translate-x-1/2 translate-y-1/2"></div>
@@ -277,7 +309,7 @@
         </div>
     </section>
 
-    <!-- FOOTER - Clean and minimal -->
+    <!-- FOOTER -  -->
     <footer class="bg-black text-white py-16">
         <div class="mx-auto max-w-screen-xl px-6 lg:px-12">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">

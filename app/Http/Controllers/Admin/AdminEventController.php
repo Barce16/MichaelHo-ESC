@@ -18,6 +18,7 @@ use App\Notifications\EventApprovedExistingUserNotification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Services\NotificationService;
 use App\Services\SmsNotifier;
@@ -90,6 +91,7 @@ class AdminEventController extends Controller
 
         $pendingIntroPayment = null;
         $pendingDownpayment = null;
+        $hasDownpaymentPaid = false;
 
         if ($event->billing) {
             $pendingIntroPayment = $event->billing->payments()
@@ -103,6 +105,12 @@ class AdminEventController extends Controller
                 ->where('status', Payment::STATUS_PENDING)
                 ->latest()
                 ->first();
+
+            // Check if downpayment is already approved/paid
+            $hasDownpaymentPaid = $event->billing->payments()
+                ->where('payment_type', Payment::TYPE_DOWNPAYMENT)
+                ->where('status', Payment::STATUS_APPROVED)
+                ->exists();
         }
 
         return view('admin.events.show', [
@@ -110,6 +118,7 @@ class AdminEventController extends Controller
             'grandTotal' => $grandTotal,
             'pendingIntroPayment' => $pendingIntroPayment,
             'pendingDownpayment' => $pendingDownpayment,
+            'hasDownpaymentPaid' => $hasDownpaymentPaid,
         ]);
     }
 
@@ -287,67 +296,145 @@ class AdminEventController extends Controller
             return back()->with('error', 'No pending introductory payment found.');
         }
 
-        // Store old status for notification
-        $oldStatus = $event->status;
-
-        // Approve the payment
-        $payment->update([
-            'status' => Payment::STATUS_APPROVED,
-            'payment_date' => now(),
-        ]);
-
-        // Mark billing intro payment as paid
-        $event->billing->markIntroPaid();
-
-        // Update event status to meeting
-        $event->update(['status' => Event::STATUS_MEETING]);
-
         $billing = $event->billing;
-        if ($billing && $billing->isFullyPaid()) {
-            $billing->update(['status' => 'paid']);
-        }
 
-        // Send email notification
-        if ($event->customer->user) {
-            try {
-                $event->customer->user->notify(new IntroPaymentApprovedNotification($event, $payment));
-            } catch (\Exception $e) {
-                Log::error('Failed to send intro payment approval email: ' . $e->getMessage());
+        // Check if this is a FULL PAYMENT
+        $isFullPayment = false;
+        if ($billing->total_amount > 0) {
+            // Check if payment amount equals total amount (full payment)
+            if (abs($payment->amount - $billing->total_amount) < 0.01) {
+                $isFullPayment = true;
             }
         }
 
-        // Send in-app notification
-        $this->notificationService->notifyCustomerPaymentApproved($payment);
+        \DB::beginTransaction();
 
-        // Notify about event status change (payment approved → meeting scheduled)
-        $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_MEETING);
-
-        // Send SMS notifications
-        $smsSent = false;
         try {
-            // SMS for payment approval
-            $this->smsNotifier->notifyPaymentConfirmed($payment);
+            // Store old status for notification
+            $oldStatus = $event->status;
 
-            // SMS for status change to meeting
-            $this->smsNotifier->notifyEventStatusChange($event, Event::STATUS_MEETING);
+            if ($isFullPayment) {
+                // FULL PAYMENT - Split into 3 payment records
 
-            $smsSent = true;
+                // 1. Update intro payment to ₱15,000 portion only
+                $payment->update([
+                    'status' => Payment::STATUS_APPROVED,
+                    'payment_date' => now(),
+                    'amount' => 15000, // Split to intro portion only
+                ]);
+
+                // Mark billing intro payment as paid
+                $billing->markIntroPaid();
+
+                // 2. Create and approve DOWNPAYMENT record
+                $downpaymentAmount = $billing->downpayment_amount - 15000; // Downpayment minus intro
+                if ($downpaymentAmount > 0) {
+                    $downpayment = Payment::create([
+                        'billing_id' => $billing->id,
+                        'payment_type' => Payment::TYPE_DOWNPAYMENT,
+                        'payment_image' => $payment->payment_image, // Same receipt
+                        'amount' => $downpaymentAmount,
+                        'payment_method' => $payment->payment_method,
+                        'status' => Payment::STATUS_APPROVED,
+                        'payment_date' => now(),
+                    ]);
+
+                    $billing->update(['downpayment_payment_status' => 'paid']);
+                }
+
+                // 3. Create and approve BALANCE record
+                $balanceAmount = $billing->total_amount - $billing->downpayment_amount;
+                if ($balanceAmount > 0) {
+                    $balance = Payment::create([
+                        'billing_id' => $billing->id,
+                        'payment_type' => Payment::TYPE_BALANCE,
+                        'payment_image' => $payment->payment_image, // Same receipt
+                        'amount' => $balanceAmount,
+                        'payment_method' => $payment->payment_method,
+                        'status' => Payment::STATUS_APPROVED,
+                        'payment_date' => now(),
+                    ]);
+                }
+
+                // Mark billing as fully paid
+                $billing->update(['status' => 'paid']);
+
+                // Update event status to MEETING (keep meeting stage)
+                $event->update(['status' => Event::STATUS_MEETING]);
+
+                $message = 'Full payment approved! All payment stages completed. Event status: MEETING (fully paid).';
+            } else {
+                // REGULAR INTRO PAYMENT - Normal flow
+
+                // Approve the payment
+                $payment->update([
+                    'status' => Payment::STATUS_APPROVED,
+                    'payment_date' => now(),
+                ]);
+
+                // Mark billing intro payment as paid
+                $billing->markIntroPaid();
+
+                // Update event status to meeting
+                $event->update(['status' => Event::STATUS_MEETING]);
+
+                if ($billing->isFullyPaid()) {
+                    $billing->update(['status' => 'paid']);
+                }
+
+                $message = 'Introductory payment approved. Event status updated to Meeting.';
+            }
+
+            // Send email notification
+            if ($event->customer->user) {
+                try {
+                    $event->customer->user->notify(new IntroPaymentApprovedNotification($event, $payment));
+                } catch (\Exception $e) {
+                    Log::error('Failed to send intro payment approval email: ' . $e->getMessage());
+                }
+            }
+
+            // Send in-app notification
+            $this->notificationService->notifyCustomerPaymentApproved($payment);
+
+            // Notify about event status change
+            $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_MEETING);
+
+            // Send SMS notifications
+            $smsSent = false;
+            try {
+                // SMS for payment approval
+                $this->smsNotifier->notifyPaymentConfirmed($payment);
+
+                // SMS for status change to meeting
+                $this->smsNotifier->notifyEventStatusChange($event, Event::STATUS_MEETING);
+
+                $smsSent = true;
+            } catch (\Exception $e) {
+                Log::error('Failed to send intro payment approval SMS', [
+                    'payment_id' => $payment->id,
+                    'event_id' => $event->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            if ($smsSent) {
+                $message .= ' Customer notified via email, SMS, and in-app notification.';
+            } else {
+                $message .= ' Customer notified via email and in-app notification.';
+            }
+
+            \DB::commit();
+
+            return back()->with('success', $message);
         } catch (\Exception $e) {
-            Log::error('Failed to send intro payment approval SMS', [
+            \DB::rollBack();
+            Log::error('Failed to approve intro payment', [
                 'payment_id' => $payment->id,
-                'event_id' => $event->id,
                 'error' => $e->getMessage()
             ]);
+            return back()->with('error', 'Failed to approve payment. Please try again.');
         }
-
-        $message = 'Introductory payment approved. Event status updated to Meeting.';
-        if ($smsSent) {
-            $message .= ' Customer notified via email, SMS, and in-app notification.';
-        } else {
-            $message .= ' Customer notified via email and in-app notification.';
-        }
-
-        return back()->with('success', $message);
     }
 
     /**

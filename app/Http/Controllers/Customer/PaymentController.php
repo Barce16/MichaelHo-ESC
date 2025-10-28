@@ -40,13 +40,11 @@ class PaymentController extends Controller
             abort(403);
         }
 
-
         if ($event->status === Event::STATUS_REQUEST_MEETING) {
             return $this->createIntro($event);
         } elseif ($event->status === Event::STATUS_MEETING) {
             return $this->createDownpayment($event);
         } elseif (in_array($event->status, [Event::STATUS_SCHEDULED, Event::STATUS_ONGOING, Event::STATUS_COMPLETED])) {
-
             if (!$event->hasDownpaymentPaid()) {
                 return redirect()
                     ->route('customer.events.show', $event)
@@ -60,7 +58,6 @@ class PaymentController extends Controller
             ->with('error', 'No payment is required at this stage.');
     }
 
-
     /**
      * Show introductory payment form
      */
@@ -72,7 +69,6 @@ class PaymentController extends Controller
             abort(403);
         }
 
-        // Check if event is in correct status
         if ($event->status !== Event::STATUS_REQUEST_MEETING) {
             return redirect()
                 ->route('customer.events.show', $event)
@@ -80,18 +76,17 @@ class PaymentController extends Controller
         }
 
         // Check if already has pending intro payment
-        $hasPending = false;
         if ($event->billing) {
             $hasPending = $event->billing->payments()
                 ->where('payments.payment_type', Payment::TYPE_INTRODUCTORY)
                 ->where('payments.status', Payment::STATUS_PENDING)
                 ->exists();
-        }
 
-        if ($hasPending) {
-            return redirect()
-                ->route('customer.events.show', $event)
-                ->with('info', 'You already have a pending introductory payment submission.');
+            if ($hasPending) {
+                return redirect()
+                    ->route('customer.events.show', $event)
+                    ->with('info', 'You already have a pending introductory payment submission.');
+            }
         }
 
         $amount = 15000;
@@ -111,14 +106,12 @@ class PaymentController extends Controller
             abort(403);
         }
 
-        // Check if event is in correct status
         if ($event->status === Event::STATUS_REQUESTED) {
             return redirect()
                 ->route('customer.events.show', $event)
                 ->with('error', 'Downpayment not required at this stage.');
         }
 
-        // Check if downpayment amount is set
         if (!$event->billing || $event->billing->downpayment_amount <= 0) {
             return redirect()
                 ->route('customer.events.show', $event)
@@ -126,18 +119,17 @@ class PaymentController extends Controller
         }
 
         // Check if already has pending downpayment
-        $hasPending = false;
         if ($event->billing) {
             $hasPending = $event->billing->payments()
                 ->where('payments.payment_type', Payment::TYPE_DOWNPAYMENT)
                 ->where('payments.status', Payment::STATUS_PENDING)
                 ->exists();
-        }
 
-        if ($hasPending) {
-            return redirect()
-                ->route('customer.events.show', $event)
-                ->with('info', 'You already have a pending downpayment submission.');
+            if ($hasPending) {
+                return redirect()
+                    ->route('customer.events.show', $event)
+                    ->with('info', 'You already have a pending downpayment submission.');
+            }
         }
 
         // Calculate amount (downpayment - intro payment already paid)
@@ -158,21 +150,18 @@ class PaymentController extends Controller
             abort(403);
         }
 
-        // Check if event has billing
         if (!$event->billing) {
             return redirect()
                 ->route('customer.events.show', $event)
                 ->with('error', 'No billing information found for this event.');
         }
 
-        // CRITICAL: Check if downpayment is fully paid
         if (!$event->hasDownpaymentPaid()) {
             return redirect()
                 ->route('customer.events.show', $event)
                 ->with('error', 'You must complete your downpayment before making balance payments.');
         }
 
-        // Calculate remaining balance
         $remainingBalance = $event->billing->remaining_balance;
 
         if ($remainingBalance <= 0) {
@@ -181,7 +170,6 @@ class PaymentController extends Controller
                 ->with('info', 'Your event is fully paid! No remaining balance.');
         }
 
-        // For balance payment, customer can pay any amount up to remaining balance
         $amount = $remainingBalance;
         $paymentType = 'balance';
 
@@ -204,20 +192,36 @@ class PaymentController extends Controller
             'payment_receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
             'amount' => ['required', 'numeric', 'min:0'],
             'payment_method' => ['required', 'string', 'max:255'],
+            'reference_number' => ['nullable', 'string', 'max:255'],
+            'pay_in_full' => ['nullable', 'boolean'],
         ]);
 
-        // Validate payment type matches event status
+        $payInFull = $request->boolean('pay_in_full');
+
+        // Validate introductory payment
         if ($data['payment_type'] === 'introductory') {
             if ($event->status !== Event::STATUS_REQUEST_MEETING) {
                 return back()->with('error', 'Cannot submit introductory payment at this stage.');
             }
 
-            // Validate amount is exactly 15000
-            if ((float)$data['amount'] !== 15000.00) {
-                return back()->with('error', 'Introductory payment must be exactly ₱15,000.00');
+            if ($payInFull) {
+                // Paying full amount
+                if (!$event->billing || $event->billing->total_amount <= 0) {
+                    return back()->with('error', 'Billing information not available.');
+                }
+
+                $expectedAmount = $event->billing->total_amount;
+                if (abs((float)$data['amount'] - $expectedAmount) > 0.01) {
+                    return back()->with('error', 'Full payment amount must be exactly ₱' . number_format($expectedAmount, 2));
+                }
+            } else {
+                // Paying intro only
+                if ((float)$data['amount'] !== 15000.00) {
+                    return back()->with('error', 'Introductory payment must be exactly ₱15,000.00');
+                }
             }
 
-            // Check for existing pending intro payment
+            // Check for existing pending
             if ($event->billing) {
                 $hasPending = $event->billing->payments()
                     ->where('payments.payment_type', Payment::TYPE_INTRODUCTORY)
@@ -228,12 +232,14 @@ class PaymentController extends Controller
                     return back()->with('error', 'You already have a pending introductory payment.');
                 }
             }
-        } elseif ($data['payment_type'] === 'downpayment') {
+        }
+
+        // Validate downpayment
+        elseif ($data['payment_type'] === 'downpayment') {
             if ($event->status === Event::STATUS_REQUESTED) {
                 return back()->with('error', 'Cannot submit downpayment at this stage.');
             }
 
-            // Validate downpayment is requested
             if (!$event->billing || $event->billing->downpayment_amount <= 0) {
                 return back()->with('error', 'Downpayment has not been requested yet.');
             }
@@ -245,7 +251,7 @@ class PaymentController extends Controller
                 return back()->with('error', 'Downpayment amount must be ₱' . number_format($expectedAmount, 2));
             }
 
-            // Check for existing pending downpayment
+            // Check for existing pending
             if ($event->billing) {
                 $hasPending = $event->billing->payments()
                     ->where('payments.payment_type', Payment::TYPE_DOWNPAYMENT)
@@ -256,23 +262,22 @@ class PaymentController extends Controller
                     return back()->with('error', 'You already have a pending downpayment.');
                 }
             }
-        } elseif ($data['payment_type'] === 'balance') {
-            // Validate event is in correct status for balance payment
+        }
+
+        // Validate balance payment
+        elseif ($data['payment_type'] === 'balance') {
             if (!in_array($event->status, [Event::STATUS_SCHEDULED, Event::STATUS_ONGOING, Event::STATUS_COMPLETED])) {
                 return back()->with('error', 'Cannot submit balance payment at this stage.');
             }
 
-            // Validate billing exists
             if (!$event->billing) {
                 return back()->with('error', 'No billing information found.');
             }
 
-            // Validate amount doesn't exceed remaining balance
             if ((float)$data['amount'] > $event->billing->remaining_balance) {
                 return back()->with('error', 'Payment amount cannot exceed remaining balance of ₱' . number_format($event->billing->remaining_balance, 2));
             }
 
-            // Validate minimum amount (e.g., at least 100 pesos)
             if ((float)$data['amount'] < 100) {
                 return back()->with('error', 'Minimum payment amount is ₱100.00');
             }
@@ -298,16 +303,20 @@ class PaymentController extends Controller
             'payment_date' => now(),
         ]);
 
-        $message = match ($data['payment_type']) {
-            'introductory' => 'Introductory payment proof submitted. Please wait for admin verification.',
-            'downpayment' => 'Downpayment proof submitted. Please wait for admin verification.',
-            'balance' => 'Balance payment proof submitted. Please wait for admin verification.',
-            default => 'Payment proof submitted. Please wait for admin verification.',
-        };
+        // Set success message
+        if ($payInFull && $data['payment_type'] === 'introductory') {
+            $message = 'Full payment proof submitted (₱' . number_format($data['amount'], 2) . '). Please wait for admin verification.';
+        } else {
+            $message = match ($data['payment_type']) {
+                'introductory' => 'Introductory payment proof submitted. Please wait for admin verification.',
+                'downpayment' => 'Downpayment proof submitted. Please wait for admin verification.',
+                'balance' => 'Balance payment proof submitted. Please wait for admin verification.',
+                default => 'Payment proof submitted. Please wait for admin verification.',
+            };
+        }
 
         // Notify admins
         app(NotificationService::class)->notifyAdminPaymentSubmitted($payment);
-
 
         return redirect()
             ->route('customer.events.show', $event)

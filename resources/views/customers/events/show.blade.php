@@ -117,19 +117,30 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="text-lg font-bold text-orange-900 mb-2">🎉 Booking Approved - Introductory
-                                Payment Required</h3>
-                            <p class="text-orange-800 mb-4">Congratulations! Your event has been approved. Please submit
-                                your ₱15,000 introductory payment to proceed.</p>
+                            <h3 class="text-lg font-bold text-orange-900 mb-2">🎉 Booking Approved - Payment Required
+                            </h3>
+                            <p class="text-orange-800 mb-4">Congratulations! Your event has been approved. Submit your
+                                payment to proceed.</p>
 
                             <div class="bg-white rounded-lg p-4 mb-4 shadow-sm">
-                                <div class="flex items-center justify-between">
+                                <div class="flex items-center justify-between mb-2">
                                     <span class="text-sm font-medium text-gray-700">Introductory Payment</span>
                                     <span class="text-3xl font-bold text-orange-600">₱{{ number_format($introAmount, 2)
                                         }}</span>
                                 </div>
-                                <p class="text-xs text-gray-600 mt-2">This initial payment secures your event booking
-                                    and allows us to schedule your planning meeting.</p>
+                                @if($event->billing && $event->billing->total_amount > 0)
+                                <div class="mt-3 pt-3 border-t border-gray-200">
+                                    <div class="flex items-center gap-2 text-sm text-green-700">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                        <span class="font-semibold">Option to pay in full available!</span>
+                                    </div>
+                                    <p class="text-xs text-gray-600 mt-1">You can choose to pay the full amount (₱{{
+                                        number_format($event->billing->total_amount, 2) }}) in the payment form.</p>
+                                </div>
+                                @endif
                             </div>
 
                             <a href="{{ route('customer.payments.createIntro', $event) }}"
@@ -138,7 +149,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
-                                Submit Payment Now
+                                Proceed to Payment
                             </a>
                         </div>
                     </div>

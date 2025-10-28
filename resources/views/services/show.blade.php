@@ -110,6 +110,8 @@
         currentCategory: '',
         currentInclusions: [],
         selectedInclusions: {},
+        coordinationPrice: {{ $package->coordination_price ?? 0 }},
+        stylingPrice: {{ $package->event_styling_price ?? 0 }},
         
         init() {
             const initialData = window.packageInclusionsData || {};
@@ -139,6 +141,23 @@
         
         getSelectedCount(category, items) {
             return items.filter((item, index) => this.isInclusionSelected(category, index)).length;
+        },
+        
+        getTotalPrice() {
+            // Start with coordination + styling prices
+            let total = this.coordinationPrice + this.stylingPrice;
+            
+            // Add prices of selected inclusions
+            const initialData = window.packageInclusionsData || {};
+            Object.keys(initialData).forEach(category => {
+                initialData[category].forEach((item, index) => {
+                    if (this.isInclusionSelected(category, index)) {
+                        total += parseFloat(item.price || 0);
+                    }
+                });
+            });
+            
+            return total;
         }
     }">
         <!-- Elegant Header -->
@@ -173,8 +192,10 @@
                     {{ ucfirst($package->type) }} Package
                 </p>
                 <div class="text-center">
-                    <p class="text-xs uppercase tracking-wider text-gray-500 mb-2">Starting from</p>
-                    <p class="text-4xl font-light text-black">₱{{ number_format($package->price, 0, ',', ',') }}</p>
+                    <p class="text-xs uppercase tracking-wider text-gray-500 mb-2">Total Price</p>
+                    <p class="text-4xl font-light text-black"
+                        x-text="'₱' + getTotalPrice().toLocaleString('en-PH', {minimumFractionDigits: 0, maximumFractionDigits: 0})">
+                    </p>
                 </div>
                 <!-- Elegant divider -->
                 <div class="mt-8 flex items-center justify-center">
@@ -199,7 +220,7 @@
                         $hasImages = $galleryImages->count() > 0;
                         @endphp
 
-                        <div class="relative aspect-[4/5] w-full overflow-hidden bg-gray-100" id="imageGallery">
+                        <div class="relative aspect-[16/9] w-full overflow-hidden bg-gray-100" id="imageGallery">
                             @if($hasImages)
                             @foreach($galleryImages as $index => $image)
                             <div class="gallery-slide {{ $index === 0 ? 'active' : '' }} absolute inset-0">
@@ -792,7 +813,7 @@
 
                                 <!-- Inclusion Image -->
                                 <template x-if="inclusion.image">
-                                    <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                                    <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                                         <img :src="`{{ asset('storage') }}/${inclusion.image}`"
                                             :alt="inclusion.name || inclusion" class="w-full h-full object-cover">
                                     </div>

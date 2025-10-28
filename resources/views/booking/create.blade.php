@@ -96,7 +96,7 @@
     @endif
 
     <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-        <!-- Decorative elements -->
+        <!--  elements -->
         <div
             class="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-slate-100 to-transparent rounded-full blur-3xl opacity-40">
         </div>

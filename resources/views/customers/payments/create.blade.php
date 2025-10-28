@@ -116,6 +116,32 @@
 
             {{-- Payment Form --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
+                {{-- Validation Errors --}}
+                @if ($errors->any())
+                <div class="bg-red-50 border-l-4 border-red-500 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">There were errors with your submission:</h3>
+                            <div class="mt-2 text-sm text-red-700">
+                                <ul class="list-disc list-inside space-y-1">
+                                    @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <div class="bg-slate-50 border-b border-gray-200 px-6 py-4">
                     <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
                         <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +161,11 @@
 
                     <div class="space-y-6">
                         {{-- Payment Amount --}}
-                        <div>
+                        <div x-data="{ 
+                            payInFull: '0',
+                            introAmount: 15000,
+                            fullAmount: {{ $event->billing ? $event->billing->total_amount : 0 }}
+                        }">
                             <label for="amount" class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                 <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 36 36">
                                     <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z">
@@ -149,7 +179,50 @@
                                 Payment Amount <span class="text-rose-500">*</span>
                             </label>
 
-                            {{-- Pay in Full Option --}}
+                            @if($paymentType === 'introductory' && $event->billing && $event->billing->total_amount > 0)
+                            {{-- Payment Options for Intro --}}
+                            <div class="space-y-3 mb-4">
+                                {{-- Intro Payment Option --}}
+                                <label
+                                    class="flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                    :class="payInFull === '0' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'">
+                                    <input type="radio" name="payment_option" value="0" x-model="payInFull"
+                                        class="mt-1 text-orange-600 focus:ring-orange-500">
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-gray-900">Introductory Payment</div>
+                                        <div class="text-2xl font-bold text-orange-600 my-1">₱15,000.00</div>
+                                        <p class="text-sm text-gray-600">Pay the introductory fee to schedule a meeting
+                                        </p>
+                                    </div>
+                                </label>
+
+                                {{-- Pay in Full Option --}}
+                                <label
+                                    class="flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                    :class="payInFull === '1' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'">
+                                    <input type="radio" name="payment_option" value="1" x-model="payInFull"
+                                        class="mt-1 text-green-600 focus:ring-green-500">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <div class="font-semibold text-gray-900">Pay in Full</div>
+                                            <span
+                                                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                Recommended
+                                            </span>
+                                        </div>
+                                        <div class="text-2xl font-bold text-green-600 my-1">
+                                            ₱{{ number_format($event->billing->total_amount, 2) }}
+                                        </div>
+                                        <p class="text-sm text-gray-600">Complete your payment in one go</p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <input type="hidden" name="pay_in_full" :value="payInFull === '1' ? 1 : 0">
+                            <input type="hidden" name="amount" :value="payInFull === '1' ? fullAmount : introAmount">
+
+                            @elseif($paymentType === 'balance')
+                            {{-- Pay in Full Option for Balance --}}
                             <div
                                 class="mb-3 flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                                 <input type="checkbox" id="pay_full"
@@ -165,17 +238,26 @@
                                     class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
                                 <input id="amount" name="amount" type="number" step="0.01"
                                     min="{{ $paymentType === 'balance' ? '100' : '0' }}"
-                                    max="{{ $paymentType === 'balance' ? $amount : '' }}" value="{{ $amount }}" {{
-                                    $paymentType !=='balance' ? 'readonly' : '' }}
-                                    class="block w-full pl-10 pr-4 py-3 rounded-lg border-gray-300 {{ $paymentType !== 'balance' ? 'bg-gray-50 cursor-not-allowed' : 'focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200' }} text-lg font-semibold transition"
+                                    max="{{ $paymentType === 'balance' ? $amount : '' }}" value="{{ $amount }}"
+                                    class="block w-full pl-10 pr-4 py-3 rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-lg font-semibold transition"
                                     required />
                             </div>
-                            @if($paymentType === 'balance')
                             <p class="mt-1 text-xs text-gray-500">Enter amount between ₱100 and ₱{{
                                 number_format($amount, 2) }} or check "Pay Full Balance" above</p>
+
                             @else
+                            {{-- Fixed Amount (Downpayment or Intro without billing) --}}
+                            <div class="relative">
+                                <span
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
+                                <input id="amount" name="amount" type="number" step="0.01" value="{{ $amount }}"
+                                    readonly
+                                    class="block w-full pl-10 pr-4 py-3 rounded-lg border-gray-300 bg-gray-50 cursor-not-allowed text-lg font-semibold transition"
+                                    required />
+                            </div>
                             <p class="mt-1 text-xs text-gray-500">Amount is fixed for this payment type</p>
                             @endif
+
                             @error('amount')
                             <p class="mt-2 text-sm text-rose-600 flex items-center gap-1">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

@@ -195,7 +195,7 @@
 
     <!-- FOOTER -->
     <footer class="bg-gray-950 text-white py-16 relative overflow-hidden">
-        <!-- Decorative background elements -->
+        <!--  background elements -->
         <div class="absolute inset-0 opacity-5">
             <div class="absolute top-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl"></div>
             <div class="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
