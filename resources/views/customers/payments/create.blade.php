@@ -405,7 +405,7 @@
                             @enderror
                         </div>
 
-                        {{-- File Upload --}}
+                        {{-- File Upload / Preview --}}
                         <div>
                             <label for="payment_receipt"
                                 class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -416,10 +416,13 @@
                                 </svg>
                                 Payment Proof / Receipt <span class="text-rose-500">*</span>
                             </label>
-                            <div class="mt-2 flex justify-center px-6 pt-8 pb-8 border-2 border-gray-300 border-dashed rounded-lg hover:border-emerald-400 transition-colors cursor-pointer bg-gray-50 hover:bg-gray-100"
+
+                            {{-- Upload Area (shown when no image) --}}
+                            <div id="upload-area"
+                                class="mt-2 flex justify-center px-6 py-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-emerald-400 transition-colors cursor-pointer bg-gray-50 hover:bg-gray-100"
                                 onclick="document.getElementById('payment_receipt').click()">
-                                <div class="space-y-3 text-center">
-                                    <svg class="mx-auto h-16 w-16 text-gray-400" stroke="currentColor" fill="none"
+                                <div class="space-y-2 text-center">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none"
                                         viewBox="0 0 48 48">
                                         <path
                                             d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
@@ -430,11 +433,38 @@
                                             class="relative cursor-pointer rounded-md font-semibold text-emerald-600 hover:text-emerald-500">
                                             <span>Click to upload</span>
                                         </label>
-                                        <p class="mt-1">or drag and drop</p>
+                                        <span class="text-gray-500"> or drag and drop</span>
                                     </div>
                                     <p class="text-xs text-gray-500">PNG, JPG, JPEG up to 10MB</p>
                                 </div>
                             </div>
+
+                            {{-- Preview Area (shown when image uploaded) --}}
+                            <div id="preview-area"
+                                class="hidden mt-2 relative rounded-lg overflow-hidden border-2 border-emerald-200 bg-emerald-50">
+                                <img id="image-preview" class="w-full h-48 object-contain rounded-lg" />
+                                <div
+                                    class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none">
+                                </div>
+                                <div class="absolute bottom-0 left-0 right-0 p-3 flex items-center justify-between">
+                                    <div class="flex items-center gap-2 text-white text-sm">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span class="font-medium">Receipt uploaded</span>
+                                    </div>
+                                    <button type="button" onclick="removeImage()"
+                                        class="bg-rose-500 text-white rounded-lg px-3 py-1.5 hover:bg-rose-600 transition text-sm font-medium flex items-center gap-1.5">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+
                             <input id="payment_receipt" name="payment_receipt" type="file" class="hidden"
                                 accept="image/png,image/jpeg,image/jpg" required onchange="previewImage(event)" />
                             @error('payment_receipt')
@@ -447,22 +477,6 @@
                                 {{ $message }}
                             </p>
                             @enderror
-                        </div>
-
-                        {{-- Image Preview --}}
-                        <div id="image-preview-container" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Preview</label>
-                            <div
-                                class="relative rounded-lg overflow-hidden border-2 border-emerald-200 bg-emerald-50 p-4">
-                                <img id="image-preview" class="max-w-full h-auto rounded-lg shadow-lg mx-auto" />
-                                <button type="button" onclick="removeImage()"
-                                    class="absolute top-6 right-6 bg-rose-500 text-white rounded-full p-2 hover:bg-rose-600 transition shadow-lg">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
                         </div>
                     </div>
 
@@ -493,29 +507,34 @@
 
     <script>
         function previewImage(event) {
-            const previewContainer = document.getElementById('image-preview-container');
+            const uploadArea = document.getElementById('upload-area');
+            const previewArea = document.getElementById('preview-area');
             const imagePreview = document.getElementById('image-preview');
             
             const file = event.target.files[0];
             if (!file) {
-                previewContainer.classList.add('hidden');
+                uploadArea.classList.remove('hidden');
+                previewArea.classList.add('hidden');
                 return;
             }
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 imagePreview.src = e.target.result;
-                previewContainer.classList.remove('hidden');
+                uploadArea.classList.add('hidden');
+                previewArea.classList.remove('hidden');
             };
             reader.readAsDataURL(file);
         }
 
         function removeImage() {
             const fileInput = document.getElementById('payment_receipt');
-            const previewContainer = document.getElementById('image-preview-container');
+            const uploadArea = document.getElementById('upload-area');
+            const previewArea = document.getElementById('preview-area');
             
             fileInput.value = '';
-            previewContainer.classList.add('hidden');
+            uploadArea.classList.remove('hidden');
+            previewArea.classList.add('hidden');
         }
     </script>
 </x-app-layout>

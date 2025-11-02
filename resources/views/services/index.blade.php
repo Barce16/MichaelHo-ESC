@@ -394,9 +394,9 @@
                                         </h3>
 
                                         <!-- Price - Prominent -->
-                                        <p class="text-3xl font-light text-black mb-4">
+                                        {{-- <p class="text-3xl font-light text-black mb-4">
                                             ₱{{ number_format($package->price ?? 0, 0, ',', ',') }}
-                                        </p>
+                                        </p> --}}
 
                                         <!-- Description -->
                                         <p class="text-sm text-gray-600 leading-relaxed mb-6 line-clamp-2"
@@ -426,7 +426,7 @@
                                         <!-- CTA Button - Minimal elegant -->
                                         <a href="{{ route('services.show', $package) }}"
                                             class="inline-block px-8 py-3 border border-black text-black text-xs uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-300">
-                                            View Details
+                                            Inquire
                                         </a>
                                     </div>
                                 </div>
