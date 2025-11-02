@@ -11,6 +11,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PublicBookingController;
 use App\Http\Controllers\EventShowcaseController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Admin\FeedbackController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Customer\BillingPageController;
@@ -158,6 +159,10 @@ Route::get('/test-sms', function () {
         ], 500);
     }
 });
+
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
+
 
 Route::middleware('auth')->group(function () {
     // Profile

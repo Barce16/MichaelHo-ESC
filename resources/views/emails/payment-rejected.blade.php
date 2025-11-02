@@ -269,7 +269,11 @@
 
         <!-- Content -->
         <div class="content">
-            <div class="greeting">Hello {{ $customer->customer_name }},</div>
+            <div class="greeting">
+                Hello {{ strtolower($customer->gender) === 'male' ? 'Mr.' : (strtolower($customer->gender) === 'female'
+                ? 'Ms.' : '') }} {{ $customer->customer_name }},
+            </div>
+
 
             <div class="message">
                 <p>We've reviewed your {{ $paymentTypeLabel }} submission, but unfortunately we need you to resubmit

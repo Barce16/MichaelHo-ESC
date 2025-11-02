@@ -18,19 +18,17 @@
 
 <body class="font-sans text-gray-900 antialiased">
     <div class="min-h-screen flex flex-col-reverse gap-y-5 sm:flex-row items-center justify-center bg-gray-100 p-6">
-        <!-- Left: Login Form -->
-        <div class="w-full sm:w-1/2 max-w-md bg-white shadow-lg rounded-lg p-8">
+        <!-- Content -->
+        @if (request()->routeIs('contact'))
+        <div class="w-lg bg-white shadow-lg rounded-lg p-8 py-16">
             {{ $slot }}
         </div>
-
-        <!-- Right: Logo -->
-        <div class="w-full sm:w-1/2 flex justify-center mt-8 sm:mt-0">
-            <a href="/">
-                <x-application-logo class="w-80 h-auto text-gray-600" />
-            </a>
+        @else
+        <div class="w-[40rem] bg-white shadow-lg rounded-lg px-10 py-16">
+            {{ $slot }}
         </div>
+        @endif
     </div>
-
 </body>
 
 </html>

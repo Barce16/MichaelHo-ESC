@@ -87,24 +87,34 @@
                 </div>
             </div>
         </div>
-
-        <!-- Navbar -  -->
+        <!-- Navbar - Centered Logo Layout with Mobile Support -->
         <header id="navbar" class="bg-white border-b border-gray-100">
             <nav class="mx-auto max-w-screen-xl px-6 lg:px-12">
-                <div class="py-6 flex items-center justify-between">
-                    <a href="{{ url('/') }}">
-                        <img src="{{ asset('images/favicon.png') }}" alt="Logo" class="h-14">
-                    </a>
-                    <div class="flex items-center gap-10 text-xs uppercase tracking-widest font-medium">
-                        <a href="{{ url('/') }}" class="text-gray-700 hover:text-black transition-colors duration-300">
-                            Home
-                        </a>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden lg:flex py-6 items-center justify-between">
+
+                    <!-- Left Navigation -->
+                    <div class="flex items-center gap-8 flex-1">
+                        <div class="text-center">
+                            <a href="{{ url('/') }}"
+                                class="text-xs uppercase tracking-widest font-medium text-gray-700 hover:text-black transition-colors duration-300">
+                                Home
+                            </a>
+                        </div>
+
+                        <div class="text-center">
+                            <a href="{{ url('/#service-section') }}"
+                                class="text-xs uppercase tracking-widest font-medium text-gray-700 hover:text-black transition-colors duration-300">
+                                About
+                            </a>
+                        </div>
 
                         <!-- Services Dropdown -->
-                        <div class="relative" x-data="{ open: false }" @mouseenter="open = true"
+                        <div class="relative text-center" x-data="{ open: false }" @mouseenter="open = true"
                             @mouseleave="open = false">
                             <button @click="open = !open"
-                                class="flex items-center text-xs uppercase gap-1 text-black border-b-2 border-black pb-1 transition-colors duration-300">
+                                class="flex items-center text-xs uppercase gap-1 font-medium tracking-widest text-gray-700 hover:text-black transition-colors duration-300">
                                 Services
                                 <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-180': open }" fill="none"
                                     stroke="currentColor" viewBox="0 0 24 24">
@@ -120,7 +130,7 @@
                                 x-transition:leave="transition ease-in duration-150"
                                 x-transition:leave-start="opacity-100 transform scale-100"
                                 x-transition:leave-end="opacity-0 transform scale-95"
-                                class="absolute top-full left-0 mt-2 w-56 bg-white border border-gray-200 shadow-lg"
+                                class="absolute top-full left-0 mt-2 w-56 bg-white border border-gray-200 shadow-lg z-50"
                                 style="display: none;">
 
                                 <a href="{{ route('services.index') }}"
@@ -138,13 +148,88 @@
                                 @endforeach
                             </div>
                         </div>
+                    </div>
 
-                        <a href="{{ Route::has('login') ? route('login') : '#' }}"
-                            class="text-gray-700 hover:text-black transition-colors duration-300">
-                            Account
+                    <!-- Center Logo -->
+                    <div class="flex-shrink-0 mx-8">
+                        <a href="{{ url('/') }}">
+                            <img src="{{ asset('images/favicon.png') }}" alt="Logo" class="h-16">
                         </a>
                     </div>
+
+                    <!-- Right Navigation -->
+                    <div class="flex items-center gap-8 flex-1 justify-end">
+                        <div class="text-center">
+                            <a href="{{ route('events-showcase.index') }}"
+                                class="text-xs uppercase tracking-widest font-medium text-gray-700 hover:text-black transition-colors duration-300">
+                                Portfolio
+                            </a>
+                        </div>
+
+                        <div class="text-center">
+                            <a href="{{ url('/contact') }}"
+                                class="text-xs uppercase tracking-widest font-medium text-gray-700 hover:text-black transition-colors duration-300">
+                                Contact Us
+                            </a>
+                        </div>
+
+                        <div class="text-center">
+                            <a href="{{ Route::has('login') ? route('login') : '#' }}"
+                                class="text-xs uppercase tracking-widest font-medium text-gray-700 hover:text-black transition-colors duration-300">
+                                Account
+                            </a>
+                        </div>
+                    </div>
+
                 </div>
+
+                <!-- Mobile Navigation -->
+                <div class="lg:hidden py-4 flex items-center justify-between" x-data="{ mobileOpen: false }">
+                    <!-- Mobile Logo -->
+                    <a href="{{ url('/') }}">
+                        <img src="{{ asset('images/favicon.png') }}" alt="Logo" class="h-12">
+                    </a>
+
+                    <!-- Mobile Menu Button -->
+                    <button @click="mobileOpen = !mobileOpen" class="text-gray-700 hover:text-black p-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path x-show="!mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
+                            <path x-show="mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+
+                    <!-- Mobile Dropdown Menu -->
+                    <div x-show="mobileOpen" x-cloak x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 transform -translate-y-2"
+                        x-transition:enter-end="opacity-100 transform translate-y-0"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 transform translate-y-0"
+                        x-transition:leave-end="opacity-0 transform -translate-y-2"
+                        class="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50"
+                        style="display: none;">
+
+                        <div class="px-6 py-4 space-y-4">
+                            <a href="{{ url('/') }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Home</a>
+                            <a href="{{ url('/about') }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">About</a>
+                            <a href="{{ route('services.index') }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Services</a>
+                            <a href="{{ url('/portfolio') }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Portfolio</a>
+                            <a href="{{ url('/blog') }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Blog</a>
+                            <a href="{{ url('/contact') }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Contact
+                                Us</a>
+                            <a href="{{ Route::has('login') ? route('login') : '#' }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Account</a>
+                        </div>
+                    </div>
+                </div>
+
             </nav>
         </header>
     </div>
@@ -281,7 +366,7 @@
     </section>
 
     <!-- SERVICES SECTION - Elegant cards -->
-    <section class="py-24 bg-gray-50">
+    <section id="service-section" class="py-24 bg-gray-50">
         <div class="mx-auto max-w-screen-xl px-6 lg:px-12">
             <div class="text-center mb-16 animate-on-scroll from-bottom">
                 <h2 class="text-5xl font-light mb-4" style="font-family: 'Playfair Display', serif;">

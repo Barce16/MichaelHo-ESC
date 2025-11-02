@@ -217,7 +217,11 @@
 
         <!-- Content -->
         <div class="content">
-            <div class="greeting">Hello {{ $customer->customer_name }}!</div>
+            <div class="greeting">
+                Hello {{ strtolower($customer->gender) === 'male' ? 'Mr.' : (strtolower($customer->gender) === 'female'
+                ? 'Ms.' : '') }} {{ $customer->customer_name }}!
+            </div>
+
 
             <div class="message">
                 <p><strong>Great news!</strong> Your introductory payment has been verified and approved.</p>

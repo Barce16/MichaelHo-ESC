@@ -168,6 +168,7 @@ class AdminEventController extends Controller
             $user = User::create([
                 'name' => $customer->customer_name,
                 'username' => $username,
+                'gender' => $customer->gender,
                 'email' => $customer->email,
                 'password' => Hash::make($password),
                 'user_type' => 'customer',
@@ -307,7 +308,7 @@ class AdminEventController extends Controller
             }
         }
 
-        \DB::beginTransaction();
+        DB::beginTransaction();
 
         try {
             // Store old status for notification
@@ -424,11 +425,11 @@ class AdminEventController extends Controller
                 $message .= ' Customer notified via email and in-app notification.';
             }
 
-            \DB::commit();
+            DB::commit();
 
             return back()->with('success', $message);
         } catch (\Exception $e) {
-            \DB::rollBack();
+            DB::rollBack();
             Log::error('Failed to approve intro payment', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage()

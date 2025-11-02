@@ -117,7 +117,13 @@ class SmsNotifier
             return false;
         }
 
-        $message = "Good news {$customer->customer_name}! Your event '{$event->name}' has been approved.\n\n";
+        $prefix = match (strtolower($customer->gender)) {
+            'male' => 'Mr.',
+            'female' => 'Ms.',
+            default => '',
+        };
+
+        $message = "Good news {$prefix} {$customer->customer_name}! Your event '{$event->name}' has been approved.\n\n";
         $message .= "Next Step: Pay P15,000 introductory payment to schedule your meeting.\n\n";
         $message .= "Login to your account to submit payment: " . url('/login');
 
@@ -130,7 +136,15 @@ class SmsNotifier
     public function notifyEventApproved(Event $event, string $username, string $password): bool
     {
         $customer = $event->customer;
-        $message = "Good news {$customer->customer_name}! Your event '{$event->name}' has been approved.\n\n";
+
+        $prefix = match (strtolower($customer->gender)) {
+            'male' => 'Mr.',
+            'female' => 'Ms.',
+            default => '',
+        };
+
+
+        $message = "Good news {$prefix} {$customer->customer_name}! Your event '{$event->name}' has been approved.\n\n";
         $message .= "Login Details:\n";
         $message .= "Username: {$username}\n";
         $message .= "Password: {$password}\n\n";
@@ -148,6 +162,13 @@ class SmsNotifier
         $event = $payment->billing->event;
         $customer = $event->customer;
 
+
+        $prefix = match (strtolower($customer->gender)) {
+            'male' => 'Mr.',
+            'female' => 'Ms.',
+            default => '',
+        };
+
         $paymentType = match ($payment->payment_type) {
             'introductory' => 'introductory payment',
             'downpayment' => 'downpayment',
@@ -156,7 +177,7 @@ class SmsNotifier
         };
 
         $message = "Payment Confirmed!\n\n";
-        $message .= "Hello {$customer->customer_name},\n\n";
+        $message .= "Hello {$prefix} {$customer->customer_name},\n\n";
         $message .= "Your {$paymentType} of P" . number_format($payment->amount, 2) . " for '{$event->name}' has been approved.\n\n";
 
         $billing = $payment->billing;
@@ -179,8 +200,14 @@ class SmsNotifier
         $event = $payment->billing->event;
         $customer = $event->customer;
 
+        $prefix = match (strtolower($customer->gender)) {
+            'male' => 'Mr.',
+            'female' => 'Ms.',
+            default => '',
+        };
+
         $message = "Payment Issue\n\n";
-        $message .= "Hello {$customer->customer_name},\n\n";
+        $message .= "Hello {$prefix} {$customer->customer_name},\n\n";
         $message .= "Your payment of P" . number_format($payment->amount, 2) . " for '{$event->name}' needs attention.\n\n";
         $message .= "Reason: {$reason}\n\n";
         $message .= "Please resubmit your payment.\n\n";

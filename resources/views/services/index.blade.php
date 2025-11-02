@@ -64,14 +64,14 @@
             <div class="mx-auto max-w-screen-xl px-6 lg:px-12 flex items-center justify-between h-9">
                 <div class="flex items-center gap-6">
                     <a href="https://www.facebook.com/MichaelHoEventsPlanningandCoordinating/" target="_blank"
-                        class="opacity-70 hover:opacity-100 transition-opacity">
+                        class="opacity-70 hover:opacity-100 transition-opacity" aria-label="Facebook">
                         <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                             <path
                                 d="M22.675 0H1.325C.593 0 0 .593 0 1.325v21.351C0 23.406.593 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.464.099 2.795.143v3.24l-1.918.001c-1.504 0-1.794.716-1.794 1.764v2.312h3.587l-.467 3.622h-3.12V24h6.116C23.406 24 24 23.406 24 22.676V1.325C24 .593 23.406 0 22.675 0z" />
                         </svg>
                     </a>
                     <a href="https://www.instagram.com/michaelhoevents/?hl=en" target="_blank"
-                        class="opacity-70 hover:opacity-100 transition-opacity">
+                        class="opacity-70 hover:opacity-100 transition-opacity" aria-label="Instagram">
                         <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                             <path
                                 d="M12 2.163c3.204 0 3.584.012 4.85.07 1.17.056 1.97.24 2.43.403a4.92 4.92 0 011.675 1.087 4.92 4.92 0 011.087 1.675c.163.46.347 1.26.403 2.43.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.056 1.17-.24 1.97-.403 2.43a4.918 4.918 0 01-1.087 1.675 4.918 4.918 0 01-1.675 1.087c-.46.163-1.26.347-2.43.403-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.17-.056-1.97-.24-2.43-.403a4.918 4.918 0 01-1.675-1.087 4.918 4.918 0 01-1.087-1.675c-.163-.46-.347-1.26-.403-2.43C2.175 15.747 2.163 15.367 2.163 12s.012-3.584.07-4.85c.056-1.17.24-1.97.403-2.43a4.92 4.92 0 011.087-1.675A4.92 4.92 0 015.398 2.636c.46-.163 1.26-.347 2.43-.403C8.416 2.175 8.796 2.163 12 2.163zm0-2.163C8.741 0 8.332.013 7.052.072 5.775.131 4.772.348 3.95.692a6.918 6.918 0 00-2.53 1.656A6.918 6.918 0 00.692 4.878c-.344.822-.561 1.825-.62 3.102C.013 8.332 0 8.741 0 12c0 3.259.013 3.668.072 4.948.059 1.277.276 2.28.62 3.102a6.918 6.918 0 001.656 2.53 6.918 6.918 0 002.53 1.656c.822.344 1.825.561 3.102.62C8.332 23.987 8.741 24 12 24s3.668-.013 4.948-.072c1.277-.059 2.28-.276 3.102-.62a6.918 6.918 0 002.53-1.656 6.918 6.918 0 001.656-2.53c.344-.822.561-1.825.62-3.102.059-1.28.072-1.689.072-4.948s-.013-3.668-.072-4.948c-.059-1.277-.276-2.28-.62-3.102a6.918 6.918 0 00-1.656-2.53A6.918 6.918 0 0019.05.692c-.822-.344-1.825-.561-3.102-.62C15.668.013 15.259 0 12 0z" />
@@ -87,24 +87,34 @@
                 </div>
             </div>
         </div>
-
-        <!-- Navbar -  -->
+        <!-- Navbar - Centered Logo Layout with Mobile Support -->
         <header id="navbar" class="bg-white border-b border-gray-100">
             <nav class="mx-auto max-w-screen-xl px-6 lg:px-12">
-                <div class="py-6 flex items-center justify-between">
-                    <a href="{{ url('/') }}">
-                        <img src="{{ asset('images/favicon.png') }}" alt="Logo" class="h-14">
-                    </a>
-                    <div class="flex items-center gap-10 text-xs uppercase tracking-widest font-medium">
-                        <a href="{{ url('/') }}" class="text-gray-700 hover:text-black transition-colors duration-300">
-                            Home
-                        </a>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden lg:flex py-6 items-center justify-between">
+
+                    <!-- Left Navigation -->
+                    <div class="flex items-center gap-8 flex-1">
+                        <div class="text-center">
+                            <a href="{{ url('/') }}"
+                                class="text-xs uppercase tracking-widest font-medium text-gray-700 hover:text-black transition-colors duration-300">
+                                Home
+                            </a>
+                        </div>
+
+                        <div class="text-center">
+                            <a href="{{ url('/#service-section') }}"
+                                class="text-xs uppercase tracking-widest font-medium text-gray-700 hover:text-black transition-colors duration-300">
+                                About
+                            </a>
+                        </div>
 
                         <!-- Services Dropdown -->
-                        <div class="relative" x-data="{ open: false }" @mouseenter="open = true"
+                        <div class="relative text-center" x-data="{ open: false }" @mouseenter="open = true"
                             @mouseleave="open = false">
                             <button @click="open = !open"
-                                class="flex items-center text-xs uppercase gap-1 text-black border-b-2 border-black pb-1 transition-colors duration-300">
+                                class="flex items-center text-xs uppercase gap-1 font-medium tracking-widest text-gray-700 hover:text-black transition-colors duration-300">
                                 Services
                                 <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-180': open }" fill="none"
                                     stroke="currentColor" viewBox="0 0 24 24">
@@ -120,7 +130,7 @@
                                 x-transition:leave="transition ease-in duration-150"
                                 x-transition:leave-start="opacity-100 transform scale-100"
                                 x-transition:leave-end="opacity-0 transform scale-95"
-                                class="absolute top-full left-0 mt-2 w-56 bg-white border border-gray-200 shadow-lg"
+                                class="absolute top-full left-0 mt-2 w-56 bg-white border border-gray-200 shadow-lg z-50"
                                 style="display: none;">
 
                                 <a href="{{ route('services.index') }}"
@@ -138,16 +148,92 @@
                                 @endforeach
                             </div>
                         </div>
+                    </div>
 
-                        <a href="{{ Route::has('login') ? route('login') : '#' }}"
-                            class="text-gray-700 hover:text-black transition-colors duration-300">
-                            Account
+                    <!-- Center Logo -->
+                    <div class="flex-shrink-0 mx-8">
+                        <a href="{{ url('/') }}">
+                            <img src="{{ asset('images/favicon.png') }}" alt="Logo" class="h-16">
                         </a>
                     </div>
+
+                    <!-- Right Navigation -->
+                    <div class="flex items-center gap-8 flex-1 justify-end">
+                        <div class="text-center">
+                            <a href="{{ route('events-showcase.index') }}"
+                                class="text-xs uppercase tracking-widest font-medium text-gray-700 hover:text-black transition-colors duration-300">
+                                Portfolio
+                            </a>
+                        </div>
+
+                        <div class="text-center">
+                            <a href="{{ url('/contact') }}"
+                                class="text-xs uppercase tracking-widest font-medium text-gray-700 hover:text-black transition-colors duration-300">
+                                Contact Us
+                            </a>
+                        </div>
+
+                        <div class="text-center">
+                            <a href="{{ Route::has('login') ? route('login') : '#' }}"
+                                class="text-xs uppercase tracking-widest font-medium text-gray-700 hover:text-black transition-colors duration-300">
+                                Account
+                            </a>
+                        </div>
+                    </div>
+
                 </div>
+
+                <!-- Mobile Navigation -->
+                <div class="lg:hidden py-4 flex items-center justify-between" x-data="{ mobileOpen: false }">
+                    <!-- Mobile Logo -->
+                    <a href="{{ url('/') }}">
+                        <img src="{{ asset('images/favicon.png') }}" alt="Logo" class="h-12">
+                    </a>
+
+                    <!-- Mobile Menu Button -->
+                    <button @click="mobileOpen = !mobileOpen" class="text-gray-700 hover:text-black p-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path x-show="!mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
+                            <path x-show="mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+
+                    <!-- Mobile Dropdown Menu -->
+                    <div x-show="mobileOpen" x-cloak x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 transform -translate-y-2"
+                        x-transition:enter-end="opacity-100 transform translate-y-0"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 transform translate-y-0"
+                        x-transition:leave-end="opacity-0 transform -translate-y-2"
+                        class="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50"
+                        style="display: none;">
+
+                        <div class="px-6 py-4 space-y-4">
+                            <a href="{{ url('/') }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Home</a>
+                            <a href="{{ url('/about') }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">About</a>
+                            <a href="{{ route('services.index') }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Services</a>
+                            <a href="{{ url('/portfolio') }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Portfolio</a>
+                            <a href="{{ url('/blog') }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Blog</a>
+                            <a href="{{ url('/contact') }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Contact
+                                Us</a>
+                            <a href="{{ Route::has('login') ? route('login') : '#' }}"
+                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Account</a>
+                        </div>
+                    </div>
+                </div>
+
             </nav>
         </header>
     </div>
+
 
     <div id="navbar-spacer" class="h-0"></div>
 

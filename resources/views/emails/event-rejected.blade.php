@@ -180,7 +180,11 @@
 
         <!-- Content -->
         <div class="content">
-            <div class="greeting">Hello {{ $customer->customer_name }},</div>
+            <div class="greeting">
+                Hello {{ strtolower($customer->gender) === 'male' ? 'Mr.' : (strtolower($customer->gender) === 'female'
+                ? 'Ms.' : '') }} {{ $customer->customer_name }}!
+            </div>
+
 
             <div class="message">
                 <p>Thank you for your interest in Michael Ho Events and for submitting your event booking request.</p>

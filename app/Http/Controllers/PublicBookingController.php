@@ -62,6 +62,7 @@ class PublicBookingController extends Controller
             'customer_name' => ['required', 'string', 'min:2', 'max:100'],
             'email' => ['required', 'email', 'max:120'],
             'phone' => ['required', 'string', 'min:10', 'max:12'],
+            'gender' => ['required', 'string'],
             'address' => ['nullable', 'string', 'min:10', 'max:255'],
             'guests' => ['nullable', 'integer', 'min:1'],
             'notes' => ['nullable', 'string', 'max:5000'],
@@ -76,6 +77,7 @@ class PublicBookingController extends Controller
                     $customer = Customer::create([
                         'customer_name' => $customerData['customer_name'],
                         'email' => $customerData['email'],
+                        'gender' => $customerData['gender'],
                         'phone' => $customerData['phone'],
                         'address' => $customerData['address'] ?? null,
                         'user_id' => null,

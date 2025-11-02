@@ -145,7 +145,6 @@
 
                 <!-- RIGHT COLUMN - Customer Information Form -->
                 <div class="space-y-8">
-
                     <div class="border border-gray-900 p-8">
                         <h2 class="text-2xl font-light mb-2" style="font-family: 'Playfair Display', serif;">
                             Your Information
@@ -174,6 +173,27 @@
                                         class="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors @error('customer_name') border-red-500 @enderror"
                                         placeholder="Enter your full name">
                                     @error('customer_name')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <!-- Gender -->
+                                <div>
+                                    <label for="gender"
+                                        class="block text-xs uppercase tracking-wider text-gray-600 mb-2">
+                                        Gender <span class="text-red-500">*</span>
+                                    </label>
+                                    <select id="gender" name="gender" required
+                                        class="w-full px-4 py-3 border border-gray-200 bg-white text-sm focus:outline-none focus:border-black transition-colors @error('gender') border-red-500 @enderror">
+                                        <option value="" disabled {{ old('gender') ? '' : 'selected' }}>Select gender
+                                        </option>
+                                        <option value="Male" {{ old('gender')=='Male' ? 'selected' : '' }}>Male</option>
+                                        <option value="Female" {{ old('gender')=='Female' ? 'selected' : '' }}>Female
+                                        </option>
+                                        <option value="Other" {{ old('gender')=='Other' ? 'selected' : '' }}>Other
+                                        </option>
+                                    </select>
+                                    @error('gender')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
@@ -261,8 +281,8 @@
                             </div>
                         </form>
                     </div>
-
                 </div>
+
             </div>
         </div>
     </section>
