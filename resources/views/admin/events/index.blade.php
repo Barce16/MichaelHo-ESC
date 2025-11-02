@@ -11,6 +11,10 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
+
+            {{-- Events Calendar Component --}}
+            <x-events-calendar :events="$events" userType="Admin" />
+
             {{-- Statistics Dashboard --}}
             <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
                 @php

@@ -15,6 +15,9 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
+            {{-- Events Calendar Component --}}
+            <x-events-calendar :events="$events" userType="customer" />
+
             {{-- Stats Cards --}}
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="bg-gradient-to-br from-slate-900 to-gray-800 rounded-xl shadow-lg p-6 text-white">
