@@ -275,6 +275,7 @@ Route::middleware('auth')->group(function () {
             Route::resource('customers', CustomerController::class);
             // Staff assignment
             Route::resource('staff', StaffController::class);
+
             Route::get('events/{event}/assign-staff', [AdminEventController::class, 'assignStaffPage'])
                 ->name('events.assignStaffPage');
             Route::post('events/{event}/assign-staff', [AdminEventController::class, 'assignStaff'])
