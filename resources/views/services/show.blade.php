@@ -332,7 +332,7 @@
                                         <span class="text-xs text-gray-500 ml-2"
                                             x-text="`(${getSelectedCount('{{ $category }}', {{ json_encode($items) }})} selected)`"></span>
                                     </h4>
-                                    <button type="button"
+                                    <button type="button" hidden
                                         @click="openCustomize('{{ $category }}', {{ json_encode($items) }})"
                                         class="p-1.5 text-gray-400 hover:text-black transition-colors">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
