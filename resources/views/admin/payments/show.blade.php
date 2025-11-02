@@ -185,24 +185,163 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h4 class="text-lg font-semibold text-gray-900 mb-4">Payment Proof</h4>
 
-                <div class="border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                    <img src="{{ $payment->getImageUrlAttribute() }}" alt="Payment Proof"
-                        class="w-full h-auto max-h-[600px] object-contain">
-                </div>
-
-                <div class="mt-4">
-                    <a href="{{ $payment->getImageUrlAttribute() }}" target="_blank"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition text-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                        Open in New Tab
-                    </a>
-                </div>
+                <a href="{{ $payment->getImageUrlAttribute() }}" target="_blank" class="block">
+                    <div
+                        class="border border-gray-200 rounded-lg overflow-hidden bg-gray-50 hover:border-blue-400 transition cursor-pointer">
+                        <img src="{{ $payment->getImageUrlAttribute() }}" alt="Payment Proof"
+                            class="w-full h-auto max-h-80 object-contain">
+                    </div>
+                    <p class="mt-3 text-sm text-gray-600 text-center">
+                        <span class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            Click to view full size
+                        </span>
+                    </p>
+                </a>
             </div>
             @endif
 
+            {{-- Action Buttons for Pending Payments --}}
+            @if($payment->status === 'pending')
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                x-data="{ showApprove: false, showReject: false }">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4">Actions</h4>
+
+                <div class="flex gap-3">
+                    <button @click="showApprove = true"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Approve Payment
+                    </button>
+
+                    <button @click="showReject = true"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-rose-600 text-white font-semibold rounded-lg hover:bg-rose-700 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Reject Payment
+                    </button>
+                </div>
+
+                {{-- Approve Modal --}}
+                <div x-show="showApprove" x-cloak @click.self="showApprove=false"
+                    class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+                        <form method="POST" action="{{ route('admin.payments.approve', $payment->id) }}">
+                            @csrf
+
+                            <div class="bg-emerald-50 border-b border-emerald-100 p-6 rounded-t-2xl">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-emerald-900">Approve Payment</h3>
+                                            <p class="text-sm text-emerald-700">Confirm payment verification</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" @click="showApprove=false"
+                                        class="text-gray-400 hover:text-gray-600">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="p-6">
+                                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
+                                    <div class="text-sm text-gray-600 mb-1">Payment Amount</div>
+                                    <div class="text-2xl font-bold text-gray-900">₱{{ number_format($payment->amount, 2)
+                                        }}</div>
+                                    <div class="text-xs text-gray-500 mt-1">{{ ucfirst($payment->payment_type) }}
+                                        Payment</div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
+                                <button type="button" @click="showApprove=false"
+                                    class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                    class="px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition">
+                                    Approve Payment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {{-- Reject Modal --}}
+                <div x-show="showReject" x-cloak @click.self="showReject=false"
+                    class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+                        <form method="POST" action="{{ route('admin.payments.reject', $payment->id) }}">
+                            @csrf
+
+                            <div class="bg-rose-50 border-b border-rose-100 p-6 rounded-t-2xl">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-lg font-semibold text-rose-900">Reject Payment</h3>
+                                            <p class="text-sm text-rose-700">Provide reason for rejection</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" @click="showReject=false"
+                                        class="text-gray-400 hover:text-gray-600">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="p-6">
+                                <label for="rejection_reason" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Rejection Reason <span class="text-rose-500">*</span>
+                                </label>
+                                <textarea id="rejection_reason" name="rejection_reason" rows="4" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+                                    placeholder="E.g., Proof of payment is unclear, wrong amount, etc."></textarea>
+                            </div>
+
+                            <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
+                                <button type="button" @click="showReject=false"
+                                    class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                    class="px-6 py-2.5 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition">
+                                    Reject Payment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

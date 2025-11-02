@@ -111,7 +111,7 @@
                     <div class="text-sm text-emerald-900">
                         <p class="font-semibold mb-1">Balance Payment</p>
                         <p>You can pay any amount towards your remaining balance of ₱{{ number_format($amount, 2) }}.
-                            Enter the amount you wish to pay below (minimum ₱100).</p>
+                            Enter the amount you wish to pay.</p>
                     </div>
                 </div>
             </div>

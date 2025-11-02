@@ -48,53 +48,65 @@ class CustomerPaymentController extends Controller
         DB::beginTransaction();
 
         try {
-            $event = $payment->event;
+            // Get billing and event through the proper relationship
             $billing = $payment->billing;
 
-            // Check if this is a FULL PAYMENT at intro stage
+            if (!$billing) {
+                DB::rollBack();
+                return back()->with('error', 'Billing information not found for this payment.');
+            }
+
+            $event = $billing->event;
+
+            if (!$event) {
+                DB::rollBack();
+                return back()->with('error', 'Event not found for this payment.');
+            }
+
+            $originalPaymentAmount = $payment->amount;
+
+            // Check if this is a FULL PAYMENT
             $isFullPayment = false;
+
             if ($payment->isIntroductory() && $billing->total_amount > 0) {
-                // Check if payment amount equals total amount (full payment)
-                if (abs($payment->amount - $billing->total_amount) < 0.01) {
+                if (abs($originalPaymentAmount - $billing->total_amount) < 0.01) {
+                    $isFullPayment = true;
+                }
+            } elseif ($payment->isDownpayment() && $billing->remaining_balance > 0) {
+                if (abs($originalPaymentAmount - $billing->remaining_balance) < 0.01) {
                     $isFullPayment = true;
                 }
             }
 
-            if ($isFullPayment) {
-                // FULL PAYMENT - Create additional payment records
-
-                // 1. Approve the intro payment (₱5,000 portion)
+            if ($isFullPayment && $payment->isIntroductory()) {
+                // INTRO FULL PAYMENT - Split into 3 records
                 $payment->update([
                     'status' => Payment::STATUS_APPROVED,
                     'payment_date' => now(),
-                    'amount' => 5000, // Split to intro portion only
+                    'amount' => 5000,
                 ]);
 
                 $billing->markIntroPaid();
 
-                // 2. Create and approve DOWNPAYMENT record
-                $downpaymentAmount = $billing->downpayment_amount - 5000; // Downpayment minus intro
+                $downpaymentAmount = $billing->downpayment_amount - 5000;
                 if ($downpaymentAmount > 0) {
-                    $downpayment = Payment::create([
+                    Payment::create([
                         'billing_id' => $billing->id,
                         'payment_type' => Payment::TYPE_DOWNPAYMENT,
-                        'payment_image' => $payment->payment_image, // Same receipt
+                        'payment_image' => $payment->payment_image,
                         'amount' => $downpaymentAmount,
                         'payment_method' => $payment->payment_method,
                         'status' => Payment::STATUS_APPROVED,
                         'payment_date' => now(),
                     ]);
-
-                    $billing->update(['downpayment_payment_status' => 'paid']);
                 }
 
-                // 3. Create and approve BALANCE record
                 $balanceAmount = $billing->total_amount - $billing->downpayment_amount;
                 if ($balanceAmount > 0) {
-                    $balance = Payment::create([
+                    Payment::create([
                         'billing_id' => $billing->id,
                         'payment_type' => Payment::TYPE_BALANCE,
-                        'payment_image' => $payment->payment_image, // Same receipt
+                        'payment_image' => $payment->payment_image,
                         'amount' => $balanceAmount,
                         'payment_method' => $payment->payment_method,
                         'status' => Payment::STATUS_APPROVED,
@@ -102,74 +114,85 @@ class CustomerPaymentController extends Controller
                     ]);
                 }
 
-                // Mark billing as fully paid
                 $billing->update(['status' => 'paid']);
-
-                // Update event status to MEETING (keep the meeting stage)
                 $oldStatus = $event->status;
                 $event->update(['status' => Event::STATUS_MEETING]);
                 $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_MEETING);
 
-                // Send SMS for status change
                 try {
                     $this->smsNotifier->notifyEventStatusChange($event, Event::STATUS_MEETING);
                 } catch (\Exception $e) {
-                    Log::error('Failed to send event status SMS', [
-                        'event_id' => $event->id,
-                        'error' => $e->getMessage()
+                    Log::error('Failed to send event status SMS', ['event_id' => $event->id, 'error' => $e->getMessage()]);
+                }
+
+                $message = 'Full payment approved! Event is now fully paid.';
+            } elseif ($isFullPayment && $payment->isDownpayment()) {
+                // DOWNPAYMENT FULL PAYMENT - Split into downpayment + balance
+                $downpaymentPortion = $billing->downpayment_amount - $billing->introductory_payment_amount;
+                $payment->update([
+                    'status' => Payment::STATUS_APPROVED,
+                    'payment_date' => now(),
+                    'amount' => $downpaymentPortion,
+                ]);
+
+                $balanceAmount = $originalPaymentAmount - $downpaymentPortion;
+                if ($balanceAmount > 0) {
+                    Payment::create([
+                        'billing_id' => $billing->id,
+                        'payment_type' => Payment::TYPE_BALANCE,
+                        'payment_image' => $payment->payment_image,
+                        'amount' => $balanceAmount,
+                        'payment_method' => $payment->payment_method,
+                        'status' => Payment::STATUS_APPROVED,
+                        'payment_date' => now(),
                     ]);
                 }
 
-                $message = 'Full payment approved! All payment stages completed. Event status: MEETING (fully paid).';
-            } else {
-                // REGULAR PAYMENT - Normal flow
+                $billing->update(['status' => 'paid']);
+                $oldStatus = $event->status;
+                $event->update(['status' => Event::STATUS_SCHEDULED]);
+                $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_SCHEDULED);
 
-                // Approve the payment
+                try {
+                    $this->smsNotifier->notifyEventStatusChange($event, Event::STATUS_SCHEDULED);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send event status SMS', ['event_id' => $event->id, 'error' => $e->getMessage()]);
+                }
+
+                $message = 'Full payment approved! Event is now fully paid.';
+            } else {
+                // REGULAR PAYMENT
                 $payment->update([
                     'status' => Payment::STATUS_APPROVED,
                     'payment_date' => now(),
                 ]);
 
-                // Handle based on payment type
                 if ($payment->isIntroductory()) {
-                    // Mark intro payment as paid in billing
                     $billing->markIntroPaid();
-
-                    // Update event status to meeting
                     $oldStatus = $event->status;
                     $event->update(['status' => Event::STATUS_MEETING]);
                     $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_MEETING);
 
-                    // Send SMS for status change
                     try {
                         $this->smsNotifier->notifyEventStatusChange($event, Event::STATUS_MEETING);
                     } catch (\Exception $e) {
-                        Log::error('Failed to send event status SMS', [
-                            'event_id' => $event->id,
-                            'error' => $e->getMessage()
-                        ]);
+                        Log::error('Failed to send event status SMS', ['event_id' => $event->id, 'error' => $e->getMessage()]);
                     }
 
-                    $message = 'Introductory payment approved. Event status updated to Meeting.';
+                    $message = 'Introductory payment approved. Event status: Meeting.';
                 } elseif ($payment->isDownpayment()) {
-                    // Update event status to scheduled
                     $oldStatus = $event->status;
                     $event->update(['status' => Event::STATUS_SCHEDULED]);
                     $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_SCHEDULED);
 
-                    // Send SMS for status change
                     try {
                         $this->smsNotifier->notifyEventStatusChange($event, Event::STATUS_SCHEDULED);
                     } catch (\Exception $e) {
-                        Log::error('Failed to send event status SMS', [
-                            'event_id' => $event->id,
-                            'error' => $e->getMessage()
-                        ]);
+                        Log::error('Failed to send event status SMS', ['event_id' => $event->id, 'error' => $e->getMessage()]);
                     }
 
                     $message = 'Downpayment approved. Event is now SCHEDULED.';
                 } else {
-                    // Balance or other payment type
                     $message = 'Payment approved successfully.';
                 }
 
@@ -178,25 +201,20 @@ class CustomerPaymentController extends Controller
                 }
             }
 
-            // Send in-app notification
             $this->notificationService->notifyCustomerPaymentApproved($payment);
 
-            // Send SMS notification for payment approval
             $smsSent = false;
             try {
                 $this->smsNotifier->notifyPaymentConfirmed($payment);
                 $smsSent = true;
             } catch (\Exception $e) {
-                Log::error('Failed to send payment approval SMS', [
-                    'payment_id' => $payment->id,
-                    'error' => $e->getMessage()
-                ]);
+                Log::error('Failed to send payment approval SMS', ['payment_id' => $payment->id, 'error' => $e->getMessage()]);
             }
 
             if ($smsSent) {
-                $message .= ' Customer notified via SMS and in-app notification.';
+                $message .= ' Customer notified via SMS and in-app.';
             } else {
-                $message .= ' Customer notified via in-app notification.';
+                $message .= ' Customer notified via in-app.';
             }
 
             DB::commit();
@@ -206,9 +224,10 @@ class CustomerPaymentController extends Controller
             DB::rollBack();
             Log::error('Failed to approve payment', [
                 'payment_id' => $payment->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
-            return back()->with('error', 'Failed to approve payment. Please try again.');
+            return back()->with('error', 'Failed to approve payment: ' . $e->getMessage());
         }
     }
 
