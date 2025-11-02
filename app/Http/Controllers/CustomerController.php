@@ -10,13 +10,50 @@ class CustomerController extends Controller
     public function index()
     {
         $q = request('q');
-        $customers = Customer::when($q, function ($query) use ($q) {
-            $q = "%" . strtolower($q) . "%";
-            $query->whereRaw('LOWER(customer_name) LIKE ?', [$q])
-                ->orWhereRaw('LOWER(email) LIKE ?', [$q])
-                ->orWhereRaw('LOWER(phone) LIKE ?', [$q]);
-        })
-            ->latest()->paginate(10)->withQueryString();
+        $hasEvents = request('has_events');
+        $dateRange = request('date_range');
+
+        $customers = Customer::query()
+            // Search filter
+            ->when($q, function ($query) use ($q) {
+                $searchTerm = "%" . strtolower($q) . "%";
+                $query->where(function ($query) use ($searchTerm) {
+                    $query->whereRaw('LOWER(customer_name) LIKE ?', [$searchTerm])
+                        ->orWhereRaw('LOWER(email) LIKE ?', [$searchTerm])
+                        ->orWhereRaw('LOWER(phone) LIKE ?', [$searchTerm]);
+                });
+            })
+            // Has events filter (Status)
+            ->when($hasEvents !== null && $hasEvents !== '', function ($query) use ($hasEvents) {
+                if ($hasEvents === '1') {
+                    // Customers with events
+                    $query->has('events');
+                } else {
+                    // Customers without events
+                    $query->doesntHave('events');
+                }
+            })
+            // Date range filter (Joined)
+            ->when($dateRange, function ($query) use ($dateRange) {
+                switch ($dateRange) {
+                    case 'today':
+                        $query->whereDate('created_at', today());
+                        break;
+                    case 'week':
+                        $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                        break;
+                    case 'month':
+                        $query->whereMonth('created_at', now()->month)
+                            ->whereYear('created_at', now()->year);
+                        break;
+                    case 'year':
+                        $query->whereYear('created_at', now()->year);
+                        break;
+                }
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
 
         return view('customers.index', compact('customers'));
     }

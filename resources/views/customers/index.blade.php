@@ -69,38 +69,70 @@
                         </div>
                     </div>
                 </div>
+
             </div>
 
-            {{-- Search Section --}}
+            {{-- Filters Section --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div class="flex items-center gap-2 mb-4">
                     <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                     </svg>
-                    <h3 class="font-semibold text-gray-800">Search Customers</h3>
+                    <h3 class="font-semibold text-gray-800">Filter Customers</h3>
                 </div>
 
-                <form method="GET" class="flex gap-3">
-                    <div class="flex-1 relative">
-                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <input name="q" value="{{ request('q') }}" placeholder="Search by name, email, or phone..."
-                            class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-200 focus:border-slate-400">
+                <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    {{-- Search --}}
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Search</label>
+                        <div class="relative">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <input type="text" name="q" value="{{ request('q') }}"
+                                placeholder="Name, email, or phone..."
+                                class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-200 focus:border-slate-400">
+                        </div>
                     </div>
-                    <button type="submit"
-                        class="px-6 py-2.5 bg-slate-700 text-white font-medium rounded-lg hover:bg-slate-800 transition">
-                        Search
-                    </button>
-                    @if(request('q'))
-                    <a href="{{ route('admin.customers.index') }}"
-                        class="px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
-                        Clear
-                    </a>
-                    @endif
+
+                    {{-- Has Events Filter --}}
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                        <select name="has_events"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-200 focus:border-slate-400">
+                            <option value="">All Customers</option>
+                            <option value="1" @selected(request('has_events')==='1' )>With Events</option>
+                            <option value="0" @selected(request('has_events')==='0' )>No Events</option>
+                        </select>
+                    </div>
+
+                    {{-- Date Range Filter --}}
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Joined</label>
+                        <select name="date_range"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-200 focus:border-slate-400">
+                            <option value="">All Time</option>
+                            <option value="today" @selected(request('date_range')==='today' )>Today</option>
+                            <option value="week" @selected(request('date_range')==='week' )>This Week</option>
+                            <option value="month" @selected(request('date_range')==='month' )>This Month</option>
+                            <option value="year" @selected(request('date_range')==='year' )>This Year</option>
+                        </select>
+                    </div>
+
+                    {{-- Action Buttons --}}
+                    <div class="flex gap-2 items-end">
+                        <a href="{{ route('admin.customers.index') }}"
+                            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition text-center">
+                            Reset
+                        </a>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition">
+                            Filter
+                        </button>
+                    </div>
                 </form>
             </div>
 
@@ -253,15 +285,15 @@
                                             d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                     </svg>
                                     <p class="text-gray-500 font-medium">
-                                        @if(request('q'))
-                                        No customers found matching "{{ request('q') }}"
+                                        @if(request('q') || request('has_events') !== null || request('date_range'))
+                                        No customers found matching your filters
                                         @else
                                         No customers yet
                                         @endif
                                     </p>
                                     <p class="text-gray-400 text-sm mt-1">
-                                        @if(request('q'))
-                                        Try a different search term
+                                        @if(request('q') || request('has_events') !== null || request('date_range'))
+                                        Try adjusting your filters
                                         @else
                                         Get started by adding your first customer
                                         @endif
@@ -276,7 +308,7 @@
                 {{-- Pagination --}}
                 @if($customers->hasPages())
                 <div class="px-6 py-4 border-t border-gray-200 bg-slate-50">
-                    {{ $customers->links() }}
+                    {{ $customers->withQueryString()->links() }}
                 </div>
                 @endif
             </div>
