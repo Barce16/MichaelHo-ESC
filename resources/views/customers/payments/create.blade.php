@@ -82,6 +82,7 @@
                 </div>
             </div>
             @elseif($paymentType === 'downpayment')
+            @if(isset($hasApprovedDownpayment) && !$hasApprovedDownpayment)
             <div class="bg-violet-50 border-l-4 border-violet-500 rounded-lg p-4">
                 <div class="flex gap-3">
                     <svg class="w-5 h-5 text-violet-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
@@ -97,6 +98,8 @@
                     </div>
                 </div>
             </div>
+            @endif
+
             @elseif($paymentType === 'balance')
             <div class="bg-emerald-50 border-l-4 border-emerald-500 rounded-lg p-4">
                 <div class="flex gap-3">
@@ -161,13 +164,17 @@
 
                     <div class="space-y-6">
                         {{-- Payment Amount --}}
+                        @php
+                        $hasApprovedDown = isset($hasApprovedDownpayment) && $hasApprovedDownpayment;
+                        $defaultOption = $hasApprovedDown ? '2' : '0';
+                        $minCustomAmount = $hasApprovedDown ? 100 : $amount;
+                        @endphp
                         <div x-data="{ 
-                            payInFull: '0',
-                            introAmount: 5000,
-                            downpaymentAmount: {{ $amount ?? 0 }},
-                            fullAmount: {{ $event->billing ? $event->billing->total_amount : 0 }},
-                            remainingBalance: {{ $event->billing ? $event->billing->remaining_balance : 0 }}
-                        }">
+                                payInFull: '{{ $defaultOption }}',
+                                customAmount: {{ $minCustomAmount }},
+                                downpaymentAmount: {{ $amount ?? 0 }},
+                                remainingBalance: {{ $event->billing ? $event->billing->remaining_balance : 0 }}
+                            }">
                             <label for="amount" class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                 <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 36 36">
                                     <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z">
@@ -221,24 +228,42 @@
                             </div>
 
                             <input type="hidden" name="pay_in_full" :value="payInFull === '1' ? 1 : 0">
-                            <input type="hidden" name="amount" :value="payInFull === '1' ? fullAmount : introAmount">
+                            <input type="hidden" name="amount" :value="payInFull === '1' ? remainingBalance : 5000">
 
                             @elseif($paymentType === 'downpayment' && $event->billing &&
                             $event->billing->remaining_balance > 0)
                             {{-- Payment Options for Downpayment --}}
                             <div class="space-y-3 mb-4">
-                                {{-- Downpayment Option --}}
+                                {{-- Downpayment Option - Only show if not yet approved --}}
+                                @if(!$hasApprovedDown)
                                 <label
                                     class="flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all"
                                     :class="payInFull === '0' ? 'border-violet-500 bg-violet-50' : 'border-gray-200 hover:border-gray-300'">
                                     <input type="radio" name="payment_option" value="0" x-model="payInFull"
-                                        class="mt-1 text-violet-600 focus:ring-violet-500">
+                                        class="mt-1 text-violet-600">
                                     <div class="flex-1">
                                         <div class="font-semibold text-gray-900">Downpayment</div>
                                         <div class="text-2xl font-bold text-violet-600 my-1">₱{{ number_format($amount,
                                             2) }}</div>
-                                        <p class="text-sm text-gray-600">Pay the downpayment to proceed with event
-                                            planning</p>
+                                        <p class="text-sm text-gray-600">Pay the downpayment to proceed</p>
+                                    </div>
+                                </label>
+                                @endif
+
+                                {{-- Custom Amount Option --}}
+                                <label
+                                    class="flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                    :class="payInFull === '2' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'">
+                                    <input type="radio" name="payment_option" value="2" x-model="payInFull"
+                                        class="mt-1 text-blue-600">
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-gray-900">Custom Amount</div>
+                                        <div class="text-sm text-gray-600 mb-2">Pay any amount towards balance</div>
+                                        <input type="number" step="0.01" x-model="customAmount"
+                                            :disabled="payInFull !== '2'" min="{{ $minCustomAmount }}"
+                                            max="{{ $event->billing->remaining_balance }}" placeholder="Enter amount"
+                                            class="w-full px-3 py-2 border rounded-lg"
+                                            :class="payInFull === '2' ? 'border-blue-300' : 'border-gray-300 bg-gray-50'">
                                     </div>
                                 </label>
 
@@ -247,14 +272,13 @@
                                     class="flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all"
                                     :class="payInFull === '1' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'">
                                     <input type="radio" name="payment_option" value="1" x-model="payInFull"
-                                        class="mt-1 text-green-600 focus:ring-green-500">
+                                        class="mt-1 text-green-600">
                                     <div class="flex-1">
                                         <div class="flex items-center gap-2">
                                             <div class="font-semibold text-gray-900">Pay Remaining Balance</div>
                                             <span
-                                                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                Save Time
-                                            </span>
+                                                class="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Save
+                                                Time</span>
                                         </div>
                                         <div class="text-2xl font-bold text-green-600 my-1">
                                             ₱{{ number_format($event->billing->remaining_balance, 2) }}
@@ -266,7 +290,7 @@
 
                             <input type="hidden" name="pay_in_full" :value="payInFull === '1' ? 1 : 0">
                             <input type="hidden" name="amount"
-                                :value="payInFull === '1' ? remainingBalance : downpaymentAmount">
+                                :value="payInFull === '1' ? remainingBalance : (payInFull === '2' ? customAmount : downpaymentAmount)">
 
                             @elseif($paymentType === 'balance')
                             {{-- Pay in Full Option for Balance --}}

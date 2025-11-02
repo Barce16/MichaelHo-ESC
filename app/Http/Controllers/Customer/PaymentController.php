@@ -40,12 +40,25 @@ class PaymentController extends Controller
             abort(403);
         }
 
+        // Check if downpayment is already paid
+        $hasDownpaymentPaid = false;
+        if ($event->billing) {
+            $hasDownpaymentPaid = $event->billing->payments()
+                ->where('payment_type', Payment::TYPE_DOWNPAYMENT)
+                ->where('status', Payment::STATUS_APPROVED)
+                ->exists();
+        }
+
         if ($event->status === Event::STATUS_REQUEST_MEETING) {
             return $this->createIntro($event);
         } elseif ($event->status === Event::STATUS_MEETING) {
+            // If downpayment already paid, route to balance
+            if ($hasDownpaymentPaid) {
+                return $this->createBalancePayment($event);
+            }
             return $this->createDownpayment($event);
         } elseif (in_array($event->status, [Event::STATUS_SCHEDULED, Event::STATUS_ONGOING, Event::STATUS_COMPLETED])) {
-            if (!$event->hasDownpaymentPaid()) {
+            if (!$hasDownpaymentPaid) {
                 return redirect()
                     ->route('customer.events.show', $event)
                     ->with('error', 'Please complete your downpayment before making balance payments.');
@@ -136,7 +149,13 @@ class PaymentController extends Controller
         $amount = $event->billing->downpayment_amount - $event->billing->introductory_payment_amount;
         $paymentType = 'downpayment';
 
-        return view('customers.payments.create', compact('event', 'amount', 'paymentType'));
+
+        $hasApprovedDownpayment = $event->billing->payments()
+            ->where('payment_type', Payment::TYPE_DOWNPAYMENT)
+            ->where('status', Payment::STATUS_APPROVED)
+            ->exists();
+
+        return view('customers.payments.create', compact('event', 'amount', 'paymentType', 'hasApprovedDownpayment'));
     }
 
     /**
@@ -173,7 +192,13 @@ class PaymentController extends Controller
         $amount = $remainingBalance;
         $paymentType = 'balance';
 
-        return view('customers.payments.create', compact('event', 'amount', 'paymentType'));
+        $hasApprovedDownpayment = $event->billing->payments()
+            ->where('payment_type', Payment::TYPE_DOWNPAYMENT)
+            ->where('status', Payment::STATUS_APPROVED)
+            ->exists();
+
+
+        return view('customers.payments.create', compact('event', 'amount', 'paymentType', 'hasApprovedDownpayment'));
     }
 
     /**
@@ -252,9 +277,15 @@ class PaymentController extends Controller
                 }
             } else {
                 // Paying downpayment only (minus intro already paid)
-                $expectedAmount = $event->billing->downpayment_amount - $event->billing->introductory_payment_amount;
-                if (abs((float)$data['amount'] - $expectedAmount) > 0.01) {
-                    return back()->with('error', 'Downpayment amount must be ₱' . number_format($expectedAmount, 2));
+                $minAmount = $event->billing->downpayment_amount - $event->billing->introductory_payment_amount;
+                $maxAmount = $event->billing->remaining_balance;
+
+                if ((float)$data['amount'] < $minAmount) {
+                    return back()->with('error', 'Payment must be at least ₱' . number_format($minAmount, 2) . ' (downpayment amount)');
+                }
+
+                if ((float)$data['amount'] > $maxAmount) {
+                    return back()->with('error', 'Payment cannot exceed ₱' . number_format($maxAmount, 2) . ' (remaining balance)');
                 }
             }
 

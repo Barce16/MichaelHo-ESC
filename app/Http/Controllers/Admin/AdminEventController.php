@@ -553,14 +553,18 @@ class AdminEventController extends Controller
         DB::beginTransaction();
 
         try {
-            if ($isFullPayment) {
-                // FULL PAYMENT - Split into downpayment and balance records
 
-                // Store original payment amount before modifying
-                $originalPaymentAmount = $payment->amount;
+            $originalPaymentAmount = $payment->amount;
+            $downpaymentPortion = $billing->downpayment_amount - $billing->introductory_payment_amount;
 
-                // 1. Update downpayment to correct portion
-                $downpaymentPortion = $billing->downpayment_amount - $billing->introductory_payment_amount;
+            // Check payment type
+            $isFullPayment = abs($originalPaymentAmount - $billing->remaining_balance) < 0.01;
+            $isCustomAmount = $originalPaymentAmount > $downpaymentPortion && !$isFullPayment;
+
+            if ($isFullPayment || $isCustomAmount) {
+                // Split payment
+
+                // 1. Update to downpayment portion
                 $payment->update([
                     'status' => Payment::STATUS_APPROVED,
                     'payment_date' => now(),
@@ -569,13 +573,13 @@ class AdminEventController extends Controller
 
                 $billing->update(['downpayment_payment_status' => 'paid']);
 
-                // 2. Create and approve BALANCE record
+                // 2. Create balance payment for the rest
                 $balanceAmount = $originalPaymentAmount - $downpaymentPortion;
                 if ($balanceAmount > 0) {
-                    $balance = Payment::create([
+                    Payment::create([
                         'billing_id' => $billing->id,
                         'payment_type' => Payment::TYPE_BALANCE,
-                        'payment_image' => $payment->payment_image, // Same receipt
+                        'payment_image' => $payment->payment_image,
                         'amount' => $balanceAmount,
                         'payment_method' => $payment->payment_method,
                         'status' => Payment::STATUS_APPROVED,
@@ -583,10 +587,13 @@ class AdminEventController extends Controller
                     ]);
                 }
 
-                // Mark billing as fully paid
-                $billing->update(['status' => 'paid']);
-
-                $message = 'Full payment approved! Event is now fully paid.';
+                // 3. Check if fully paid
+                if ($billing->isFullyPaid()) {
+                    $billing->update(['status' => 'paid']);
+                    $message = 'Full payment approved! Event is now fully paid.';
+                } else {
+                    $message = 'Payment approved! ₱' . number_format($downpaymentPortion, 2) . ' applied to downpayment, ₱' . number_format($balanceAmount, 2) . ' applied to balance.';
+                }
             } else {
                 // REGULAR DOWNPAYMENT - Normal flow
 
