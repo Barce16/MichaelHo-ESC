@@ -100,7 +100,7 @@
                         <div class="flex-1">
                             <h3 class="text-lg font-semibold text-orange-900 mb-1">Introductory Payment Submitted</h3>
                             <p class="text-sm text-orange-700 mb-4">
-                                Customer has submitted proof of ₱15,000 introductory payment
+                                Customer has submitted proof of ₱5,000 introductory payment
                             </p>
                             <div class="flex gap-3">
                                 <form method="POST" action="{{ route('admin.events.approveIntroPayment', $event) }}">
@@ -629,7 +629,7 @@
                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <div class="text-sm font-medium text-orange-900 mb-1">Awaiting Payment</div>
-                                <div class="text-xs text-orange-700">Customer needs to pay ₱15,000 intro payment</div>
+                                <div class="text-xs text-orange-700">Customer needs to pay ₱5,000 intro payment</div>
                             </div>
                             @endif
 
@@ -655,7 +655,7 @@
                                     </svg>
                                     <div class="text-sm font-medium text-blue-900 mb-1">Awaiting Downpayment</div>
                                     <div class="text-xs text-blue-700">Customer needs to pay ₱{{
-                                        number_format($event->billing->downpayment_amount - 15000, 2) }}</div>
+                                        number_format($event->billing->downpayment_amount - 5000, 2) }}</div>
                                 </div>
                                 @endif
 
@@ -766,7 +766,7 @@
                                     </div>
                                     <div>
                                         <h3 class="text-lg font-semibold text-emerald-900">Approve Event</h3>
-                                        <p class="text-sm text-emerald-700">Customer will be asked to pay ₱15,000
+                                        <p class="text-sm text-emerald-700">Customer will be asked to pay ₱5,000
                                             introductory payment</p>
                                     </div>
                                 </div>
@@ -791,7 +791,7 @@
                                     </div>
                                     <div>
                                         <div class="text-xs text-gray-500 mb-1">Intro Payment Required</div>
-                                        <div class="text-xl font-bold text-emerald-600">₱15,000.00</div>
+                                        <div class="text-xl font-bold text-emerald-600">₱5,000.00</div>
                                     </div>
                                 </div>
                             </div>
@@ -808,7 +808,7 @@
                                         <ul class="text-xs text-blue-800 space-y-1">
                                             <li>• Customer account will be created automatically</li>
                                             <li>• Customer will receive login credentials via email</li>
-                                            <li>• Customer must pay ₱15,000 introductory payment</li>
+                                            <li>• Customer must pay ₱5,000 introductory payment</li>
                                             <li>• After payment verification, you can request downpayment</li>
                                         </ul>
                                     </div>
@@ -957,13 +957,13 @@
 
                                 <div class="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
                                     <div class="text-xs text-emerald-600 mb-1">Intro Paid</div>
-                                    <div class="text-xl font-bold text-emerald-600">₱15,000.00</div>
+                                    <div class="text-xl font-bold text-emerald-600">₱5,000.00</div>
                                 </div>
 
                                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                                     <div class="text-xs text-gray-500 mb-1">Remaining</div>
                                     <div class="text-xl font-bold text-gray-700">₱<span
-                                            x-text="fmt(grandTotal - 15000)"></span></div>
+                                            x-text="fmt(grandTotal - 5000)"></span></div>
                                 </div>
                             </div>
 
@@ -980,8 +980,8 @@
                                 </div>
                                 <p class="text-xs text-gray-500 mt-2">
                                     Customer will pay: <span class="font-semibold text-gray-700">₱<span
-                                            x-text="fmt(Math.max(downpaymentAmount - 15000, 0))"></span></span>
-                                    (₱15,000 already paid as intro payment)
+                                            x-text="fmt(Math.max(downpaymentAmount - 5000, 0))"></span></span>
+                                    (₱5,000 already paid as intro payment)
                                 </p>
                                 <p class="text-xs text-gray-500 mt-1">Default: 50% of total (₱<span
                                         x-text="fmt(grandTotal * 0.5)"></span>)</p>
@@ -997,7 +997,7 @@
                                     <div class="text-sm text-amber-900">
                                         <p class="font-medium mb-1">Important Note:</p>
                                         <p class="text-xs text-amber-800">
-                                            The downpayment amount you enter should include the ₱15,000 introductory
+                                            The downpayment amount you enter should include the ₱5,000 introductory
                                             payment.
                                             The customer will only pay the difference.
                                         </p>

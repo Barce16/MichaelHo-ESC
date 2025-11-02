@@ -358,7 +358,7 @@
                 <h3>💰 Payment Summary</h3>
                 <div class="billing-row">
                     <span>Introductory Payment:</span>
-                    <span>₱{{ number_format(15000, 2) }}</span>
+                    <span>₱{{ number_format(5000, 2) }}</span>
                 </div>
                 <div class="billing-row">
                     <span>Downpayment:</span>
@@ -366,7 +366,7 @@
                 </div>
                 <div class="billing-row">
                     <span style="font-weight: 600;">Total Paid:</span>
-                    <span style="font-weight: 600;">₱{{ number_format(15000 + $payment->amount, 2) }}</span>
+                    <span style="font-weight: 600;">₱{{ number_format(5000 + $payment->amount, 2) }}</span>
                 </div>
                 @if($event->billing->remaining_balance > 0)
                 <div class="billing-row total">

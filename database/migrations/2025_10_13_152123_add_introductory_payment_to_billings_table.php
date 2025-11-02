@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('billings', function (Blueprint $table) {
             if (!Schema::hasColumn('billings', 'introductory_payment_amount')) {
-                $table->decimal('introductory_payment_amount', 10, 2)->default(15000)->after('downpayment_amount');
+                $table->decimal('introductory_payment_amount', 10, 2)->default(5000)->after('downpayment_amount');
             }
 
             if (!Schema::hasColumn('billings', 'introductory_payment_status')) {

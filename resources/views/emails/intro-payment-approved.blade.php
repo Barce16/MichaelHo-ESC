@@ -277,7 +277,7 @@
 
             <div class="highlight-box">
                 <h4>💡 Important Note</h4>
-                <p>The ₱15,000 introductory payment you made will be <strong>deducted from your total
+                <p>The ₱5,000 introductory payment you made will be <strong>deducted from your total
                         downpayment</strong>. You'll only pay the remaining balance when we request the downpayment.</p>
             </div>
 

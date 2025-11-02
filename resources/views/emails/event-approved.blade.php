@@ -370,7 +370,7 @@
             <!-- Introductory Payment Highlight -->
             <div class="payment-highlight">
                 <h3>💳 Introductory Payment Required</h3>
-                <div class="payment-amount">₱15,000.00</div>
+                <div class="payment-amount">₱5,000.00</div>
                 <p class="payment-description">
                     Pay this amount to secure your event booking and schedule your planning meeting
                 </p>
@@ -378,7 +378,7 @@
 
             <div class="info-callout">
                 <h4>ℹ️ About the Introductory Payment</h4>
-                <p>• This ₱15,000 payment secures your event date and allows us to begin planning</p>
+                <p>• This ₱5,000 payment secures your event date and allows us to begin planning</p>
                 <p>• This amount will be <strong>deducted from your total downpayment</strong> later</p>
                 <p>• After verification, we'll schedule a meeting to finalize all details</p>
             </div>
@@ -462,7 +462,7 @@
             <div class="message">
                 <h3 style="color: #2d3748; margin-bottom: 20px;">📋 What Happens Next?</h3>
                 <ol class="step-list">
-                    <li>Make your <strong>₱15,000 introductory payment</strong> using any method above</li>
+                    <li>Make your <strong>₱5,000 introductory payment</strong> using any method above</li>
                     <li>Log in to your dashboard using the credentials provided</li>
                     <li><strong>Upload your payment receipt/proof</strong> for verification</li>
                     <li>Our team will verify your payment within 24-48 hours</li>

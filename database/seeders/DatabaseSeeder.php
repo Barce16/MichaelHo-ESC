@@ -141,7 +141,7 @@ class DatabaseSeeder extends Seeder
                 'contact_person' => null,
                 'contact_email' => null,
                 'contact_phone' => null,
-                'price' => 15000.00,
+                'price' => 5000.00,
                 'category' => 'HMUA',
                 'is_active' => 1,
                 'notes' => "Prenuptial/Engagement Shoot\r\n10 Heads On-the-Day of the Event (including bride)",

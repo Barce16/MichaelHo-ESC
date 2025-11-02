@@ -63,7 +63,7 @@ class NotificationService
             ],
             'request_meeting' => [
                 'title' => 'Event Approved!',
-                'message' => "Great news! Your event '{$event->name}' has been approved. Please pay the ₱15,000 introductory payment to proceed."
+                'message' => "Great news! Your event '{$event->name}' has been approved. Please pay the ₱5,000 introductory payment to proceed."
             ],
             'meeting' => [
                 'title' => 'Meeting Scheduled',

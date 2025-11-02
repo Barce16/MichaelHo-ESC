@@ -76,7 +76,7 @@
                     </svg>
                     <div class="text-sm text-blue-900">
                         <p class="font-semibold mb-1">About Introductory Payment</p>
-                        <p>This ₱15,000 payment secures your event booking and allows us to schedule your planning
+                        <p>This ₱5,000 payment secures your event booking and allows us to schedule your planning
                             meeting. This amount will be deducted from your total downpayment later.</p>
                     </div>
                 </div>
@@ -91,7 +91,7 @@
                     </svg>
                     <div class="text-sm text-violet-900">
                         <p class="font-semibold mb-1">About Downpayment</p>
-                        <p>The ₱15,000 introductory payment has been deducted from your downpayment. You only need to
+                        <p>The ₱5,000 introductory payment has been deducted from your downpayment. You only need to
                             pay ₱{{ number_format($amount, 2) }} now to complete your downpayment and schedule your
                             event.</p>
                     </div>
@@ -163,7 +163,7 @@
                         {{-- Payment Amount --}}
                         <div x-data="{ 
                             payInFull: '0',
-                            introAmount: 15000,
+                            introAmount: 5000,
                             fullAmount: {{ $event->billing ? $event->billing->total_amount : 0 }}
                         }">
                             <label for="amount" class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -190,7 +190,7 @@
                                         class="mt-1 text-orange-600 focus:ring-orange-500">
                                     <div class="flex-1">
                                         <div class="font-semibold text-gray-900">Introductory Payment</div>
-                                        <div class="text-2xl font-bold text-orange-600 my-1">₱15,000.00</div>
+                                        <div class="text-2xl font-bold text-orange-600 my-1">₱5,000.00</div>
                                         <p class="text-sm text-gray-600">Pay the introductory fee to schedule a meeting
                                         </p>
                                     </div>

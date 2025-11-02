@@ -251,7 +251,7 @@
                                     @if($event->billing->introductory_payment_status === 'paid')
                                     <div class="flex items-center justify-between text-sm">
                                         <span class="text-gray-600">Introductory Payment (Paid)</span>
-                                        <span class="text-emerald-600 font-semibold">- ₱15,000.00</span>
+                                        <span class="text-emerald-600 font-semibold">- ₱5,000.00</span>
                                     </div>
                                     @endif
                                     <div class="flex items-center justify-between pt-2 border-t border-gray-200">
@@ -725,15 +725,15 @@
                             <div class="flex items-center justify-between text-sm">
                                 <span>Intro Payment {{ $event->billing->introductory_payment_status === 'paid' ?
                                     '(Paid)' : '(Pending)' }}</span>
-                                <span>{{ $event->billing->introductory_payment_status === 'paid' ? '- ₱15,000.00' :
-                                    '₱15,000.00' }}</span>
+                                <span>{{ $event->billing->introductory_payment_status === 'paid' ? '- ₱5,000.00' :
+                                    '₱5,000.00' }}</span>
                             </div>
                             @if($event->billing->downpayment_amount > 0)
                             <div class="flex items-center justify-between text-sm">
                                 <span>Downpayment {{ $event->hasDownpaymentPaid() ? '(Paid)' : '(Pending)' }}</span>
                                 <span>{{ $event->hasDownpaymentPaid() ? '- ₱' .
-                                    number_format($event->billing->downpayment_amount - 15000, 2) : '₱' .
-                                    number_format($event->billing->downpayment_amount - 15000, 2) }}</span>
+                                    number_format($event->billing->downpayment_amount - 5000, 2) : '₱' .
+                                    number_format($event->billing->downpayment_amount - 5000, 2) }}</span>
                             </div>
                             @endif
                             @if($event->billing->remaining_balance > 0)

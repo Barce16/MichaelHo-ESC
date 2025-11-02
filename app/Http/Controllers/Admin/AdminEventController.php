@@ -138,7 +138,7 @@ class AdminEventController extends Controller
             ['event_id' => $event->id],
             [
                 'total_amount' => $grandTotal,
-                'introductory_payment_amount' => 15000,
+                'introductory_payment_amount' => 5000,
                 'introductory_payment_status' => 'pending',
                 'downpayment_amount' => $grandTotal / 2,
                 'status' => 'pending',
@@ -211,7 +211,7 @@ class AdminEventController extends Controller
                 ]);
             }
 
-            $message = 'Event approved! Customer must pay ₱15,000 introductory payment. Account credentials sent via email and SMS.';
+            $message = 'Event approved! Customer must pay ₱5,000 introductory payment. Account credentials sent via email and SMS.';
         } else {
             // EXISTING USER: No credentials
 
@@ -232,7 +232,7 @@ class AdminEventController extends Controller
                 ]);
             }
 
-            $message = 'Event approved! Customer must pay ₱15,000 introductory payment. Customer notified via email and SMS.';
+            $message = 'Event approved! Customer must pay ₱5,000 introductory payment. Customer notified via email and SMS.';
         }
 
         return back()->with('success', $message);
@@ -317,18 +317,18 @@ class AdminEventController extends Controller
             if ($isFullPayment) {
                 // FULL PAYMENT - Split into 3 payment records
 
-                // 1. Update intro payment to ₱15,000 portion only
+                // 1. Update intro payment to ₱5,000 portion only
                 $payment->update([
                     'status' => Payment::STATUS_APPROVED,
                     'payment_date' => now(),
-                    'amount' => 15000, // Split to intro portion only
+                    'amount' => 5000, // Split to intro portion only
                 ]);
 
                 // Mark billing intro payment as paid
                 $billing->markIntroPaid();
 
                 // 2. Create and approve DOWNPAYMENT record
-                $downpaymentAmount = $billing->downpayment_amount - 15000; // Downpayment minus intro
+                $downpaymentAmount = $billing->downpayment_amount - 5000; // Downpayment minus intro
                 if ($downpaymentAmount > 0) {
                     $downpayment = Payment::create([
                         'billing_id' => $billing->id,
@@ -517,7 +517,7 @@ class AdminEventController extends Controller
             'downpayment_amount' => $data['downpayment_amount'], // Store full amount
         ]);
 
-        return back()->with('success', 'Downpayment requested. Customer will pay ₱' . number_format($actualAmount, 2) . ' (after ₱15k deduction).');
+        return back()->with('success', 'Downpayment requested. Customer will pay ₱' . number_format($actualAmount, 2) . ' (after ₱5k deduction).');
     }
 
     /**

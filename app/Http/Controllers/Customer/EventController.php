@@ -171,12 +171,12 @@ class EventController extends Controller
         }
 
         // Calculate amounts
-        $introAmount = 15000;
+        $introAmount = 5000;
         $downpaymentAmount = 0;
 
         if ($event->billing && $event->billing->downpayment_amount > 0) {
             // Only subtract intro payment if it's been approved
-            $introDeduction = ($event->billing->introductory_payment_status === 'paid') ? 15000 : 0;
+            $introDeduction = ($event->billing->introductory_payment_status === 'paid') ? 5000 : 0;
             $downpaymentAmount = $event->billing->downpayment_amount - $introDeduction;
         }
 

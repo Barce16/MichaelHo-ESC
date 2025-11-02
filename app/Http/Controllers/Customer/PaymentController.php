@@ -89,7 +89,7 @@ class PaymentController extends Controller
             }
         }
 
-        $amount = 15000;
+        $amount = 5000;
         $paymentType = 'introductory';
 
         return view('customers.payments.create', compact('event', 'amount', 'paymentType'));
@@ -216,8 +216,8 @@ class PaymentController extends Controller
                 }
             } else {
                 // Paying intro only
-                if ((float)$data['amount'] !== 15000.00) {
-                    return back()->with('error', 'Introductory payment must be exactly ₱15,000.00');
+                if ((float)$data['amount'] !== 5000.00) {
+                    return back()->with('error', 'Introductory payment must be exactly ₱5,000.00');
                 }
             }
 

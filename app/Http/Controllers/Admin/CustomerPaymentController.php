@@ -63,17 +63,17 @@ class CustomerPaymentController extends Controller
             if ($isFullPayment) {
                 // FULL PAYMENT - Create additional payment records
 
-                // 1. Approve the intro payment (₱15,000 portion)
+                // 1. Approve the intro payment (₱5,000 portion)
                 $payment->update([
                     'status' => Payment::STATUS_APPROVED,
                     'payment_date' => now(),
-                    'amount' => 15000, // Split to intro portion only
+                    'amount' => 5000, // Split to intro portion only
                 ]);
 
                 $billing->markIntroPaid();
 
                 // 2. Create and approve DOWNPAYMENT record
-                $downpaymentAmount = $billing->downpayment_amount - 15000; // Downpayment minus intro
+                $downpaymentAmount = $billing->downpayment_amount - 5000; // Downpayment minus intro
                 if ($downpaymentAmount > 0) {
                     $downpayment = Payment::create([
                         'billing_id' => $billing->id,

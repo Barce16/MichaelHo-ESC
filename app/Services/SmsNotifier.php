@@ -124,7 +124,7 @@ class SmsNotifier
         };
 
         $message = "Good news {$prefix} {$customer->customer_name}! Your event '{$event->name}' has been approved.\n\n";
-        $message .= "Next Step: Pay P15,000 introductory payment to schedule your meeting.\n\n";
+        $message .= "Next Step: Pay P5,000 introductory payment to schedule your meeting.\n\n";
         $message .= "Login to your account to submit payment: " . url('/login');
 
         return $this->sendSms($customer->phone, $message);
@@ -148,7 +148,7 @@ class SmsNotifier
         $message .= "Login Details:\n";
         $message .= "Username: {$username}\n";
         $message .= "Password: {$password}\n\n";
-        $message .= "Next Step: Pay P15,000 introductory payment.\n\n";
+        $message .= "Next Step: Pay P5,000 introductory payment.\n\n";
         $message .= "Login at: " . url('/login');
 
         return $this->sendSms($customer->phone, $message);
