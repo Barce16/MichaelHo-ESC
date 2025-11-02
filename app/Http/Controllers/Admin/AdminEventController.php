@@ -521,7 +521,7 @@ class AdminEventController extends Controller
     }
 
     /**
-     * Approve downpayment
+     * Approve downpayment 
      */
     public function approveDownpayment(Request $request, Event $event)
     {
@@ -539,49 +539,113 @@ class AdminEventController extends Controller
             return back()->with('error', 'No pending downpayment found.');
         }
 
-        // Approve the payment
-        $payment->update([
-            'status' => Payment::STATUS_APPROVED,
-            'payment_date' => now(),
-        ]);
-
-        // Send in-app notification
-        $this->notificationService->notifyCustomerPaymentApproved($payment);
-
         $billing = $event->billing;
-        if ($billing && $billing->isFullyPaid()) {
-            $billing->update(['status' => 'paid']);
-        }
 
-        // Send email notification
-        if ($event->customer->user) {
-            try {
-                $event->customer->user->notify(new DownpaymentApprovedNotification($event, $payment));
-            } catch (\Exception $e) {
-                Log::error('Failed to send downpayment approval email: ' . $e->getMessage());
+        // Check if this is a FULL PAYMENT (paying remaining balance)
+        $isFullPayment = false;
+        if ($billing->remaining_balance > 0) {
+            // Check if payment amount equals remaining balance (full payment)
+            if (abs($payment->amount - $billing->remaining_balance) < 0.01) {
+                $isFullPayment = true;
             }
         }
 
-        // Send SMS notification
-        $smsSent = false;
+        DB::beginTransaction();
+
         try {
-            $this->smsNotifier->notifyPaymentConfirmed($payment);
-            $smsSent = true;
+            if ($isFullPayment) {
+                // FULL PAYMENT - Split into downpayment and balance records
+
+                // Store original payment amount before modifying
+                $originalPaymentAmount = $payment->amount;
+
+                // 1. Update downpayment to correct portion
+                $downpaymentPortion = $billing->downpayment_amount - $billing->introductory_payment_amount;
+                $payment->update([
+                    'status' => Payment::STATUS_APPROVED,
+                    'payment_date' => now(),
+                    'amount' => $downpaymentPortion,
+                ]);
+
+                $billing->update(['downpayment_payment_status' => 'paid']);
+
+                // 2. Create and approve BALANCE record
+                $balanceAmount = $originalPaymentAmount - $downpaymentPortion;
+                if ($balanceAmount > 0) {
+                    $balance = Payment::create([
+                        'billing_id' => $billing->id,
+                        'payment_type' => Payment::TYPE_BALANCE,
+                        'payment_image' => $payment->payment_image, // Same receipt
+                        'amount' => $balanceAmount,
+                        'payment_method' => $payment->payment_method,
+                        'status' => Payment::STATUS_APPROVED,
+                        'payment_date' => now(),
+                    ]);
+                }
+
+                // Mark billing as fully paid
+                $billing->update(['status' => 'paid']);
+
+                $message = 'Full payment approved! Event is now fully paid.';
+            } else {
+                // REGULAR DOWNPAYMENT - Normal flow
+
+                // Approve the payment
+                $payment->update([
+                    'status' => Payment::STATUS_APPROVED,
+                    'payment_date' => now(),
+                ]);
+
+                $billing->update(['downpayment_payment_status' => 'paid']);
+
+                if ($billing->isFullyPaid()) {
+                    $billing->update(['status' => 'paid']);
+                }
+
+                $message = 'Downpayment approved.';
+            }
+
+            // Send in-app notification
+            $this->notificationService->notifyCustomerPaymentApproved($payment);
+
+            // Send email notification
+            if ($event->customer->user) {
+                try {
+                    $event->customer->user->notify(new DownpaymentApprovedNotification($event, $payment));
+                } catch (\Exception $e) {
+                    Log::error('Failed to send downpayment approval email: ' . $e->getMessage());
+                }
+            }
+
+            // Send SMS notification
+            $smsSent = false;
+            try {
+                $this->smsNotifier->notifyPaymentConfirmed($payment);
+                $smsSent = true;
+            } catch (\Exception $e) {
+                Log::error('Failed to send downpayment approval SMS', [
+                    'payment_id' => $payment->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            if ($smsSent) {
+                $message .= ' Customer notified via email, SMS, and in-app notification.';
+            } else {
+                $message .= ' Customer notified via email and in-app notification.';
+            }
+
+            DB::commit();
+
+            return back()->with('success', $message);
         } catch (\Exception $e) {
-            Log::error('Failed to send downpayment approval SMS', [
+            DB::rollBack();
+            Log::error('Failed to approve downpayment', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage()
             ]);
+            return back()->with('error', 'Failed to approve payment. Please try again.');
         }
-
-        $message = 'Downpayment approved.';
-        if ($smsSent) {
-            $message .= ' Customer notified via email, SMS, and in-app notification.';
-        } else {
-            $message .= ' Customer notified via email and in-app notification.';
-        }
-
-        return back()->with('success', $message);
     }
 
     /**

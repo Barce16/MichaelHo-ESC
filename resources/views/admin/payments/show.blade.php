@@ -84,13 +84,6 @@
                         @endif
 
                         <div>
-                            <div class="text-xs font-medium text-gray-500 mb-1">Reference No.</div>
-                            <div class="text-sm font-medium text-gray-900">
-                                {{ $payment->reference_number ?? 'N/A' }}
-                            </div>
-                        </div>
-
-                        <div>
                             <div class="text-xs font-medium text-gray-500 mb-1">Payment Date</div>
                             <div class="text-sm font-medium text-gray-900">
                                 {{ $payment->payment_date?->format('F d, Y') ?? 'N/A' }}
@@ -99,7 +92,8 @@
 
                         <div>
                             <div class="text-xs font-medium text-gray-500 mb-1">Submitted</div>
-                            <div class="text-sm text-gray-600">{{ $payment->created_at->format('M d, Y h:i A') }}</div>
+                            <div class="text-sm font-medium text-gray-900">{{ $payment->created_at->format('M d, Y h:i
+                                A') }}</div>
                         </div>
 
                         @if($payment->notes)

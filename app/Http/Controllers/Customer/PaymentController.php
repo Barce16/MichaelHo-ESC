@@ -244,11 +244,18 @@ class PaymentController extends Controller
                 return back()->with('error', 'Downpayment has not been requested yet.');
             }
 
-            // Calculate expected amount
-            $expectedAmount = $event->billing->downpayment_amount - $event->billing->introductory_payment_amount;
-
-            if (abs((float)$data['amount'] - $expectedAmount) > 0.01) {
-                return back()->with('error', 'Downpayment amount must be ₱' . number_format($expectedAmount, 2));
+            if ($payInFull) {
+                // Paying full remaining balance
+                $expectedAmount = $event->billing->remaining_balance;
+                if (abs((float)$data['amount'] - $expectedAmount) > 0.01) {
+                    return back()->with('error', 'Full payment amount must be exactly ₱' . number_format($expectedAmount, 2));
+                }
+            } else {
+                // Paying downpayment only (minus intro already paid)
+                $expectedAmount = $event->billing->downpayment_amount - $event->billing->introductory_payment_amount;
+                if (abs((float)$data['amount'] - $expectedAmount) > 0.01) {
+                    return back()->with('error', 'Downpayment amount must be ₱' . number_format($expectedAmount, 2));
+                }
             }
 
             // Check for existing pending
@@ -304,7 +311,7 @@ class PaymentController extends Controller
         ]);
 
         // Set success message
-        if ($payInFull && $data['payment_type'] === 'introductory') {
+        if ($payInFull && in_array($data['payment_type'], ['introductory', 'downpayment'])) {
             $message = 'Full payment proof submitted (₱' . number_format($data['amount'], 2) . '). Please wait for admin verification.';
         } else {
             $message = match ($data['payment_type']) {

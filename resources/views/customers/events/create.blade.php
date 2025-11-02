@@ -77,7 +77,7 @@ window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $
                                     Event Name <span class="text-rose-500">*</span>
                                 </label>
                                 <input type="text" name="name" id="name" required value="{{ old('name') }}"
-                                    class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
+                                    class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
                                     placeholder="e.g., Sarah's 18th Birthday">
                                 @error('name')
                                 <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
@@ -111,7 +111,7 @@ window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $
                                     Package <span class="text-rose-500">*</span>
                                 </label>
                                 <select name="package_id" id="package_id" required
-                                    class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
+                                    class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
                                     x-model.number="selectedPackage" @change="loadPackage(selectedPackage)">
                                     <option value="">Select a package</option>
                                     @foreach($packages as $p)
@@ -136,7 +136,7 @@ window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $
                                     Venue
                                 </label>
                                 <input type="text" name="venue" id="venue" value="{{ old('venue') }}"
-                                    class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
+                                    class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
                                     placeholder="Event location">
                                 @error('venue')
                                 <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
@@ -154,7 +154,7 @@ window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $
                                     Theme
                                 </label>
                                 <input type="text" name="theme" id="theme" value="{{ old('theme') }}"
-                                    class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
+                                    class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
                                     placeholder="e.g., Garden, Vintage, Modern">
                                 @error('theme')
                                 <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
@@ -378,34 +378,8 @@ window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $
                     </div>
 
                     <div class="p-6 space-y-4">
-                        {{-- Budget --}}
-                        <div>
-                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 36 36">
-                                    <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z">
-                                    </path>
-                                    <path d="M14.18,19.7h5.19a4.28,4.28,0,0,0,3.5-1.9H14.18Z"></path>
-                                    <path d="M19.37,10.51H14.18V12h8.37A4.21,4.21,0,0,0,19.37,10.51Z"></path>
-                                    <path
-                                        d="M17.67,2a16,16,0,1,0,16,16A16,16,0,0,0,17.67,2Zm10.5,15.8H25.7a6.87,6.87,0,0,1-6.33,4.4H14.18v6.54a1.25,1.25,0,1,1-2.5,0V17.8H8.76a.9.9,0,1,1,0-1.8h2.92V13.8H8.76a.9.9,0,1,1,0-1.8h2.92V9.26A1.25,1.25,0,0,1,12.93,8h6.44a6.84,6.84,0,0,1,6.15,4h2.65a.9.9,0,0,1,0,1.8H26.09a6.91,6.91,0,0,1,.12,1.3,6.8,6.8,0,0,1-.06.9h2a.9.9,0,0,1,0,1.8Z">
-                                    </path>
-                                </svg>
-                                Budget (Optional)
-                            </label>
-                            <div class="relative">
-                                <span
-                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
-                                <input type="number" name="budget" id="budget" step="0.01" min="0"
-                                    value="{{ old('budget') }}"
-                                    class="block w-full pl-10 pr-4 py-3 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition"
-                                    placeholder="0.00">
-                            </div>
-                            @error('budget')
-                            <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
-                            @enderror
-                        </div>
 
-                        {{-- Guests --}}
+                        {{-- Guest Count --}}
                         <div>
                             <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
@@ -413,15 +387,16 @@ window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
-                                Guest Details
+                                Guest Count
                             </label>
-                            <textarea name="guests" id="guests" rows="4"
-                                class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition resize-none"
-                                placeholder="Guest count, names, or special requirements...">{{ old('guests') }}</textarea>
+                            <input type="number" name="guests" id="guests" min="1"
+                                class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition"
+                                placeholder="Enter number of guests" value="{{ old('guests') }}">
                             @error('guests')
                             <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
                             @enderror
                         </div>
+
 
                         {{-- Notes --}}
                         <div>
@@ -434,8 +409,8 @@ window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $
                                 Additional Notes
                             </label>
                             <textarea name="notes" id="notes" rows="3"
-                                class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition resize-none"
-                                placeholder="Any special requests or requirements...">{{ old('notes') }}</textarea>
+                                class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition resize-none"
+                                placeho lder="Any special requests or requirements...">{{ old('notes') }}</textarea>
                             @error('notes')
                             <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
                             @enderror
