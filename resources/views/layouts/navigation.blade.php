@@ -115,65 +115,81 @@
                                 Mark all read
                             </button>
                         </div>
+                        <div class="flex flex-col max-h-[32rem]">
 
-                        <!-- Notifications List -->
-                        <div class="max-h-[32rem] overflow-y-auto">
-                            <template x-if="notifications.length === 0">
-                                <div class="px-4 py-12 text-center">
-                                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                    </svg>
-                                    <p class="text-gray-500 text-sm">No notifications yet</p>
-                                </div>
-                            </template>
-
-                            <template x-for="notification in notifications" :key="notification.id">
-                                <a :href="`/notifications/${notification.id}/read`"
-                                    class="block px-4 py-3 hover:bg-gray-50 transition border-b border-gray-100"
-                                    :class="{ 'bg-blue-50': !notification.is_read }">
-                                    <div class="flex items-start gap-3">
-                                        <!-- Icon -->
-                                        <div :class="{
-                                            'bg-orange-100 text-orange-600': notification.type === 'event_request',
-                                            'bg-emerald-100 text-emerald-600': notification.type === 'payment_submitted',
-                                            'bg-blue-100 text-blue-600': notification.type === 'event_status',
-                                            'bg-green-100 text-green-600': notification.type === 'payment_approved',
-                                            'bg-red-100 text-red-600': notification.type === 'payment_rejected',
-                                            'bg-purple-100 text-purple-600': notification.type === 'schedule_assigned',
-                                            'bg-gray-100 text-gray-600': notification.type === 'schedule_removed',
-                                            'bg-teal-100 text-teal-600': notification.type === 'payroll_paid',
-                                            'bg-yellow-100 text-yellow-600': notification.type === 'customer_feedback',
-                                        }"
-                                            class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </div>
-
-                                        <!-- Content -->
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-sm font-semibold text-gray-900 mb-1"
-                                                x-text="notification.title"></p>
-                                            <p class="text-xs text-gray-600 line-clamp-2 leading-relaxed"
-                                                x-text="notification.message"></p>
-                                            <p class="text-xs text-gray-400 mt-2"
-                                                x-text="formatDate(notification.created_at)"></p>
-                                        </div>
-
-                                        <!-- Unread indicator -->
-                                        <template x-if="!notification.is_read">
-                                            <span
-                                                class="w-2.5 h-2.5 bg-blue-600 rounded-full flex-shrink-0 mt-1"></span>
-                                        </template>
+                            {{-- list (scrolls) --}}
+                            <div class="overflow-y-auto flex-1">
+                                <template x-if="notifications.length === 0">
+                                    <div class="px-4 py-12 text-center">
+                                        <svg class="w-16 h-16 text-gray-300 mx-auto mb-3" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                        </svg>
+                                        <p class="text-gray-500 text-sm">No notifications yet</p>
                                     </div>
+                                </template>
+
+                                <template x-for="notification in notifications" :key="notification.id">
+                                    <a :href="`/notifications/${notification.id}/read`"
+                                        class="block px-4 py-3 hover:bg-gray-50 transition border-b border-gray-100"
+                                        :class="{ 'bg-blue-50': !notification.is_read }">
+                                        <div class="flex items-start gap-3">
+                                            <div :class="{
+                        'bg-orange-100 text-orange-600': notification.type === 'event_request',
+                        'bg-emerald-100 text-emerald-600': notification.type === 'payment_submitted',
+                        'bg-blue-100 text-blue-600': notification.type === 'event_status',
+                        'bg-green-100 text-green-600': notification.type === 'payment_approved',
+                        'bg-red-100 text-red-600': notification.type === 'payment_rejected',
+                        'bg-purple-100 text-purple-600': notification.type === 'schedule_assigned',
+                        'bg-gray-100 text-gray-600': notification.type === 'schedule_removed',
+                        'bg-teal-100 text-teal-600': notification.type === 'payroll_paid',
+                        'bg-yellow-100 text-yellow-600': notification.type === 'customer_feedback',
+                    }" class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-semibold text-gray-900 mb-1"
+                                                    x-text="notification.title"></p>
+                                                <p class="text-xs text-gray-600 line-clamp-2 leading-relaxed"
+                                                    x-text="notification.message"></p>
+                                                <p class="text-xs text-gray-400 mt-2"
+                                                    x-text="formatDate(notification.created_at)"></p>
+                                            </div>
+
+                                            <template x-if="!notification.is_read">
+                                                <span
+                                                    class="w-2.5 h-2.5 bg-blue-600 rounded-full flex-shrink-0 mt-1"></span>
+                                            </template>
+                                        </div>
+                                    </a>
+                                </template>
+                            </div>
+
+                            {{-- sticky footer (always visible at bottom) --}}
+                            <div class="px-4 py-3 border-t border-gray-100 bg-white flex items-center justify-center">
+                                <a href="{{ route('notifications.index') }}"
+                                    class="w-full inline-flex items-center justify-center gap-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                        aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                    </svg>
+                                    View all notifications
                                 </a>
-                            </template>
+                            </div>
                         </div>
                     </div>
+
+
                 </div>
+
 
                 <!-- User Profile -->
                 <img src="{{ Auth::user()->profile_photo_url }}" class="h-8 w-8 rounded-full object-cover"

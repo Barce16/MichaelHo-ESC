@@ -213,14 +213,12 @@
                         <div class="px-6 py-4 space-y-4">
                             <a href="{{ url('/') }}"
                                 class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Home</a>
-                            <a href="{{ url('/about') }}"
+                            <a href="{{ url('/#service-section') }}"
                                 class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">About</a>
                             <a href="{{ route('services.index') }}"
                                 class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Services</a>
                             <a href="{{ url('/portfolio') }}"
                                 class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Portfolio</a>
-                            <a href="{{ url('/blog') }}"
-                                class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Blog</a>
                             <a href="{{ url('/contact') }}"
                                 class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Contact
                                 Us</a>

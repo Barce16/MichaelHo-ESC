@@ -21,4 +21,27 @@ class Customer extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function hasPendingPayments(): bool
+    {
+        return $this->events()
+            ->whereHas('billing.payments', function ($query) {
+                $query->where('status', Payment::STATUS_PENDING);
+            })
+            ->exists();
+    }
+
+    public function hasOutstandingBalance(): bool
+    {
+        return $this->events()
+            ->whereHas('billing', function ($query) {
+                $query->whereRaw('total_amount > (
+                SELECT COALESCE(SUM(amount), 0) 
+                FROM payments 
+                WHERE billing_id = billings.id 
+                AND status = ?
+            )', [Payment::STATUS_APPROVED]);
+            })
+            ->exists();
+    }
 }

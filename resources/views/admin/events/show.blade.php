@@ -539,70 +539,106 @@
                 </div>
 
                 {{-- Pricing Summary --}}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-                    <div class="bg-slate-50 border-b border-gray-200 px-6 py-4">
+                @php
+                $pricingLines = [
+                ['label' => 'Coordination', 'amount' => $coord ?? 0],
+                ['label' => 'Event Styling', 'amount' => $styl ?? 0],
+                ['label' => 'Inclusions', 'amount' => $incSubtotal ?? 0],
+                ];
+                @endphp
+
+                <section aria-labelledby="pricing-heading" class="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <header id="pricing-heading" class="bg-slate-50 border-b border-gray-200 px-6 py-4">
                         <h3 class="text-base font-semibold text-gray-800 flex items-center gap-2">
-                            <svg fill="#000000" viewBox="0 0 24 24" id="phillippine-peso" data-name="Flat Line"
-                                xmlns="http://www.w3.org/2000/svg" class="icon flat-line w-4 h-4 text-gray-500">
-                                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-                                <g id="SVGRepo_iconCarrier">
-                                    <path id="primary" d="M11,15H8V3h3a6,6,0,0,1,6,6h0A6,6,0,0,1,11,15ZM8,3V21"
-                                        style="fill: none; stroke: #6b7280 ; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2;">
-                                    </path>
-                                    <path id="primary-2" data-name="primary" d="M4,7H20M4,11H20"
-                                        style="fill: none; stroke: #6b7280 ; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2;">
-                                    </path>
-                                </g>
+                            <svg class="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path d="M11 15H8V3h3a6 6 0 016 6 6 6 0 01-6 6zM8 3v18" stroke="#6b7280"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M4 7H20M4 11H20" stroke="#6b7280" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
                             </svg>
                             Pricing
                         </h3>
-                    </div>
+                    </header>
+
                     <div class="p-6 space-y-3">
+                        @foreach($pricingLines as $line)
                         <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-600">Coordination</span>
-                            <span class="font-medium text-gray-900">₱{{ number_format($coord, 2) }}</span>
+                            <span class="text-gray-600">{{ $line['label'] }}</span>
+                            <span class="font-medium text-gray-900">₱{{ number_format((float)$line['amount'], 2)
+                                }}</span>
                         </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-600">Event Styling</span>
-                            <span class="font-medium text-gray-900">₱{{ number_format($styl, 2) }}</span>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-600">Inclusions</span>
-                            <span class="font-medium text-gray-900">₱{{ number_format($incSubtotal, 2) }}</span>
-                        </div>
+                        @endforeach
+
                         <div class="border-t border-gray-200 pt-3 mt-3">
                             <div class="flex justify-between items-center">
                                 <span class="font-semibold text-gray-900">Grand Total</span>
-                                <span class="text-xl font-bold text-emerald-600">₱{{ number_format($grandTotal, 2)
+                                <span class="text-xl font-bold text-emerald-600">₱{{ number_format($grandTotal ?? 0, 2)
                                     }}</span>
                             </div>
                         </div>
 
-                        {{-- Payment Progress (if billing exists) --}}
-                        @if($event->billing)
+                        @if($event->billing ?? false)
                         <div class="border-t border-gray-200 pt-3 mt-3 space-y-2">
                             <div class="flex justify-between items-center text-sm">
-                                <span class="text-gray-600">Intro Payment</span>
+                                <span class="text-gray-600">Amount Paid</span>
                                 <span
-                                    class="font-medium {{ $event->billing->introductory_payment_status === 'paid' ? 'text-emerald-600' : 'text-gray-500' }}">
-                                    {{ $event->billing->introductory_payment_status === 'paid' ? '✓ Paid' :
-                                    'Pending' }}
+                                    class="font-medium {{ (float)($totalPaid ?? 0) > 0 ? 'text-emerald-600' : 'text-gray-500' }}">
+                                    ₱{{ number_format((float)($totalPaid ?? 0), 2) }}
                                 </span>
                             </div>
-                            @if($event->billing->downpayment_amount > 0)
+
                             <div class="flex justify-between items-center text-sm">
-                                <span class="text-gray-600">Downpayment</span>
-                                <span
-                                    class="font-medium {{ $event->hasDownpaymentPaid() ? 'text-emerald-600' : 'text-gray-500' }}">
-                                    {{ $event->hasDownpaymentPaid() ? '✓ Paid' : 'Pending' }}
-                                </span>
+                                <span class="text-gray-600">Remaining Balance</span>
+                                @php $remaining = $remainingBalance ?? max(0, ($grandTotal ?? 0) - ($totalPaid ?? 0));
+                                @endphp
+                                @if($remaining > 0)
+                                <span class="font-semibold text-red-600">₱{{ number_format($remaining, 2) }}</span>
+                                @else
+                                <span class="font-semibold text-emerald-600">₱0.00 — Paid in full</span>
+                                @endif
                             </div>
-                            @endif
+
+                            {{-- Optional progress indicator --}}
+                            @php
+                            $paid = (float)($totalPaid ?? 0);
+                            $total = max(1, (float)($grandTotal ?? 0)); // avoid division by zero
+                            $percent = min(100, round(($paid / $total) * 100));
+                            @endphp
+                            <div class="w-full pt-2">
+                                <div class="text-xs text-gray-500 mb-1">{{ $percent }}% paid</div>
+                                <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-2 rounded-full"
+                                        style="width: {{ $percent }}%; background-color: rgba(16,185,129,0.85)"></div>
+                                </div>
+                            </div>
+
+                            {{-- Payment status indicators --}}
+                            <div class="pt-2 space-y-2">
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-gray-600">Intro Payment</span>
+                                    <span
+                                        class="font-medium {{ ($event->billing->introductory_payment_status ?? '') === 'paid' ? 'text-emerald-600' : 'text-gray-500' }}">
+                                        {{ ($event->billing->introductory_payment_status ?? '') === 'paid' ? '✓ Paid' :
+                                        'Pending' }}
+                                    </span>
+                                </div>
+
+                                @if(($event->billing->downpayment_amount ?? 0) > 0)
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-gray-600">Downpayment</span>
+                                    <span
+                                        class="font-medium {{ $event->hasDownpaymentPaid() ? 'text-emerald-600' : 'text-gray-500' }}">
+                                        {{ $event->hasDownpaymentPaid() ? '✓ Paid' : 'Pending' }}
+                                    </span>
+                                </div>
+                                @endif
+                            </div>
                         </div>
                         @endif
                     </div>
-                </div>
+                </section>
+
 
                 {{-- Action Buttons Based on Status --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200">

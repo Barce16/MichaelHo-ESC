@@ -431,6 +431,17 @@
                                         @enderror
                                     </div>
 
+                                    <!-- Theme -->
+                                    <div>
+                                        <label for="theme"
+                                            class="block text-xs uppercase tracking-wider text-gray-600 mb-2">
+                                            Theme
+                                        </label>
+                                        <input type="text" id="theme" name="theme" required
+                                            class="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors"
+                                            placeholder="e.g., Modern Minimalist">
+                                    </div>
+
                                     <!-- Venue -->
                                     <div>
                                         <label for="venue"

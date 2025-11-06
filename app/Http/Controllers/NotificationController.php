@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
 
 class NotificationController extends Controller
 {
@@ -18,21 +20,21 @@ class NotificationController extends Controller
     /**
      * Get notifications for dropdown
      */
-    public function index(Request $request)
+    public function index()
     {
-        $notifications = $this->notificationService->getRecentNotifications(
-            $request->user(),
-            10
-        );
+        $user = Auth::user();
 
-        $unreadCount = $this->notificationService->getUnreadCount($request->user());
+        // fetch user's notifications
+        $notifications = Notification::where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->get();
 
-        return response()->json([
-            'notifications' => $notifications,
-            'unread_count' => $unreadCount,
-        ]);
+        // unread count (support is_read or read_at)
+        $unreadCount = $notifications->where('is_read', false)->count()
+            ?: $notifications->whereNull('read_at')->count();
+
+        return view('notifications.index', compact('notifications', 'unreadCount'));
     }
-
     /**
      * Mark notification as read
      */
@@ -58,6 +60,6 @@ class NotificationController extends Controller
     {
         $this->notificationService->markAllAsRead($request->user());
 
-        return response()->json(['success' => true]);
+        return back();
     }
 }

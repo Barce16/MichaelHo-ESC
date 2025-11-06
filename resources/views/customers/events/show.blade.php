@@ -754,7 +754,7 @@
                         @if($event->billing->remaining_balance > 0)
                         <div class="flex items-center justify-between pt-2 border-t border-white/20">
                             <span class="font-semibold">Remaining Balance</span>
-                            <span class="text-xl font-bold">₱{{ number_format($event->billing->remaining_balance, 2)
+                            <span class="text-3xl font-bold">₱{{ number_format($remainingBalance, 2)
                                 }}</span>
                         </div>
                         @endif

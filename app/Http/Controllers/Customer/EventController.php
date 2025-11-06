@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreEventRequest;
-use App\Http\Requests\UpdateEventRequest;
 use App\Models\Event;
 use App\Models\Package;
 use App\Models\Inclusion;
@@ -14,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Services\NotificationService;
+
 
 class EventController extends Controller
 {
@@ -34,11 +33,26 @@ class EventController extends Controller
             ->orderByDesc('event_date')
             ->paginate(12);
 
-        return view('customers.events.index', compact('events'));
+        $hasPendingBillings = $customer->hasPendingPayments();
+        return view('customers.events.index', compact('events', 'hasPendingBillings'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        // Get authenticated customer
+        $customer = $request->user()->customer;
+        abort_if(!$customer, 403);
+
+        // Check if customer has pending billings
+        $hasOutstandingBalance = $customer->hasOutstandingBalance();
+
+        // Redirect if has pending billings
+        if ($hasOutstandingBalance) {
+            return redirect()->route('customer.events.index')
+                ->with('error', 'Please settle your pending billings before requesting a new event.');
+        }
+
+        // Load packages and inclusions only if allowed
         $packages = Package::where('is_active', true)
             ->with(['inclusions' => function ($query) {
                 $query->where('is_active', true);
@@ -51,9 +65,17 @@ class EventController extends Controller
 
         return view('customers.events.create', compact('packages', 'allInclusions'));
     }
-
     public function store(Request $request)
     {
+
+        $customer = $request->user()->customer;
+        abort_if(!$customer, 403);
+
+        $hasPendingBillings = $customer->hasPendingPayments();
+        if ($hasPendingBillings) {
+            return redirect()->route('customer.events.index')
+                ->with('error', 'Please settle your pending billings before requesting a new event.');
+        }
         $data = $request->validate([
             'name'         => ['required', 'string', 'max:150'],
             'event_date'   => ['required', 'date'],
@@ -144,54 +166,76 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
+        // auth
         $customer = Auth::user()->customer;
+        if (!$customer || $event->customer_id !== $customer->id) abort(403);
 
-        if (!$customer || $event->customer_id !== $customer->id) {
-            abort(403);
-        }
-
+        // load relations
         $event->load(['package', 'inclusions', 'customer', 'billing.payments']);
 
-        // Check for pending payments
-        $pendingIntroPayment = null;
-        $pendingDownpayment = null;
+        // pricing
+        $incSubtotal = $event->inclusions->sum(fn($i) => (float) ($i->pivot->price_snapshot ?? 0));
+        $coord = (float) ($event->package?->coordination_price ?? 25000);
+        $styl  = (float) ($event->package?->event_styling_price ?? 55000);
+        $grandTotal = $incSubtotal + $coord + $styl;
 
-        if ($event->billing) {
-            $pendingIntroPayment = $event->billing->payments()
-                ->where('payments.payment_type', Payment::TYPE_INTRODUCTORY)
-                ->where('payments.status', Payment::STATUS_PENDING)
-                ->latest('payments.created_at')
-                ->first();
+        // payments collection
+        $payments = $event->billing ? $event->billing->payments : collect();
 
-            $pendingDownpayment = $event->billing->payments()
-                ->where('payments.payment_type', Payment::TYPE_DOWNPAYMENT)
-                ->where('payments.status', Payment::STATUS_PENDING)
-                ->latest('payments.created_at')
-                ->first();
-        }
+        // pending checks
+        $pendingIntroPayment = $payments->where('payment_type', Payment::TYPE_INTRODUCTORY)
+            ->where('status', Payment::STATUS_PENDING)
+            ->sortByDesc('created_at')
+            ->first();
 
-        // Calculate amounts
+        $pendingDownpayment = $payments->where('payment_type', Payment::TYPE_DOWNPAYMENT)
+            ->where('status', Payment::STATUS_PENDING)
+            ->sortByDesc('created_at')
+            ->first();
+
+        // approved sums
+        $totalPaid = (float) $payments->where('status', Payment::STATUS_APPROVED)->sum('amount');
+
+        // remaining
+        $remainingBalance = max(0, $grandTotal - $totalPaid);
+
+        // intro/downpayment specifics
         $introAmount = 5000;
-        $downpaymentAmount = 0;
+        $introPaid = (float) $payments->where('payment_type', Payment::TYPE_INTRODUCTORY)
+            ->where('status', Payment::STATUS_APPROVED)
+            ->sum('amount');
 
-        if ($event->billing && $event->billing->downpayment_amount > 0) {
-            // Only subtract intro payment if it's been approved
-            $introDeduction = ($event->billing->introductory_payment_status === 'paid') ? 5000 : 0;
-            $downpaymentAmount = $event->billing->downpayment_amount - $introDeduction;
-        }
+        $requiredDownpayment = $event->billing->downpayment_amount ?? 0;
+        $requiredDownpaymentAfterIntro = max(0, $requiredDownpayment - $introPaid);
 
-        // Check if downpayment is paid (required for balance payments)
-        $isDownpaymentPaid = $event->hasDownpaymentPaid();
-        $canPayBalance = $isDownpaymentPaid && $event->billing && $event->billing->remaining_balance > 0;
+        $downpaymentPaid = (float) $payments->where('payment_type', Payment::TYPE_DOWNPAYMENT)
+            ->where('status', Payment::STATUS_APPROVED)
+            ->sum('amount');
 
+        $downpaymentRemaining = max(0, $requiredDownpaymentAfterIntro - $downpaymentPaid);
+
+        // flags
+        $isDownpaymentPaid = $event->hasDownpaymentPaid() || ($downpaymentPaid >= $requiredDownpaymentAfterIntro && $requiredDownpaymentAfterIntro > 0);
+        $canPayBalance = $isDownpaymentPaid && $event->billing && $remainingBalance > 0;
+
+        // view
         return view('customers.events.show', compact(
             'event',
             'pendingIntroPayment',
             'pendingDownpayment',
             'introAmount',
-            'downpaymentAmount',
+            'downpaymentRemaining',
+            'downpaymentPaid',
+            'requiredDownpayment',
+            'requiredDownpaymentAfterIntro',
             'isDownpaymentPaid',
-            'canPayBalance'
+            'canPayBalance',
+            'incSubtotal',
+            'coord',
+            'styl',
+            'grandTotal',
+            'totalPaid',
+            'remainingBalance'
         ));
     }
 

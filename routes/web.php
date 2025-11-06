@@ -184,6 +184,7 @@ Route::middleware('auth')->group(function () {
         ->prefix('customer')
         ->name('customer.')
         ->group(function () {
+
             // Events
             Route::resource('events', CustomerEventController::class);
 

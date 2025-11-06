@@ -93,24 +93,36 @@ class AdminEventController extends Controller
         $pendingDownpayment = null;
         $hasDownpaymentPaid = false;
 
+        $totalPaid = 0.0;
+        $remainingBalance = $grandTotal;
+
         if ($event->billing) {
-            $pendingIntroPayment = $event->billing->payments()
+            // use the loaded payments collection to avoid extra queries
+            $payments = $event->billing->payments;
+
+            $pendingIntroPayment = $payments
                 ->where('payment_type', Payment::TYPE_INTRODUCTORY)
                 ->where('status', Payment::STATUS_PENDING)
-                ->latest()
+                ->sortByDesc('created_at')
                 ->first();
 
-            $pendingDownpayment = $event->billing->payments()
+            $pendingDownpayment = $payments
                 ->where('payment_type', Payment::TYPE_DOWNPAYMENT)
                 ->where('status', Payment::STATUS_PENDING)
-                ->latest()
+                ->sortByDesc('created_at')
                 ->first();
 
-            // Check if downpayment is already approved/paid
-            $hasDownpaymentPaid = $event->billing->payments()
+            $hasDownpaymentPaid = $payments
                 ->where('payment_type', Payment::TYPE_DOWNPAYMENT)
                 ->where('status', Payment::STATUS_APPROVED)
-                ->exists();
+                ->isNotEmpty();
+
+            // sum approved payments (collection)
+            $totalPaid = (float) $payments
+                ->where('status', Payment::STATUS_APPROVED)
+                ->sum('amount');
+
+            $remainingBalance = max(0, $grandTotal - $totalPaid);
         }
 
         return view('admin.events.show', [
@@ -119,6 +131,11 @@ class AdminEventController extends Controller
             'pendingIntroPayment' => $pendingIntroPayment,
             'pendingDownpayment' => $pendingDownpayment,
             'hasDownpaymentPaid' => $hasDownpaymentPaid,
+            'incSubtotal' => $inclusionsSubtotal,
+            'coord' => $coord,
+            'styl' => $styling,
+            'totalPaid' => $totalPaid,
+            'remainingBalance' => $remainingBalance,
         ]);
     }
 
