@@ -398,6 +398,121 @@
                 </div>
             </div>
 
+
+            {{-- Banner Upload --}}
+            <div x-data="bannerUploader({{ $package->banner ? 'true' : 'false' }})"
+                class="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div class="bg-slate-50 border-b border-gray-200 px-6 py-4">
+                    <h4 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Package Banner
+                        <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded">Portrait
+                            - For Homepage Display</span>
+                    </h4>
+                </div>
+
+                <div class="p-6 space-y-4">
+                    {{-- Current Banner - Portrait Style --}}
+                    <div class="flex justify-center">
+                        @if($package->banner)
+                        <div x-show="!removeBannerFlag && !newBannerPreview"
+                            class="relative rounded-lg overflow-hidden border-2 border-gray-200 w-80">
+                            <img src="{{ $package->banner_url }}" alt="Current banner"
+                                class="w-full h-[480px] object-cover">
+                            <div class="absolute top-2 right-2 flex gap-2">
+                                <button type="button" @click="markForRemoval()"
+                                    class="p-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition shadow-lg">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div
+                                class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                                <p class="text-xs text-white font-medium">Current Banner</p>
+                                <p class="text-[10px] text-white/80">Portrait orientation</p>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+
+                    {{-- Marked for Removal Notice --}}
+                    <div x-show="removeBannerFlag && !newBannerPreview" x-transition
+                        class="bg-rose-50 border-2 border-rose-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <span class="text-sm font-medium text-rose-900">Banner will be removed</span>
+                            </div>
+                            <button type="button" @click="undoRemoval()"
+                                class="text-xs text-rose-600 hover:text-rose-800 font-medium underline">
+                                Undo
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- New Banner Preview - Portrait Style --}}
+                    <div class="flex justify-center">
+                        <div x-show="newBannerPreview" x-transition
+                            class="relative rounded-lg overflow-hidden border-2 border-emerald-200 w-80">
+                            <img :src="newBannerPreview" alt="New banner preview" class="w-full h-[480px] object-cover">
+                            <button type="button" @click="removeNewBanner()"
+                                class="absolute top-2 right-2 p-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition shadow-lg">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                            <div
+                                class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-emerald-600/80 to-transparent p-3">
+                                <p class="text-xs text-white font-medium">✓ New Banner</p>
+                                <p class="text-[10px] text-white/90">(will replace current)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Upload New Banner --}}
+                    <div>
+                        <input type="file" name="banner" accept="image/*" @change="previewNewBanner($event)"
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition">
+                        <p class="mt-2 text-xs text-gray-500">
+                            Upload new banner to replace current one. Recommended size: <strong>600x900px
+                                (Portrait)</strong>. Max file size: 5MB
+                        </p>
+                        <x-input-error :messages="$errors->get('banner')" class="mt-2" />
+                    </div>
+
+                    {{-- No Banner State - Portrait Style --}}
+                    @if(!$package->banner)
+                    <div class="flex justify-center">
+                        <div x-show="!newBannerPreview"
+                            class="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg w-80 h-[480px] bg-gray-50">
+                            <div class="text-center px-4">
+                                <svg class="w-16 h-16 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <p class="text-sm font-medium text-gray-600 mb-1">No banner uploaded yet</p>
+                                <p class="text-xs text-gray-500">Portrait format (600x900px)</p>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Hidden input for remove banner flag --}}
+                    <input type="hidden" name="remove_banner" :value="removeBannerFlag ? '1' : '0'">
+                </div>
+            </div>
+
             {{-- Gallery Management --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200" x-data="galleryManager()"
                 x-init="init('#pkg-images-json')" x-ref="gallery"
@@ -697,5 +812,44 @@
             },
         }));
     });
+
+
+    function bannerUploader(hasBanner) {
+    return {
+        removeBannerFlag: false,
+        newBannerPreview: null,
+        hasBanner: hasBanner,
+
+        previewNewBanner(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.newBannerPreview = e.target.result;
+                    this.removeBannerFlag = false;
+                };
+                reader.readAsDataURL(file);
+            }
+        },
+
+        markForRemoval() {
+            this.removeBannerFlag = true;
+        },
+
+        undoRemoval() {
+            this.removeBannerFlag = false;
+        },
+
+        removeNewBanner() {
+            this.newBannerPreview = null;
+            // Reset the file input
+            const input = document.querySelector('input[name="banner"]');
+            if (input) {
+                input.value = '';
+            }
+        }
+    }
+}
+
     </script>
 </x-admin.layouts.management>

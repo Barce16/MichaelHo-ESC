@@ -380,6 +380,67 @@
                 </div>
             </div>
 
+            {{-- Banner Upload --}}
+            <div x-data="bannerUploader()" class="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div class="bg-slate-50 border-b border-gray-200 px-6 py-4">
+                    <h4 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Package Banner
+                        <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded">Portrait
+                            - For Homepage Display</span>
+                    </h4>
+                </div>
+
+                <div class="p-6 space-y-4">
+                    <div>
+                        <input type="file" name="banner" accept="image/*" @change="previewBanner($event)"
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition">
+                        <p class="mt-2 text-xs text-gray-500">
+                            Recommended size: <strong>600x900px (Portrait)</strong>. Max file size: 5MB
+                        </p>
+                        <x-input-error :messages="$errors->get('banner')" class="mt-2" />
+                    </div>
+
+                    {{-- Banner Preview - Portrait Style --}}
+                    <div class="flex justify-center">
+                        <div x-show="bannerPreview" x-transition
+                            class="relative rounded-lg overflow-hidden border-2 border-gray-200 w-80">
+                            <img :src="bannerPreview" alt="Banner preview" class="w-full h-[480px] object-cover">
+                            <button type="button" @click="removeBanner()"
+                                class="absolute top-2 right-2 p-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition shadow-lg">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                            <div
+                                class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                                <p class="text-xs text-white font-medium">Preview</p>
+                                <p class="text-[10px] text-white/80">Portrait orientation</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div x-show="!bannerPreview" class="flex justify-center">
+                        <div
+                            class="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg w-80 h-[480px] bg-gray-50">
+                            <div class="text-center px-4">
+                                <svg class="w-16 h-16 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <p class="text-sm font-medium text-gray-600 mb-1">No banner uploaded yet</p>
+                                <p class="text-xs text-gray-500">Portrait format (600x900px)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{-- Gallery Upload --}}
             <div x-data="galleryUploader()" class="bg-white rounded-xl shadow-sm border border-gray-200">
                 <div class="bg-slate-50 border-b border-gray-200 px-6 py-4">
@@ -472,7 +533,7 @@
 
     <script>
         document.addEventListener('alpine:init', () => {
-      Alpine.data('packagePricing', () => ({
+        Alpine.data('packagePricing', () => ({
         selected: [],
         names: {}, categories: {}, prices: {}, notes: {},
         coordinationPrice: 25000,
@@ -541,5 +602,7 @@
         }
       }));
     });
+
+    
     </script>
 </x-admin.layouts.management>

@@ -122,10 +122,10 @@
 
                                 <div class="border-t border-gray-100"></div>
 
-                                @foreach($categories as $category)
-                                <a href="{{ route('services.category', $category) }}"
+                                @foreach($categories as $item_category)
+                                <a href="{{ route('services.category', $item_category) }}"
                                     class="block px-6 py-3 text-gray-700 hover:bg-gray-50 hover:text-black transition-colors duration-200">
-                                    {{ ucfirst($category) }}
+                                    {{ ucfirst($item_category) }}
                                 </a>
                                 @endforeach
                             </div>

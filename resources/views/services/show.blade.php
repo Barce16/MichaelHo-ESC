@@ -21,35 +21,6 @@
             display: none !important;
         }
 
-        /* Image Gallery Styles */
-        .gallery-slide {
-            display: none;
-            animation: fadeIn 0.7s ease-in-out;
-        }
-
-        .gallery-slide.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        .gallery-indicator {
-            transition: all 0.3s ease;
-        }
-
-        .gallery-indicator.active {
-            background-color: #000000;
-            width: 2rem;
-        }
-
         @keyframes slide-in {
             from {
                 transform: translateX(100%);
@@ -69,97 +40,7 @@
 </head>
 
 <body class="bg-white">
-    @php
-    // Prepare inclusions data for Alpine.js
-    $alpineInclusionsData = [];
-    if ($package->inclusions) {
-    if (is_string($package->inclusions)) {
-    $inclusionsData = json_decode($package->inclusions, true) ?? [];
-    } elseif ($package->inclusions instanceof \Illuminate\Support\Collection ||
-    $package->inclusions instanceof \Illuminate\Database\Eloquent\Collection) {
-    $inclusionsData = $package->inclusions->toArray();
-    } elseif (is_array($package->inclusions)) {
-    $inclusionsData = $package->inclusions;
-    } else {
-    $inclusionsData = [];
-    }
-
-    $hasCategorized = !empty($inclusionsData) && is_array(reset($inclusionsData)) &&
-    isset(reset($inclusionsData)['category']);
-
-    if ($hasCategorized) {
-    $grouped = [];
-    foreach($inclusionsData as $item) {
-    $category = $item['category'] ?? 'Other';
-    if (!isset($grouped[$category])) {
-    $grouped[$category] = [];
-    }
-    $grouped[$category][] = $item;
-    }
-    $alpineInclusionsData = $grouped;
-    }
-    }
-    @endphp
-
-    <script>
-        window.packageInclusionsData = @json($alpineInclusionsData);
-    </script>
-
-    <div x-data="{
-        showCustomizeModal: false,
-        currentCategory: '',
-        currentInclusions: [],
-        selectedInclusions: {},
-        coordinationPrice: {{ $package->coordination_price ?? 0 }},
-        stylingPrice: {{ $package->event_styling_price ?? 0 }},
-        
-        init() {
-            const initialData = window.packageInclusionsData || {};
-            Object.keys(initialData).forEach(category => {
-                initialData[category].forEach((item, index) => {
-                    const key = `${category}_${index}`;
-                    this.selectedInclusions[key] = true;
-                });
-            });
-        },
-        
-        openCustomize(category, inclusions) {
-            this.currentCategory = category;
-            this.currentInclusions = inclusions;
-            this.showCustomizeModal = true;
-        },
-        
-        toggleInclusion(category, index) {
-            const key = `${category}_${index}`;
-            this.selectedInclusions[key] = !this.selectedInclusions[key];
-        },
-        
-        isInclusionSelected(category, index) {
-            const key = `${category}_${index}`;
-            return this.selectedInclusions[key] !== false;
-        },
-        
-        getSelectedCount(category, items) {
-            return items.filter((item, index) => this.isInclusionSelected(category, index)).length;
-        },
-        
-        getTotalPrice() {
-            // Start with coordination + styling prices
-            let total = this.coordinationPrice + this.stylingPrice;
-            
-            // Add prices of selected inclusions
-            const initialData = window.packageInclusionsData || {};
-            Object.keys(initialData).forEach(category => {
-                initialData[category].forEach((item, index) => {
-                    if (this.isInclusionSelected(category, index)) {
-                        total += parseFloat(item.price || 0);
-                    }
-                });
-            });
-            
-            return total;
-        }
-    }">
+    <div x-data="{}">
         <!-- Elegant Header -->
         <header class="border-b border-gray-100 bg-white">
             <div class="max-w-screen-xl mx-auto px-6 lg:px-12 py-6">
@@ -170,210 +51,75 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                 d="M15 19l-7-7 7-7" />
                         </svg>
-                        <span>Back to {{ ucfirst($package->type) }}</span>
+                        Back to {{ ucfirst($package->type) }} Packages
                     </a>
 
-                    <a href="{{ url('/') }}">
-                        <img src="{{ asset('images/favicon.png') }}" alt="Logo" class="h-12">
+                    <a href="{{ url('/') }}" class="text-2xl font-light tracking-wider"
+                        style="font-family: 'Playfair Display', serif;">
+                        Michael Ho <span class="italic">Events</span>
                     </a>
-
-                    <div class="w-32"></div> <!-- Spacer for centering -->
                 </div>
             </div>
         </header>
 
-        <!-- Package Header -->
-        <section class="py-16 bg-gradient-to-b from-gray-50 to-white">
-            <div class="max-w-screen-xl mx-auto px-6 lg:px-12 text-center">
-                <h1 class="text-5xl font-light mb-4" style="font-family: 'Playfair Display', serif;">
-                    {{ $package->name }}
-                </h1>
-                <p class="text-lg text-gray-600 mb-6" style="font-family: 'Cormorant Garamond', serif;">
-                    {{ ucfirst($package->type) }} Package
-                </p>
-                <div class="text-center">
-                    <p class="text-xs uppercase tracking-wider text-gray-500 mb-2">Total Price</p>
-                    <p class="text-4xl font-light text-black"
-                        x-text="'₱' + getTotalPrice().toLocaleString('en-PH', {minimumFractionDigits: 0, maximumFractionDigits: 0})">
-                    </p>
-                </div>
-                <!-- Elegant divider -->
-                <div class="mt-8 flex items-center justify-center">
-                    <div class="h-px w-24 bg-gray-900"></div>
-                    <div class="mx-3 w-1.5 h-1.5 bg-gray-900"></div>
-                    <div class="h-px w-24 bg-gray-900"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Main Content -->
-        <section class="py-16">
+        <!-- Package Hero Section -->
+        <section class="py-20 bg-white">
             <div class="max-w-screen-xl mx-auto px-6 lg:px-12">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <!-- Package Title & Type -->
+                <div class="text-center mb-12">
+                    <p class="text-xs uppercase tracking-widest text-gray-600 mb-4">{{ ucfirst($package->type) }}
+                        Package</p>
+                    <h1 class="text-5xl md:text-6xl font-light mb-6" style="font-family: 'Playfair Display', serif;">
+                        {{ $package->name }}
+                    </h1>
+                    <div class="text-3xl font-light text-black">
+                        ₱{{ number_format($package->price, 0, ',', ',') }}
+                    </div>
+                </div>
 
-                    <!-- LEFT COLUMN - Image Gallery & Details -->
+                <!-- TWO COLUMN LAYOUT -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mt-16">
+
+                    <!-- LEFT COLUMN - Banner Image -->
                     <div class="space-y-8">
-
-                        <!-- Image Gallery -->
-                        @php
-                        $galleryImages = $package->images ?? collect();
-                        $hasImages = $galleryImages->count() > 0;
-                        @endphp
-
-                        <div class="relative aspect-[16/9] w-full overflow-hidden bg-gray-100" id="imageGallery">
-                            @if($hasImages)
-                            @foreach($galleryImages as $index => $image)
-                            <div class="gallery-slide {{ $index === 0 ? 'active' : '' }} absolute inset-0">
-                                <img src="{{ asset('storage/' . $image->path) }}"
-                                    alt="{{ $package->name }} - Image {{ $index + 1 }}"
-                                    class="w-full h-full object-cover">
-                            </div>
-                            @endforeach
-
-                            <!-- Gallery Controls -->
-                            @if($galleryImages->count() > 1)
-                            <!-- Previous Button -->
-                            <button type="button" onclick="changeSlide(-1)"
-                                class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm border border-gray-200 p-3 hover:border-black transition-all">
-                                <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                        d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-
-                            <!-- Next Button -->
-                            <button type="button" onclick="changeSlide(1)"
-                                class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm border border-gray-200 p-3 hover:border-black transition-all">
-                                <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                        d="M9 5l7 7-7 7" />
-                                </svg>
-                            </button>
-
-                            <!-- Indicators -->
-                            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                                @foreach($galleryImages as $index => $image)
-                                <button type="button" onclick="goToSlide({{ $index }})"
-                                    class="gallery-indicator h-2 bg-white/50 hover:bg-white/80 transition-all {{ $index === 0 ? 'active w-8' : 'w-2' }}"
-                                    data-slide="{{ $index }}">
-                                </button>
-                                @endforeach
-                            </div>
-                            @endif
-                            @else
-                            <!-- Placeholder if no images -->
+                        @if($package->banner)
+                        <!-- Banner Display -->
+                        <div class="flex justify-center lg:justify-center h-full">
                             <div
-                                class="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
+                                class="relative rounded-xl overflow-hidden shadow-2xl border-2 border-gray-200 w-full max-w-md group">
+                                <img src="{{ $package->banner_url }}" alt="{{ $package->name }} banner"
+                                    class="w-full h-auto object-cover aspect-[2/3] group-hover:scale-105 transition-transform duration-700"
+                                    loading="lazy">
+
+                                <!-- Gradient Overlay -->
+                                <div
+                                    class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none">
+                                </div>
+
+                                <!-- Package Badge -->
+                                <div
+                                    class="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 border border-gray-200">
+                                    <p class="text-xs uppercase tracking-widest text-black font-medium">{{
+                                        ucfirst($package->type) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        @else
+                        <!-- Fallback if no banner -->
+                        <div class="flex justify-center lg:justify-center  h-full">
+                            <div
+                                class="relative w-full max-w-md aspect-[2/3] bg-gradient-to-b from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200 flex items-center justify-center">
                                 <div class="text-center">
                                     <svg class="w-20 h-20 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
                                             d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
-                                    <p class="text-gray-400 text-sm">No images available</p>
+                                    <p class="text-gray-400 text-sm">{{ $package->name }}</p>
                                 </div>
                             </div>
-                            @endif
-                        </div>
-
-                        <!-- Package Description -->
-                        @if($package->description)
-                        <div>
-                            <h3 class="text-xs uppercase tracking-widest text-gray-600 mb-4">About This Package</h3>
-                            <p class="text-gray-700 leading-relaxed"
-                                style="font-family: 'Cormorant Garamond', serif; font-size: 1.1rem;">
-                                {{ $package->description }}
-                            </p>
                         </div>
                         @endif
-
-                        <!-- Package Inclusions -->
-                        @if($package->inclusions)
-                        <div class="border border-gray-200 p-8">
-                            <h3 class="text-xs uppercase tracking-widest text-gray-600 mb-6">Package Includes</h3>
-                            @php
-                            // Handle different types of inclusions data
-                            if (is_string($package->inclusions)) {
-                            $inclusionsData = json_decode($package->inclusions, true) ?? [];
-                            } elseif ($package->inclusions instanceof \Illuminate\Support\Collection ||
-                            $package->inclusions instanceof \Illuminate\Database\Eloquent\Collection) {
-                            $inclusionsData = $package->inclusions->toArray();
-                            } elseif (is_array($package->inclusions)) {
-                            $inclusionsData = $package->inclusions;
-                            } else {
-                            $inclusionsData = [];
-                            }
-
-                            // Check if inclusions are categorized
-                            $hasCategorized = !empty($inclusionsData) && is_array(reset($inclusionsData)) &&
-                            isset(reset($inclusionsData)['category']);
-                            @endphp
-
-                            @if($hasCategorized)
-                            @php
-                            // Group by category
-                            $grouped = [];
-                            foreach($inclusionsData as $item) {
-                            $category = $item['category'] ?? 'Other';
-                            if (!isset($grouped[$category])) {
-                            $grouped[$category] = [];
-                            }
-                            $grouped[$category][] = $item;
-                            }
-                            @endphp
-
-                            @foreach($grouped as $category => $items)
-                            <div class="mb-6 last:mb-0">
-                                <div class="flex items-center justify-between mb-3">
-                                    <h4 class="text-sm font-medium text-gray-900">
-                                        {{ $category }}
-                                        <span class="text-xs text-gray-500 ml-2"
-                                            x-text="`(${getSelectedCount('{{ $category }}', {{ json_encode($items) }})} selected)`"></span>
-                                    </h4>
-                                    <button type="button" hidden
-                                        @click="openCustomize('{{ $category }}', {{ json_encode($items) }})"
-                                        class="p-1.5 text-gray-400 hover:text-black transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <ul class="space-y-2">
-                                    @foreach($items as $index => $item)
-                                    <li class="flex items-start gap-3 transition-all duration-300"
-                                        x-show="isInclusionSelected('{{ $category }}', {{ $index }})"
-                                        x-transition:enter="transition ease-out duration-200"
-                                        x-transition:enter-start="opacity-0 -translate-y-1"
-                                        x-transition:enter-end="opacity-100 translate-y-0"
-                                        x-transition:leave="transition ease-in duration-200"
-                                        x-transition:leave-start="opacity-100 translate-y-0"
-                                        x-transition:leave-end="opacity-0 -translate-y-1">
-                                        <span class="w-1 h-1 bg-black mt-2 flex-shrink-0"></span>
-                                        <span class="text-sm text-gray-700">{{ $item['name'] ?? $item }}</span>
-                                    </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                            @endforeach
-                            @else
-                            <ul class="space-y-3">
-                                @foreach(array_values($inclusionsData) as $inclusion)
-                                <li class="flex items-start gap-3">
-                                    <span class="w-1 h-1 bg-black mt-2 flex-shrink-0"></span>
-                                    <span class="text-sm text-gray-700">
-                                        {{ is_array($inclusion) ? ($inclusion['name'] ?? $inclusion[0] ?? '') :
-                                        $inclusion }}
-                                    </span>
-                                </li>
-                                @endforeach
-                            </ul>
-                            @endif
-                        </div>
-                        @endif
-
                     </div>
 
                     <!-- RIGHT COLUMN - Booking Form & Package Info -->
@@ -499,7 +245,10 @@
                     @foreach($relatedPackages as $related)
                     <div class="group">
                         <div class="relative aspect-[3/4] overflow-hidden bg-gray-100 mb-6">
-                            @if($related->images->isNotEmpty())
+                            @if($related->banner)
+                            <img src="{{ $related->banner_url }}" alt="{{ $related->name }}"
+                                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                            @elseif($related->images->isNotEmpty())
                             <img src="{{ asset('storage/' . $related->images->first()->path) }}"
                                 alt="{{ $related->name }}"
                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
@@ -563,16 +312,13 @@
                                 @endfor
                         </div>
                         <blockquote class="mb-4">
-                            <p class="text-gray-700 italic leading-relaxed"
-                                style="font-family: 'Cormorant Garamond', serif;">
-                                "{{ $review->message }}"
+                            <p class="text-gray-700 italic" style="font-family: 'Cormorant Garamond', serif;">
+                                "{{ $review->comment }}"
                             </p>
                         </blockquote>
-                        <div class="border-t border-gray-100 pt-4">
-                            <p class="text-sm font-medium text-gray-900">{{ $review->customer->name ?? 'Anonymous' }}
-                            </p>
-                            <p class="text-xs text-gray-500">{{ $review->created_at->format('F Y') }}</p>
-                        </div>
+                        <cite class="text-sm text-gray-600 not-italic">
+                            — {{ $review->event->customer->customer_name ?? 'Anonymous' }}
+                        </cite>
                     </div>
                     @endforeach
                 </div>
@@ -580,160 +326,59 @@
         </section>
         @endif
 
-        <!-- Footer CTA -->
-        <section class="py-16 bg-gray-50 border-t border-gray-100">
-            <div class="max-w-screen-xl mx-auto px-6 lg:px-12 text-center">
-                <h3 class="text-3xl font-light mb-4" style="font-family: 'Playfair Display', serif;">
-                    Need More Information?
-                </h3>
-                <p class="text-gray-600 mb-8">
-                    Contact us for a personalized consultation
-                </p>
-                <div class="flex items-center justify-center gap-4">
-                    <a href="tel:+639173062531"
-                        class="px-8 py-3 bg-black text-white text-xs uppercase tracking-widest hover:bg-gray-900 transition-colors">
-                        Call Us
-                    </a>
-                    <a href="mailto:michaelhoevents@gmail.com"
-                        class="px-8 py-3 border border-black text-black text-xs uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-300">
-                        Email Us
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        <!-- Gallery JavaScript -->
+        <!-- Form Validation Script -->
         <script>
-            let currentSlide = 0;
-        const slides = document.querySelectorAll('.gallery-slide');
-        const indicators = document.querySelectorAll('.gallery-indicator');
-        let autoSlideInterval;
-
-        function showSlide(index) {
-            slides.forEach(slide => slide.classList.remove('active'));
-            indicators.forEach(indicator => {
-                indicator.classList.remove('active', 'w-8');
-                indicator.classList.add('w-2');
-            });
-
-            if (slides[index]) {
-                slides[index].classList.add('active');
-                if (indicators[index]) {
-                    indicators[index].classList.add('active', 'w-8');
-                    indicators[index].classList.remove('w-2');
-                }
-            }
-            currentSlide = index;
-        }
-
-        function changeSlide(direction) {
-            let newSlide = currentSlide + direction;
-            if (newSlide >= slides.length) newSlide = 0;
-            if (newSlide < 0) newSlide = slides.length - 1;
-            showSlide(newSlide);
-            resetAutoSlide();
-        }
-
-        function goToSlide(index) {
-            showSlide(index);
-            resetAutoSlide();
-        }
-
-        function startAutoSlide() {
-            if (slides.length > 1) {
-                autoSlideInterval = setInterval(() => {
-                    changeSlide(1);
-                }, 5000);
-            }
-        }
-
-        function resetAutoSlide() {
-            clearInterval(autoSlideInterval);
-            startAutoSlide();
-        }
-
-        // Start auto-slide on load
-        startAutoSlide();
-
-        // Keyboard navigation
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'ArrowLeft') changeSlide(-1);
-            if (e.key === 'ArrowRight') changeSlide(1);
-        });
-
-        // Pause auto-slide when hovering
-        const gallery = document.getElementById('imageGallery');
-        if (gallery) {
-            gallery.addEventListener('mouseenter', () => clearInterval(autoSlideInterval));
-            gallery.addEventListener('mouseleave', startAutoSlide);
-        }
-
-        // Form Validation
-        document.addEventListener('DOMContentLoaded', function() {
-            const bookingForm = document.querySelector('form[action*="book"]');
+            document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
             
-            if (bookingForm) {
-                bookingForm.addEventListener('submit', function(e) {
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Clear previous errors
                     document.querySelectorAll('.validation-error').forEach(el => el.remove());
-                    
+                    document.querySelectorAll('.border-red-500').forEach(el => {
+                        el.classList.remove('border-red-500');
+                        el.classList.add('border-gray-200');
+                    });
+
                     let hasError = false;
-                    let firstErrorField = null;
 
                     // Validate Event Name
                     const eventName = document.getElementById('event_name');
                     if (!eventName.value.trim()) {
                         showError(eventName, 'Event name is required');
                         hasError = true;
-                        if (!firstErrorField) firstErrorField = eventName;
                     }
 
                     // Validate Event Date
-                    const eventDate = document.querySelector('input[name="event_date"]');
-                    if (!eventDate || !eventDate.value.trim()) {
+                    const eventDate = document.getElementById('event_date');
+                    if (!eventDate.value) {
                         showError(eventDate, 'Event date is required');
                         hasError = true;
-                        if (!firstErrorField) firstErrorField = eventDate;
-                    } else {
-                        const selectedDate = new Date(eventDate.value);
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        
-                        if (selectedDate <= today) {
-                            showError(eventDate, 'Event date must be in the future');
-                            hasError = true;
-                            if (!firstErrorField) firstErrorField = eventDate;
-                        }
+                    }
+
+                    // Validate Theme
+                    const theme = document.getElementById('theme');
+                    if (!theme.value.trim()) {
+                        showError(theme, 'Theme is required');
+                        hasError = true;
                     }
 
                     // Validate Venue
                     const venue = document.getElementById('venue');
                     if (!venue.value.trim()) {
-                        showError(venue, 'Venue is required');
+                        showError(venue, 'Venue address is required');
                         hasError = true;
-                        if (!firstErrorField) firstErrorField = venue;
-                    } else if (venue.value.trim().length < 10) {
-                        showError(venue, 'Please enter a complete venue address');
-                        hasError = true;
-                        if (!firstErrorField) firstErrorField = venue;
                     }
 
                     if (hasError) {
                         e.preventDefault();
-                        if (firstErrorField) {
-                            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            firstErrorField.focus();
+                        showAlert('Please fill in all required fields');
+                        // Scroll to first error
+                        const firstError = document.querySelector('.border-red-500');
+                        if (firstError) {
+                            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         }
-                        showAlert('Please fill in all required fields correctly', 'error');
-                        return false;
                     }
-
-                    // Show loading state
-                    const submitBtn = bookingForm.querySelector('button[type="submit"]');
-                    const originalContent = submitBtn.innerHTML;
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = 'Processing...';
-
-                    showAlert('Proceeding to booking...', 'success');
                 });
             }
 
@@ -775,99 +420,7 @@
             });
         });
         </script>
-
-        <!-- Customize Inclusions Modal -->
-        <div x-show="showCustomizeModal" x-cloak @click.self="showCustomizeModal = false"
-            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50"
-            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;">
-
-            <div class="bg-white max-w-2xl w-full mx-auto border border-gray-900"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 transform scale-90"
-                x-transition:enter-end="opacity-100 transform scale-100"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 transform scale-100"
-                x-transition:leave-end="opacity-0 transform scale-90" @click.stop>
-
-                <!-- Modal Header -->
-                <div class="border-b border-gray-200 p-8">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-2xl font-light mb-2" style="font-family: 'Playfair Display', serif;">
-                                Customize <span x-text="currentCategory"></span>
-                            </h3>
-                            <p class="text-sm text-gray-600" style="font-family: 'Cormorant Garamond', serif;">
-                                Select or deselect items from this category
-                            </p>
-                        </div>
-                        <button type="button" @click="showCustomizeModal = false"
-                            class="text-gray-400 hover:text-black transition">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                    d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Modal Body -->
-                <div class="p-8 max-h-96 overflow-y-auto">
-                    <div class="space-y-3">
-                        <template x-for="(inclusion, index) in currentInclusions" :key="index">
-                            <label
-                                class="flex items-start gap-4 p-4 border border-gray-200 hover:border-gray-900 transition cursor-pointer group">
-                                <input type="checkbox" :checked="isInclusionSelected(currentCategory, index)"
-                                    @change="toggleInclusion(currentCategory, index)"
-                                    class="mt-1 w-4 h-4 text-black border-gray-300 focus:ring-black flex-shrink-0">
-
-                                <!-- Inclusion Image -->
-                                <template x-if="inclusion.image">
-                                    <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                                        <img :src="`{{ asset('storage') }}/${inclusion.image}`"
-                                            :alt="inclusion.name || inclusion" class="w-full h-full object-cover">
-                                    </div>
-                                </template>
-
-                                <!-- Inclusion Details -->
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-start justify-between gap-2">
-                                        <span class="text-sm font-medium text-gray-900 group-hover:text-black"
-                                            x-text="inclusion.name || inclusion"></span>
-                                        <template x-if="inclusion.price && inclusion.price > 0">
-                                            <span class="text-sm font-semibold text-gray-900 whitespace-nowrap"
-                                                x-text="'₱' + parseFloat(inclusion.price).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
-                                        </template>
-                                    </div>
-
-                                    <!-- Notes -->
-                                    <template x-if="inclusion.notes && inclusion.notes.trim()">
-                                        <p class="text-xs text-gray-600 mt-1 leading-relaxed" x-text="inclusion.notes">
-                                        </p>
-                                    </template>
-                                </div>
-                            </label>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- Modal Footer -->
-                <div class="border-t border-gray-200 p-8 bg-gray-50">
-                    <div class="flex justify-between items-center">
-                        <button type="button" @click="showCustomizeModal = false"
-                            class="px-6 py-3 border border-gray-300 text-gray-700 text-xs uppercase tracking-widest hover:border-gray-900 hover:text-black transition">
-                            Cancel
-                        </button>
-                        <button type="button" @click="showCustomizeModal = false"
-                            class="px-8 py-3 bg-black text-white text-xs uppercase tracking-widest hover:bg-gray-900 transition">
-                            Apply Changes
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>{{-- Close Alpine.js wrapper --}}
+    </div>
 </body>
 
 </html>

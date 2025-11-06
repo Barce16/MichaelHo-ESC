@@ -20,7 +20,7 @@ class Package extends Model
         'coordination',
         'coordination_price',
         'event_styling_price',
-
+        'banner',
     ];
 
     public function events()
@@ -46,6 +46,14 @@ class Package extends Model
             ->distinct()
             ->orderBy('type')
             ->pluck('type');
+    }
+
+    /**
+     * Get the banner URL
+     */
+    public function getBannerUrlAttribute(): ?string
+    {
+        return $this->banner ? asset('storage/' . $this->banner) : null;
     }
 
     protected $casts = [

@@ -1,6 +1,5 @@
 <?php
 
-// app/Http/Controllers/Admin/PackageController.php
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -61,6 +60,10 @@ class PackageController extends Controller
             'coordination'       => ['nullable', 'string', 'max:5000'],
             'coordination_price' => ['nullable', 'numeric', 'min:0'],
             'event_styling_price' => ['nullable', 'numeric', 'min:0'],
+
+            // Banner validation
+            'banner' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+
             'images'       => ['required', 'array', 'min:4'],
             'images.*'     => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'images_alt'   => ['array'],
@@ -77,6 +80,12 @@ class PackageController extends Controller
         $stylingPrice      = $request->input('event_styling_price', 55000);
 
         DB::transaction(function () use ($request, $data, $eventStylingArray, $coordinationPrice, $stylingPrice) {
+            // Handle banner upload
+            $bannerPath = null;
+            if ($request->hasFile('banner')) {
+                $bannerPath = $request->file('banner')->store('packages/banners', 'public');
+            }
+
             $package = Package::create([
                 'name'                 => $data['name'],
                 'slug'                 => Str::slug($data['name']),
@@ -87,6 +96,7 @@ class PackageController extends Controller
                 'coordination'         => $data['coordination'] ?? null,
                 'coordination_price'   => $coordinationPrice,
                 'event_styling_price'  => $stylingPrice,
+                'banner'               => $bannerPath, // Added banner
             ]);
 
             $incoming = $request->input('inclusions', []);
@@ -155,6 +165,10 @@ class PackageController extends Controller
             'coordination_price' => ['nullable', 'numeric', 'min:0'],
             'event_styling_price' => ['nullable', 'numeric', 'min:0'],
 
+            // Banner validation
+            'banner' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'remove_banner' => ['sometimes', 'boolean'],
+
             'images'             => ['nullable', 'array'],
             'images.*'           => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
 
@@ -173,6 +187,23 @@ class PackageController extends Controller
             ->values()
             ->all();
 
+        // Handle banner update/removal
+        $bannerPath = $package->banner;
+
+        // If user wants to remove banner
+        if ($request->boolean('remove_banner') && $package->banner) {
+            Storage::disk('public')->delete($package->banner);
+            $bannerPath = null;
+        }
+
+        // If new banner uploaded
+        if ($request->hasFile('banner')) {
+            // Delete old banner if exists
+            if ($package->banner) {
+                Storage::disk('public')->delete($package->banner);
+            }
+            $bannerPath = $request->file('banner')->store('packages/banners', 'public');
+        }
 
         $package->update([
             'name'                 => $data['name'],
@@ -184,6 +215,7 @@ class PackageController extends Controller
             'coordination'         => $data['coordination'] ?? null,
             'coordination_price'   => $request->input('coordination_price', 25000),
             'event_styling_price'  => $request->input('event_styling_price', 55000),
+            'banner'               => $bannerPath,
         ]);
 
 
@@ -254,6 +286,11 @@ class PackageController extends Controller
 
     public function destroy(Package $package)
     {
+        // Delete banner if exists
+        if ($package->banner) {
+            Storage::disk('public')->delete($package->banner);
+        }
+
         $package->delete();
         return back()->with('success', 'Package deleted.');
     }
