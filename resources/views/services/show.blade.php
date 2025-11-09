@@ -36,11 +36,42 @@
         .animate-slide-in {
             animation: slide-in 0.3s ease-out;
         }
+
+        /* Lightbox Styles */
+        .lightbox-backdrop {
+            backdrop-filter: blur(8px);
+        }
+
+        @keyframes zoom-in {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .animate-zoom-in {
+            animation: zoom-in 0.3s ease-out;
+        }
     </style>
 </head>
 
 <body class="bg-white">
-    <div x-data="{}">
+    <div x-data="{ 
+        showLightbox: false,
+        openLightbox() {
+            this.showLightbox = true;
+            document.body.style.overflow = 'hidden';
+        },
+        closeLightbox() {
+            this.showLightbox = false;
+            document.body.style.overflow = '';
+        }
+    }" @keydown.escape.window="closeLightbox()">
         <!-- Elegant Header -->
         <header class="border-b border-gray-100 bg-white">
             <div class="max-w-screen-xl mx-auto px-6 lg:px-12 py-6">
@@ -83,10 +114,10 @@
                     <!-- LEFT COLUMN - Banner Image -->
                     <div class="space-y-8">
                         @if($package->banner)
-                        <!-- Banner Display -->
+                        <!-- Banner Display with Click to Enlarge -->
                         <div class="flex justify-center lg:justify-center h-full">
-                            <div
-                                class="relative rounded-xl overflow-hidden shadow-2xl border-2 border-gray-200 w-full max-w-md group">
+                            <div @click="openLightbox()"
+                                class="relative rounded-xl overflow-hidden shadow-2xl border-2 border-gray-200 w-full max-w-md group cursor-pointer hover:border-gray-400 transition-colors">
                                 <img src="{{ $package->banner_url }}" alt="{{ $package->name }} banner"
                                     class="w-full h-auto object-cover aspect-[2/3] group-hover:scale-105 transition-transform duration-700"
                                     loading="lazy">
@@ -101,6 +132,18 @@
                                     class="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 border border-gray-200">
                                     <p class="text-xs uppercase tracking-widest text-black font-medium">{{
                                         ucfirst($package->type) }}</p>
+                                </div>
+
+                                <!-- Click to Enlarge Hint -->
+                                <div
+                                    class="absolute bottom-4 right-4 bg-black/80 backdrop-blur-sm px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <div class="flex items-center gap-2 text-white">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                        </svg>
+                                        <span class="text-xs font-medium">Click to enlarge</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -324,6 +367,58 @@
                 </div>
             </div>
         </section>
+        @endif
+
+        <!-- Banner Lightbox Modal -->
+        @if($package->banner)
+        <div x-show="showLightbox" x-cloak @click="closeLightbox()"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 lightbox-backdrop"
+            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+            <!-- Lightbox Container -->
+            <div @click.stop class="relative max-w-5xl w-full mx-auto animate-zoom-in"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 transform scale-90"
+                x-transition:enter-end="opacity-100 transform scale-100">
+
+                <!-- Close Button -->
+                <button @click="closeLightbox()"
+                    class="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors z-10">
+                    <div class="flex items-center gap-2 text-sm uppercase tracking-wider">
+                        <span>Close</span>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </div>
+                </button>
+
+                <!-- Banner Image -->
+                <div class="relative rounded-lg overflow-hidden shadow-2xl bg-white">
+                    <img src="{{ $package->banner_url }}" alt="{{ $package->name }} banner"
+                        class="w-full h-auto max-h-[90vh] object-contain">
+
+                    <!-- Image Info Overlay -->
+                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
+                        <h3 class="text-white text-2xl font-light mb-2" style="font-family: 'Playfair Display', serif;">
+                            {{ $package->name }}
+                        </h3>
+                        <div class="flex items-center gap-4 text-white/90 text-sm">
+                            <span class="px-3 py-1 bg-white/20 backdrop-blur-sm rounded">{{ ucfirst($package->type)
+                                }}</span>
+                            <span>₱{{ number_format($package->price, 0, ',', ',') }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keyboard Hint -->
+                <p class="text-white/60 text-xs text-center mt-4">
+                    Press ESC or click outside to close
+                </p>
+            </div>
+        </div>
         @endif
 
         <!-- Form Validation Script -->

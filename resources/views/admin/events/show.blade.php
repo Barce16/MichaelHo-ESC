@@ -41,6 +41,7 @@
         showRejectIntro: false,
         showRejectDown: false,
         showRequestDownpayment: false,
+        showProgress: false,
         downpaymentAmount: 0,
 
         fmt(n) {
@@ -734,6 +735,15 @@
                                 </svg>
                                 Assign Staff
                             </a>
+
+                            <button @click="showProgress = true"
+                                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                </svg>
+                                Update Progress
+                            </button>
                         </div>
                         @endif
 
@@ -1212,6 +1222,139 @@
             </div>
         </div>
 
+        <!-- Progress Modal -->
+        <div x-show="showProgress" x-cloak @click.self="showProgress = false"
+            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+            <div @click.stop class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-auto max-h-[90vh]"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 transform scale-90"
+                x-transition:enter-end="opacity-100 transform scale-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 transform scale-100"
+                x-transition:leave-end="opacity-0 transform scale-90">
+
+                <!-- Modal Header -->
+                <div class="bg-black text-white px-6 py-5 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold">Event Progress Tracking</h3>
+                        <p class="text-sm text-white/80 mt-1">{{ $event->name }}</p>
+                    </div>
+                    <button @click="showProgress = false" class="text-white/80 hover:text-white transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Event Info -->
+                <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-gray-500">Order ID:</span>
+                            <span class="font-semibold ml-2">#{{ str_pad($event->id, 6, '0', STR_PAD_LEFT) }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Event Date:</span>
+                            <span class="font-semibold ml-2">{{ $event->event_date->format('M d, Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Timeline - Compact -->
+                <div class="p-6 overflow-y-auto max-h-[50vh]">
+                    @if($event->progress && $event->progress->count() > 0)
+                    <div class="space-y-1">
+                        @foreach($event->progress as $progress)
+                        <div class="flex items-start gap-3 py-2 hover:bg-gray-50 rounded-lg px-2 -mx-2 transition">
+                            <!-- Checkbox -->
+                            <div class="flex-shrink-0 mt-1">
+                                <div
+                                    class="w-5 h-5 rounded border-2 {{ $loop->first ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-gray-300' }} flex items-center justify-center">
+                                    <svg class="w-3 h-3 {{ $loop->first ? 'text-white' : 'text-gray-400' }}" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                            d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <!-- Progress Content -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between gap-2">
+                                    <h4 class="font-semibold text-sm text-gray-900 leading-tight">
+                                        {{ ucfirst(str_replace('_', ' ', $progress->status)) }}
+                                    </h4>
+                                    <span class="text-xs text-gray-500 whitespace-nowrap mt-0.5">
+                                        {{ $progress->progress_date->format('M d, g:i A') }}
+                                    </span>
+                                </div>
+                                @if($progress->details)
+                                <p class="text-xs text-gray-600 mt-1 leading-relaxed">{{ $progress->details }}</p>
+                                @endif
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <div class="text-center py-12">
+                        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <p class="text-gray-500">No progress updates yet</p>
+                    </div>
+                    @endif
+                </div>
+
+                <!-- Add New Progress Form -->
+                <div class="px-6 py-6 bg-gray-50 border-t border-gray-200">
+                    <h4 class="font-bold text-lg mb-4 text-gray-900">Add New Update</h4>
+                    <form action="{{ route('admin.events.progress.store', $event) }}" method="POST" class="space-y-4">
+                        @csrf
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status Update</label>
+                            <input type="text" name="status" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="e.g., Preparing decorations">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Details (Optional)</label>
+                            <textarea name="details" rows="3"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Add any additional information about this update..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Progress Date & Time</label>
+                            <input type="datetime-local" name="progress_date" required
+                                value="{{ now()->format('Y-m-d\TH:i') }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <button type="submit"
+                            class="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                            Send Update & Notify Customer
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+                    <button @click="showProgress = false"
+                        class="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
     </div>
 </x-app-layout>

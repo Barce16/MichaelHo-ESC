@@ -12,19 +12,19 @@ use App\Http\Controllers\PublicBookingController;
 use App\Http\Controllers\EventShowcaseController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\ContactController;
-use App\Http\Controllers\Admin\FeedbackController;
-use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Customer\BillingPageController;
 use App\Http\Controllers\Customer\PaymentController;
-
 use App\Http\Controllers\Customer\EventController as CustomerEventController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\CustomerPaymentController;
 use App\Http\Controllers\Admin\AdminEventController;
+use App\Http\Controllers\Admin\EventProgressController;
 use App\Http\Controllers\Admin\EventShowcaseController as AdminEventShowcaseController;
 use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\InclusionController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\FeedbackController;
+use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Staff\ScheduleController as StaffScheduleController;
 use App\Http\Middleware\CheckAdmin;
 use App\Http\Middleware\EnsureCustomer;
@@ -33,7 +33,7 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Package;
 use App\Models\Feedback;
 use App\Models\EventShowcase;
-
+use Illuminate\Support\Facades\Mail;
 
 
 
@@ -159,6 +159,38 @@ Route::get('/test-sms', function () {
         ], 500);
     }
 });
+
+Route::get('/test-email/{event}', function ($eventId) {
+    $event = \App\Models\Event::with('progress')->findOrFail($eventId);
+
+    // Create a fake progress if none exists
+    if ($event->progress->isEmpty()) {
+        \App\Models\EventProgress::create([
+            'event_id' => $event->id,
+            'status' => 'Preparing decorations',
+            'details' => 'Getting all the flowers and decorations ready for your special day!',
+            'progress_date' => now(),
+        ]);
+        $event->load('progress');
+    }
+
+    return view('emails.event-progress', ['event' => $event]);
+})->middleware('auth');
+
+Route::get('/send-test-email/{event}', function ($eventId) {
+    $event = \App\Models\Event::with('progress')->findOrFail($eventId);
+    $progress = $event->progress->first() ?? \App\Models\EventProgress::create([
+        'event_id' => $event->id,
+        'status' => 'Test Update',
+        'details' => 'This is a test',
+        'progress_date' => now(),
+    ]);
+
+    Mail::to('jaymarpabayo@myyahoo.com')
+        ->send(new \App\Mail\EventProgressNotification($event, $progress));
+
+    return 'Test email sent to ' . 'jaymarpabayo@myyahoo.com';
+})->middleware('auth');
 
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
@@ -350,6 +382,10 @@ Route::middleware('auth')->group(function () {
                 Route::get('/remaining-balances', [ReportController::class, 'remainingBalances'])->name('remaining-balances');
                 Route::get('/system-summary', [ReportController::class, 'systemSummary'])->name('system-summary');
             });
+
+
+            Route::post('/events/{event}/progress', [EventProgressController::class, 'store'])
+                ->name('events.progress.store');
         });
 
 

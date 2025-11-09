@@ -241,4 +241,9 @@ class Event extends Model
     {
         return $this->feedback()->exists();
     }
+
+    public function progress()
+    {
+        return $this->hasMany(EventProgress::class)->orderBy('progress_date', 'desc');
+    }
 }
