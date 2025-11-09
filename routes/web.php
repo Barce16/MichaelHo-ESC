@@ -100,98 +100,6 @@ Route::get('/api/availability', [AvailabilityController::class, 'getMonthAvailab
 Route::get('/inclusions/by-package-type', [InclusionController::class, 'getByPackageType'])
     ->name('inclusions.by-package-type');
 
-
-Route::get('/test-sms', function () {
-    try {
-        // Check config
-        $apiToken = config('services.iprogtech.api_token');
-
-        if (empty($apiToken)) {
-            return response()->json([
-                'error' => 'iprogtech API token not configured',
-                'instructions' => [
-                    '1. Get API token from iprogtech',
-                    '2. Add to .env: IPROGTECH_API_TOKEN=your_token',
-                    '3. Clear cache: php artisan config:clear'
-                ]
-            ]);
-        }
-
-        $smsNotifier = app(\App\Services\SmsNotifier::class);
-
-        // Send to a DIFFERENT phone number (not your own!)
-        $result = $smsNotifier->sendSms(
-            '09152796976', // ← Change this to recipient's number
-            'Message from iprogtech at ' . now()->format('h:i A')
-        );
-
-        if ($result) {
-            return response()->json([
-                'success' => true,
-                'message' => 'SMS sent successfully! Check recipient phone.',
-                'provider' => 'iprogtech'
-            ]);
-        }
-
-        // Check logs for errors
-        $logFile = storage_path('logs/laravel.log');
-        $logs = '';
-        if (file_exists($logFile)) {
-            $lines = file($logFile);
-            $recentLines = array_slice($lines, -20);
-            foreach ($recentLines as $line) {
-                if (stripos($line, 'iprogtech') !== false || stripos($line, 'sms') !== false) {
-                    $logs .= $line . "\n";
-                }
-            }
-        }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to send SMS - check logs',
-            'recent_logs' => $logs
-        ], 500);
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
-        ], 500);
-    }
-});
-
-Route::get('/test-email/{event}', function ($eventId) {
-    $event = \App\Models\Event::with('progress')->findOrFail($eventId);
-
-    // Create a fake progress if none exists
-    if ($event->progress->isEmpty()) {
-        \App\Models\EventProgress::create([
-            'event_id' => $event->id,
-            'status' => 'Preparing decorations',
-            'details' => 'Getting all the flowers and decorations ready for your special day!',
-            'progress_date' => now(),
-        ]);
-        $event->load('progress');
-    }
-
-    return view('emails.event-progress', ['event' => $event]);
-})->middleware('auth');
-
-Route::get('/send-test-email/{event}', function ($eventId) {
-    $event = \App\Models\Event::with('progress')->findOrFail($eventId);
-    $progress = $event->progress->first() ?? \App\Models\EventProgress::create([
-        'event_id' => $event->id,
-        'status' => 'Test Update',
-        'details' => 'This is a test',
-        'progress_date' => now(),
-    ]);
-
-    Mail::to('jaymarpabayo@myyahoo.com')
-        ->send(new \App\Mail\EventProgressNotification($event, $progress));
-
-    return 'Test email sent to ' . 'jaymarpabayo@myyahoo.com';
-})->middleware('auth');
-
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
 
@@ -306,6 +214,9 @@ Route::middleware('auth')->group(function () {
                 ->name('events.rejectDownpayment');
 
             Route::resource('customers', CustomerController::class);
+            Route::post('/customers/store-walkin', [CustomerController::class, 'storeWithEvent'])
+                ->name('customers.storeWithEvent');
+
             // Staff assignment
             Route::resource('staff', StaffController::class);
 

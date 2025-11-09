@@ -1,12 +1,66 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <div>
-                <h2 class="font-bold text-2xl text-gray-800">Customers</h2>
-                <p class="text-sm text-gray-500 mt-1">Manage customer information and bookings</p>
+            <h2 class="font-semibold text-xl text-gray-800">Customers</h2>
+            <div class="flex gap-3">
+                <a href="{{ route('admin.customers.create') }}"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    Add Walk-in Customer
+                </a>
             </div>
         </div>
     </x-slot>
+
+    @if(session('success') && session('new_customer_password'))
+    <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-6 rounded-lg shadow-sm">
+        <div class="flex items-start gap-4">
+            <div class="flex-shrink-0">
+                <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-green-900 mb-2">Walk-in Customer Created Successfully!</h3>
+                <p class="text-sm text-green-800 mb-4">{{ session('success') }}</p>
+
+                <div class="bg-white border border-green-200 rounded-lg p-4 mb-4">
+                    <h4 class="font-semibold text-gray-900 mb-3">Customer Login Credentials:</h4>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-medium text-gray-600 w-24">Email:</span>
+                            <code
+                                class="text-sm bg-gray-100 px-3 py-1 rounded">{{ session('new_customer_email') }}</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-medium text-gray-600 w-24">Password:</span>
+                            <code
+                                class="text-sm bg-gray-100 px-3 py-1 rounded font-mono">{{ session('new_customer_password') }}</code>
+                            <button onclick="copyPassword()"
+                                class="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-900">
+                                Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyPassword() {
+        const password = "{{ session('new_customer_password') }}";
+        navigator.clipboard.writeText(password).then(() => {
+            alert('Password copied to clipboard!');
+        });
+}
+    </script>
+    @endif
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
