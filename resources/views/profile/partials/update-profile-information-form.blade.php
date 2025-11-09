@@ -36,6 +36,42 @@
                 </div>
             </div>
 
+            @if($user->user_type === 'admin')
+            <!-- Signature Upload (Admin Only) -->
+            <div class="md:col-span-2 flex gap-x-5 mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200"
+                x-data="{ signaturePreview: '{{ $user->signature_url }}' }">
+                <div class="mt-2">
+                    <div
+                        class="h-20 w-32 border-2 border-dashed border-gray-300 rounded flex items-center justify-center bg-white">
+                        <img x-show="signaturePreview" :src="signaturePreview"
+                            class="max-h-full max-w-full object-contain" alt="Signature">
+                        <span x-show="!signaturePreview" class="text-xs text-gray-400">No signature</span>
+                    </div>
+                </div>
+
+                <div class="text-sm flex-1">
+                    <x-input-label class="text-blue-900 font-semibold">Digital Signature (Admin Only)</x-input-label>
+                    <p class="text-xs text-blue-700 mb-2">This signature will appear on official receipts. PNG format
+                        only.</p>
+                    <input type="file" name="signature" accept=".png"
+                        class="block w-full border rounded px-3 py-2 text-sm" @change="
+                       if ($event.target.files.length > 0) {
+                           const file = $event.target.files[0];
+                           signaturePreview = URL.createObjectURL(file);
+                       }
+                   " />
+                    <x-input-error :messages="$errors->get('signature')" class="mt-1" />
+
+                    @if($user->signature_path)
+                    <label class="flex items-center mt-2 text-xs text-gray-600 cursor-pointer hover:text-red-600">
+                        <input type="checkbox" name="remove_signature" value="1" class="mr-2 rounded">
+                        Remove current signature
+                    </label>
+                    @endif
+                </div>
+            </div>
+            @endif
+
             <x-input-label for="name" :value="__('Name')" />
             <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)"
                 required autofocus autocomplete="name" />

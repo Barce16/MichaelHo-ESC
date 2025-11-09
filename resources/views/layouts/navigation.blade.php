@@ -145,6 +145,7 @@
                         'bg-gray-100 text-gray-600': notification.type === 'schedule_removed',
                         'bg-teal-100 text-teal-600': notification.type === 'payroll_paid',
                         'bg-yellow-100 text-yellow-600': notification.type === 'customer_feedback',
+                        'bg-indigo-100 text-indigo-600': notification.type === 'receipt_request',
                     }" class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">

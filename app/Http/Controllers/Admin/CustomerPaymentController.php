@@ -9,6 +9,7 @@ use App\Models\Billing;
 use App\Services\NotificationService;
 use App\Services\SmsNotifier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
@@ -284,5 +285,65 @@ class CustomerPaymentController extends Controller
         $payment->load(['billing.event.customer', 'event']);
 
         return view('admin.payments.show', compact('payment'));
+    }
+
+    /**
+     * Generate receipt PDF for approved payment
+     */
+    public function createReceipt(Payment $payment)
+    {
+        // Authorization check
+        if ($payment->status !== Payment::STATUS_APPROVED) {
+            return back()->with('error', 'Receipt can only be generated for approved payments.');
+        }
+
+        if (!$payment->hasReceiptRequested()) {
+            return back()->with('error', 'No receipt request found for this payment.');
+        }
+
+        if ($payment->hasReceiptCreated()) {
+            return back()->with('info', 'Receipt has already been generated for this payment.');
+        }
+
+        // Mark receipt as created
+        $payment->markReceiptCreated();
+
+        // Notify customer that receipt is ready
+        $this->notificationService->notifyCustomerReceiptReady($payment);
+
+        return back()->with('success', 'Receipt generated successfully! Customer has been notified and can now download it.');
+    }
+
+    /**
+     * Download receipt PDF
+     */
+    public function downloadReceipt(Payment $payment)
+    {
+        if (!$payment->hasReceiptCreated()) {
+            abort(404, 'Receipt not found.');
+        }
+
+        $event = $payment->billing->event;
+        $customer = $event->customer;
+
+        // Get current admin user or find an admin with signature
+        $admin = Auth::user()->user_type === 'admin'
+            ? Auth::user()
+            : (\App\Models\User::where('user_type', 'admin')
+                ->whereNotNull('signature_path')
+                ->first()
+                ?? \App\Models\User::where('user_type', 'admin')->first());
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.payments.receipt-pdf', compact('payment', 'event', 'customer', 'admin'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('margin-top', 5)
+            ->setOption('margin-bottom', 5)
+            ->setOption('margin-left', 10)
+            ->setOption('margin-right', 10);
+
+        $filename = 'receipt-' . $payment->id . '-' . now()->format('Y-m-d') . '.pdf';
+
+        // Use stream() instead of download() to open in browser
+        return $pdf->stream($filename);
     }
 }

@@ -25,6 +25,11 @@ class Payment extends Model
     const STATUS_APPROVED = 'approved';
     const STATUS_REJECTED = 'rejected';
 
+    // Receipt Request Status Constants
+    const RECEIPT_NOT_REQUESTED = 0;
+    const RECEIPT_REQUESTED = 1;
+    const RECEIPT_CREATED = 2;
+
     protected $fillable = [
         'event_id',
         'billing_id',
@@ -37,11 +42,17 @@ class Payment extends Model
         'status',
         'rejection_reason',
         'notes',
+        'receipt_request',
+        'receipt_requested_at',
+        'receipt_created_at',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'payment_date' => 'datetime',
+        'receipt_request' => 'integer',
+        'receipt_requested_at' => 'datetime',
+        'receipt_created_at' => 'datetime',
     ];
 
     public function event()
@@ -170,5 +181,39 @@ class Payment extends Model
     public function scopeByPaymentMethod($query, string $method)
     {
         return $query->where('payment_method', $method);
+    }
+
+    // Receipt request method
+    public function requestReceipt(): void
+    {
+        if ($this->isApproved() && $this->receipt_request === self::RECEIPT_NOT_REQUESTED) {
+            $this->update([
+                'receipt_request' => self::RECEIPT_REQUESTED,
+                'receipt_requested_at' => now(),
+            ]);
+        }
+    }
+
+    // Check if receipt is requested
+    public function hasReceiptRequested(): bool
+    {
+        return $this->receipt_request === self::RECEIPT_REQUESTED;
+    }
+
+    // Check if receipt is created
+    public function hasReceiptCreated(): bool
+    {
+        return $this->receipt_request === self::RECEIPT_CREATED;
+    }
+
+    // Mark receipt as created
+    public function markReceiptCreated(): void
+    {
+        if ($this->receipt_request === self::RECEIPT_REQUESTED) {
+            $this->update([
+                'receipt_request' => self::RECEIPT_CREATED,
+                'receipt_created_at' => now(),
+            ]);
+        }
     }
 }

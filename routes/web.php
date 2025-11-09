@@ -149,6 +149,12 @@ Route::middleware('auth')->group(function () {
             Route::get('/payments/{payment}', [PaymentController::class, 'show'])
                 ->name('payments.show');
 
+            // Receipt routes
+            Route::post('/payments/{payment}/request-receipt', [PaymentController::class, 'requestReceipt'])
+                ->name('payments.request-receipt');
+            Route::get('/payments/{payment}/download-receipt', [PaymentController::class, 'downloadReceipt'])
+                ->name('payments.download-receipt');
+
             // Billings
             Route::get('/billings', [BillingPageController::class, 'index'])
                 ->name('billings');
@@ -242,6 +248,9 @@ Route::middleware('auth')->group(function () {
             Route::get('payments/{payment}', [CustomerPaymentController::class, 'show'])->name('payments.show');
             Route::post('payments/{paymentId}/approve', [CustomerPaymentController::class, 'approve'])->name('payments.approve');
             Route::post('payments/{paymentId}/reject', [CustomerPaymentController::class, 'reject'])->name('payments.reject');
+
+            Route::post('payments/{payment}/create-receipt', [CustomerPaymentController::class, 'createReceipt'])->name('payments.create-receipt');
+            Route::get('payments/{payment}/download-receipt', [CustomerPaymentController::class, 'downloadReceipt'])->name('payments.download-receipt');
 
             // ---- Management ----
             Route::prefix('management')->name('management.')->group(function () {

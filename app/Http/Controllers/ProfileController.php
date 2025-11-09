@@ -23,6 +23,7 @@ class ProfileController extends Controller
     }
 
     /**
+/**
      * Update the user's profile information.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
@@ -35,6 +36,7 @@ class ProfileController extends Controller
             $user->email_verified_at = null;
         }
 
+        // Handle avatar removal
         if ($request->boolean('remove_avatar') && $user->profile_photo_path) {
             if (Storage::disk('public')->exists($user->profile_photo_path)) {
                 Storage::disk('public')->delete($user->profile_photo_path);
@@ -42,6 +44,7 @@ class ProfileController extends Controller
             $user->profile_photo_path = null;
         }
 
+        // Handle avatar upload
         if ($request->hasFile('avatar')) {
             $path = $request->file('avatar')->store('avatars', 'public');
 
@@ -50,6 +53,25 @@ class ProfileController extends Controller
             }
 
             $user->profile_photo_path = $path;
+        }
+
+        // Handle signature removal (admin only)
+        if ($user->user_type === 'admin' && $request->boolean('remove_signature') && $user->signature_path) {
+            if (Storage::disk('public')->exists($user->signature_path)) {
+                Storage::disk('public')->delete($user->signature_path);
+            }
+            $user->signature_path = null;
+        }
+
+        // Handle signature upload (admin only)
+        if ($user->user_type === 'admin' && $request->hasFile('signature')) {
+            $path = $request->file('signature')->store('signatures', 'public');
+
+            if ($user->signature_path && Storage::disk('public')->exists($user->signature_path)) {
+                Storage::disk('public')->delete($user->signature_path);
+            }
+
+            $user->signature_path = $path;
         }
 
         $user->save();

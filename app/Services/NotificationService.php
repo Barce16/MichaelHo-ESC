@@ -47,6 +47,32 @@ class NotificationService
     }
 
     /**
+     * Notify admin of receipt request
+     */
+    public function notifyAdminReceiptRequested(Payment $payment): void
+    {
+        $admins = User::where('user_type', 'admin')->get();
+        $event = $payment->billing->event;
+
+        $paymentType = match ($payment->payment_type) {
+            'introductory' => 'Introductory',
+            'downpayment' => 'Downpayment',
+            'balance' => 'Balance',
+            default => 'Payment'
+        };
+
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'receipt_request',
+                'title' => 'Receipt Requested',
+                'message' => "{$event->customer->customer_name} requested an official receipt for {$paymentType} payment of ₱" . number_format($payment->amount, 2) . " ({$event->name})",
+                'link' => route('admin.payments.show', $payment),
+            ]);
+        }
+    }
+
+    /**
      * Notify customer of event status change
      */
     public function notifyCustomerEventStatus(Event $event, string $oldStatus, string $newStatus): void
@@ -301,6 +327,32 @@ class NotificationService
             'title' => 'Event Inclusions Updated',
             'message' => "Your event inclusions have been updated. New total: ₱" . number_format($newTotal, 2) . " ({$changeText})",
             'link' => route('customer.events.show', $event),
+        ]);
+    }
+
+    /**
+     * Notify customer that receipt is ready for download
+     */
+    public function notifyCustomerReceiptReady(Payment $payment): void
+    {
+        $event = $payment->billing->event;
+        $user = $event->customer->user;
+
+        if (!$user) return;
+
+        $paymentType = match ($payment->payment_type) {
+            'introductory' => 'Introductory',
+            'downpayment' => 'Downpayment',
+            'balance' => 'Balance',
+            default => 'Payment'
+        };
+
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => 'receipt_ready',
+            'title' => 'Receipt Ready for Download',
+            'message' => "Your official receipt for {$paymentType} payment of ₱" . number_format($payment->amount, 2) . " ({$event->name}) is now ready to download!",
+            'link' => route('customer.payments.index'),
         ]);
     }
 }

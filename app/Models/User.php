@@ -28,6 +28,7 @@ class User extends Authenticatable
         'user_type',
         'status',
         'profile_photo_path',
+        'signature_path',
     ];
 
     /**
@@ -71,5 +72,14 @@ class User extends Authenticatable
         return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=E5E7EB&color=111827';
     }
 
-    protected $appends = ['profile_photo_url'];
+    public function getSignatureUrlAttribute(): ?string
+    {
+        if ($this->signature_path) {
+            return asset('storage/' . $this->signature_path);
+        }
+
+        return null;
+    }
+
+    protected $appends = ['profile_photo_url', 'signature_url'];
 }

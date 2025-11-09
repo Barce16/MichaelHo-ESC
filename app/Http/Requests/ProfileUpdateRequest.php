@@ -27,6 +27,7 @@ class ProfileUpdateRequest extends FormRequest
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'signature' => ['nullable', 'image', 'mimes:png', 'max:2048'],
         ];
     }
 
@@ -42,6 +43,9 @@ class ProfileUpdateRequest extends FormRequest
             'username.required' => 'Username is required.',
             'username.alpha_dash' => 'Username may only contain letters, numbers, dashes, and underscores.',
             'username.unique' => 'This username is already taken.',
+            'signature.mimes' => 'The signature must be a PNG image.',
+            'signature.image' => 'The signature must be an image file.',
+            'signature.max' => 'The signature must not be larger than 2MB.',
         ];
     }
 }
