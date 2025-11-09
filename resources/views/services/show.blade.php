@@ -112,14 +112,14 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mt-16">
 
                     <!-- LEFT COLUMN - Banner Image -->
-                    <div class="space-y-8">
+                    <div class="space-y-8 min-h-[600px] lg:min-h-[700px]">
                         @if($package->banner)
                         <!-- Banner Display with Click to Enlarge -->
                         <div class="flex justify-center lg:justify-center h-full">
                             <div @click="openLightbox()"
-                                class="relative rounded-xl overflow-hidden shadow-2xl border-2 border-gray-200 w-full max-w-md group cursor-pointer hover:border-gray-400 transition-colors">
+                                class="relative rounded-xl overflow-hidden shadow-2xl border-2 border-gray-200 w-full max-w-md group cursor-pointer hover:border-gray-400 transition-colors h-full">
                                 <img src="{{ $package->banner_url }}" alt="{{ $package->name }} banner"
-                                    class="w-full h-auto object-cover aspect-[2/3] group-hover:scale-105 transition-transform duration-700"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                                     loading="lazy">
 
                                 <!-- Gradient Overlay -->
