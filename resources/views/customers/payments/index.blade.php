@@ -127,7 +127,6 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                     {{ \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y') }}
                                 </td>
-
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @php
                                     $statusConfig = match($payment->status) {
@@ -147,14 +146,17 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                                     @if($payment->payment_image)
-                                    <a href="{{ asset('storage/' . $payment->payment_image) }}" target="_blank"
+                                    <button
+                                        onclick="openImageModal('{{ asset('storage/' . $payment->payment_image) }}')"
                                         class="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 font-medium transition">
-                                        View Receipt
+                                        {{ $payment->status === 'approved' ? 'View Proof of Payment' : 'View Receipt' }}
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                         </svg>
-                                    </a>
+                                    </button>
                                     @else
                                     <span class="text-gray-400">—</span>
                                     @endif
@@ -162,7 +164,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-16 text-center">
+                                <td colspan="7" class="px-6 py-16 text-center">
                                     <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -179,4 +181,67 @@
             </div>
         </div>
     </div>
+
+    {{-- Image Modal --}}
+    <div id="imageModal" class="fixed inset-0 z-50 hidden overflow-hidden">
+        {{-- Backdrop --}}
+        <div onclick="closeImageModal()"
+            class="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm transition-opacity"></div>
+
+        {{-- Modal Content --}}
+        <div class="fixed inset-0 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+            <div class="relative bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden">
+
+                {{-- Close Button --}}
+                <button onclick="closeImageModal()"
+                    class="absolute top-4 right-4 z-10 bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 rounded-full p-2 shadow-lg transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                {{-- Header --}}
+                <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-4">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Payment Proof
+                    </h3>
+                </div>
+
+                {{-- Image Container --}}
+                <div class="overflow-auto max-h-[calc(90vh-80px)] bg-gray-50 p-6">
+                    <div class="flex items-center justify-center">
+                        <img id="modalImage" alt="Payment Proof" class="max-w-full h-auto rounded-lg shadow-lg">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openImageModal(imageUrl) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = imageUrl;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+    </script>
 </x-app-layout>
