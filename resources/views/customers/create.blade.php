@@ -158,7 +158,7 @@
                         </div>
 
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Address </label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Address (Optional)</label>
                             <textarea name="address" rows="2"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                 placeholder="Complete address">{{ old('address') }}</textarea>
@@ -369,7 +369,7 @@
                         </div>
 
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Theme</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Theme (Optional)</label>
                             <input type="text" name="theme" value="{{ old('theme') }}"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                                 placeholder="e.g., Rustic Garden, Modern Minimalist">
@@ -501,7 +501,7 @@
                             <span class="font-bold text-lg text-blue-600"
                                 x-text="formatPrice(inclusionsSubtotal)"></span>
                         </div>
-                        <button @click="showCustomize = false"
+                        <button type="button" @click="showCustomize = false"
                             class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
                             Done
                         </button>

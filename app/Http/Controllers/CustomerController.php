@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Package;
 use App\Models\Inclusion;
 use App\Models\Event;
+use App\Models\Billing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -227,7 +228,7 @@ class CustomerController extends Controller
                     'theme' => $validated['theme'] ?? null,
                     'guests' => $validated['guests'] ?? null,
                     'notes' => $validated['notes'] ?? null,
-                    'status' => 'requested', // Or 'approved' if you want to skip approval
+                    'status' => 'request_meeting', // Auto-approve walk-in events
                 ]);
 
                 // NEW: Handle custom or default inclusions
@@ -252,6 +253,24 @@ class CustomerController extends Controller
                     $event->inclusions()->attach($attach);
                 }
 
+                // Calculate totals and create billing (like approve method)
+                $inclusionsSubtotal = !empty($selectedInclusionIds)
+                    ? $inclusions->sum('price')
+                    : 0;
+                $coord = (float) ($package->coordination_price ?? 25000);
+                $styling = (float) ($package->event_styling_price ?? 55000);
+                $grandTotal = $inclusionsSubtotal + $coord + $styling;
+
+                // Create billing record
+                Billing::create([
+                    'event_id' => $event->id,
+                    'total_amount' => $grandTotal,
+                    'introductory_payment_amount' => 5000,
+                    'introductory_payment_status' => 'pending',
+                    'downpayment_amount' => $grandTotal / 2,
+                    'status' => 'pending',
+                ]);
+
                 // Send credentials email if requested
                 if ($request->has('send_credentials_email')) {
                     Mail::to($user->email)->send(
@@ -261,7 +280,7 @@ class CustomerController extends Controller
 
                 // Store password temporarily in session for display
                 session()->flash('new_customer_password', $randomPassword);
-                session()->flash('new_customer_email', $user->email);
+                session()->flash('new_customer_username', $user->username);
             });
 
             return redirect()

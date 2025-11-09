@@ -108,8 +108,8 @@
         <div class="credentials-box">
             <h3 style="margin-top: 0; color: #000;">Your Login Credentials</h3>
             <div class="credential-row">
-                <div class="credential-label">Email:</div>
-                <div class="credential-value">{{ $user->email }}</div>
+                <div class="credential-label">Username:</div>
+                <div class="credential-value">{{ $user->username }}</div>
             </div>
             <div class="credential-row">
                 <div class="credential-label">Password:</div>

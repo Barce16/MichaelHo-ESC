@@ -32,9 +32,9 @@
                     <h4 class="font-semibold text-gray-900 mb-3">Customer Login Credentials:</h4>
                     <div class="space-y-2">
                         <div class="flex items-center gap-3">
-                            <span class="text-sm font-medium text-gray-600 w-24">Email:</span>
+                            <span class="text-sm font-medium text-gray-600 w-24">Username:</span>
                             <code
-                                class="text-sm bg-gray-100 px-3 py-1 rounded">{{ session('new_customer_email') }}</code>
+                                class="text-sm bg-gray-100 px-3 py-1 rounded">{{ session('new_customer_username') }}</code>
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="text-sm font-medium text-gray-600 w-24">Password:</span>
