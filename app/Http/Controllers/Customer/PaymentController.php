@@ -422,9 +422,9 @@ class PaymentController extends Controller
             abort(403);
         }
 
-        // Check if payment is approved (no longer require receipt_request status)
-        if (!$payment->isApproved()) {
-            return back()->with('error', 'Receipt is only available for approved payments.');
+        // Check if receipt is created (receipt_request status must be 2)
+        if (!$payment->hasReceiptCreated()) {
+            return back()->with('error', 'Receipt is not yet available. Please wait for admin to process your request.');
         }
 
         $event = $payment->billing->event;
