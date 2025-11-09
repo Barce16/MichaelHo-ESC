@@ -18,7 +18,7 @@ class NotificationController extends Controller
     }
 
     /**
-     * Get notifications for dropdown
+     * Get notifications for dropdown (returns JSON)
      */
     public function index()
     {
@@ -27,14 +27,20 @@ class NotificationController extends Controller
         // fetch user's notifications
         $notifications = Notification::where('user_id', $user->id)
             ->orderByDesc('created_at')
+            ->limit(50)
             ->get();
 
         // unread count (support is_read or read_at)
         $unreadCount = $notifications->where('is_read', false)->count()
             ?: $notifications->whereNull('read_at')->count();
 
-        return view('notifications.index', compact('notifications', 'unreadCount'));
+        // Return JSON instead of view for the JavaScript to consume
+        return response()->json([
+            'notifications' => $notifications,
+            'unread_count' => $unreadCount
+        ]);
     }
+
     /**
      * Mark notification as read
      */
@@ -60,6 +66,7 @@ class NotificationController extends Controller
     {
         $this->notificationService->markAllAsRead($request->user());
 
-        return back();
+        // Return JSON for AJAX request
+        return response()->json(['success' => true]);
     }
 }

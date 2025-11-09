@@ -67,7 +67,6 @@ class EventController extends Controller
     }
     public function store(Request $request)
     {
-
         $customer = $request->user()->customer;
         abort_if(!$customer, 403);
 
@@ -76,6 +75,7 @@ class EventController extends Controller
             return redirect()->route('customer.events.index')
                 ->with('error', 'Please settle your pending billings before requesting a new event.');
         }
+
         $data = $request->validate([
             'name'         => ['required', 'string', 'max:150'],
             'event_date'   => ['required', 'date'],
@@ -88,11 +88,14 @@ class EventController extends Controller
 
             'inclusions'   => ['nullable', 'array'],
             'inclusions.*' => ['integer', 'exists:inclusions,id'],
+
+            'inclusion_notes' => ['nullable', 'array'],
+            'inclusion_notes.*' => ['nullable', 'string', 'max:500'],
         ]);
 
         $package = Package::findOrFail($data['package_id']);
 
-        // Get selected inclusions (or default to package inclusions if none selected)
+        // Get selected inclusions
         $selectedIds = collect($request->input('inclusions', []))
             ->map(fn($id) => (int) $id)
             ->filter()
@@ -134,7 +137,7 @@ class EventController extends Controller
             ]
         );
 
-        DB::transaction(function () use ($data, $customer, $selectedIds, $inclusionPrices) {
+        DB::transaction(function () use ($data, $customer, $selectedIds, $inclusionPrices, $request) {
             $event = Event::create([
                 'customer_id' => $customer->id,
                 'name'        => $data['name'],
@@ -149,9 +152,15 @@ class EventController extends Controller
             ]);
 
             if ($selectedIds->isNotEmpty()) {
+                // Get inclusion notes
+                $inclusionNotes = $request->input('inclusion_notes', []);
+
                 $attach = [];
                 foreach ($selectedIds as $incId) {
-                    $attach[$incId] = ['price_snapshot' => (float) ($inclusionPrices[$incId] ?? 0)];
+                    $attach[$incId] = [
+                        'price_snapshot' => (float) ($inclusionPrices[$incId] ?? 0),
+                        'notes' => $inclusionNotes[$incId] ?? null, // NEW: Save notes
+                    ];
                 }
                 $event->inclusions()->attach($attach);
             }

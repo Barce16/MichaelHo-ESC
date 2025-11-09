@@ -8,6 +8,7 @@ use App\Models\Staff;
 use App\Models\Billing;
 use App\Models\Package;
 use App\Models\Payment;
+use App\Models\Inclusion;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Notifications\EventApprovedNotification;
@@ -80,7 +81,7 @@ class AdminEventController extends Controller
             'customer.user:id,name,profile_photo_path',
             'package.images',
             'package.inclusions',
-            'inclusions' => fn($q) => $q->withPivot('price_snapshot'),
+            'inclusions' => fn($q) => $q->withPivot('price_snapshot', 'notes'),
             'billing.payments',
         ]);
 
@@ -914,15 +915,24 @@ class AdminEventController extends Controller
      */
     public function editInclusions(Event $event)
     {
-        $event->load(['package', 'customer', 'inclusions']);
+        $event->load([
+            'package',
+            'customer',
+            'inclusions' => fn($q) => $q->withPivot('notes')
+        ]);
 
-        // Get all available inclusions for the package
-        $availableInclusions = $event->package->inclusions()
+        $packageType = $event->package->type;
+
+        $availableInclusions = Inclusion::where('is_active', true)
+            ->where(function ($query) use ($packageType) {
+                $query->where('package_type', $packageType)
+                    ->orWhereNull('package_type')
+                    ->orWhere('package_type', '');
+            })
             ->orderBy('category')
             ->orderBy('name')
             ->get();
 
-        // Get currently selected inclusion IDs
         $selectedInclusionIds = $event->inclusions->pluck('id');
 
         return view('admin.events.edit-inclusions', compact('event', 'availableInclusions', 'selectedInclusionIds'));
@@ -936,6 +946,8 @@ class AdminEventController extends Controller
         $request->validate([
             'inclusions' => 'nullable|array',
             'inclusions.*' => 'exists:inclusions,id',
+            'inclusion_notes' => 'nullable|array',
+            'inclusion_notes.*' => 'nullable|string|max:500',
         ]);
 
         // Store old total before updating
@@ -946,11 +958,15 @@ class AdminEventController extends Controller
         // Get the inclusions with their prices
         $inclusions = \App\Models\Inclusion::whereIn('id', $selectedInclusionIds)->get();
 
-        // Prepare sync data with price snapshots
+        // Get inclusion notes
+        $inclusionNotes = $request->input('inclusion_notes', []);
+
+        // Prepare sync data with price snapshots and notes
         $syncData = [];
         foreach ($inclusions as $inclusion) {
             $syncData[$inclusion->id] = [
                 'price_snapshot' => $inclusion->price,
+                'notes' => $inclusionNotes[$inclusion->id] ?? null,
             ];
         }
 

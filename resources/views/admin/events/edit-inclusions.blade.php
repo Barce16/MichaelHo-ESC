@@ -31,8 +31,33 @@
                 </div>
             </div>
 
-            {{-- Form --}}
-            <form method="POST" action="{{ route('admin.events.updateInclusions', $event) }}">
+            {{-- Form with Alpine.js --}}
+            @php
+            $alpineData = [
+            'selectedInclusions' => $selectedInclusionIds->toArray(),
+            'inclusionNotes' => $event->inclusions->mapWithKeys(function($inc) {
+            return [$inc->id => $inc->pivot->notes ?? ''];
+            })->toArray()
+            ];
+            @endphp
+
+            <form method="POST" action="{{ route('admin.events.updateInclusions', $event) }}" x-data='{
+                    selectedInclusions: @json($alpineData["selectedInclusions"]),
+                    inclusionNotes: @json($alpineData["inclusionNotes"]),
+                    
+                    toggleInclusion(id) {
+                        const index = this.selectedInclusions.indexOf(id);
+                        if (index > -1) {
+                            this.selectedInclusions.splice(index, 1);
+                        } else {
+                            this.selectedInclusions.push(id);
+                        }
+                    },
+                    
+                    isSelected(id) {
+                        return this.selectedInclusions.includes(id);
+                    }
+                }'>
                 @csrf
                 @method('PUT')
 
@@ -55,33 +80,52 @@
 
                     <div class="grid md:grid-cols-2 gap-3">
                         @foreach($inclusions as $inclusion)
-                        @php
-                        $isSelected = $selectedInclusionIds->contains($inclusion->id);
-                        @endphp
-                        <label
-                            class="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition {{ $isSelected ? 'border-violet-500 bg-violet-50' : 'border-gray-200 hover:border-gray-300' }}">
-                            <input type="checkbox" name="inclusions[]" value="{{ $inclusion->id }}" {{ $isSelected
-                                ? 'checked' : '' }}
-                                class="mt-1 w-5 h-5 text-violet-600 border-gray-300 rounded focus:ring-violet-500">
+                        <div class="border-2 rounded-lg transition"
+                            :class="isSelected({{ $inclusion->id }}) ? 'border-violet-500 bg-violet-50' : 'border-gray-200 bg-white'">
 
-                            @if($inclusion->image)
-                            <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                                <img src="{{ asset('storage/' . $inclusion->image) }}" alt="{{ $inclusion->name }}"
-                                    class="w-full h-full object-cover">
-                            </div>
-                            @endif
+                            {{-- Inclusion Header --}}
+                            <label class="flex items-start gap-3 p-4 cursor-pointer hover:bg-gray-50">
+                                <input type="checkbox" name="inclusions[]" value="{{ $inclusion->id }}"
+                                    @change="toggleInclusion({{ $inclusion->id }})"
+                                    :checked="isSelected({{ $inclusion->id }})"
+                                    class="mt-1 w-5 h-5 text-violet-600 border-gray-300 rounded focus:ring-violet-500 flex-shrink-0">
 
-                            <div class="flex-1">
-                                <div class="font-medium text-gray-900">{{ $inclusion->name }}</div>
-                                @if($inclusion->notes)
-                                <div class="text-xs text-gray-600 mt-1">{{ $inclusion->notes }}</div>
+                                @if($inclusion->image)
+                                <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                                    <img src="{{ asset('storage/' . $inclusion->image) }}" alt="{{ $inclusion->name }}"
+                                        class="w-full h-full object-cover">
+                                </div>
                                 @endif
-                                @if($inclusion->price > 0)
-                                <div class="text-sm font-semibold text-violet-600 mt-1">₱{{
-                                    number_format($inclusion->price, 2) }}</div>
-                                @endif
+
+                                <div class="flex-1">
+                                    <div class="font-medium text-gray-900">{{ $inclusion->name }}</div>
+                                    @if($inclusion->notes)
+                                    <div class="text-xs text-gray-600 mt-1">{{ $inclusion->notes }}</div>
+                                    @endif
+                                    @if($inclusion->price > 0)
+                                    <div class="text-sm font-semibold text-violet-600 mt-1">₱{{
+                                        number_format($inclusion->price, 2) }}</div>
+                                    @endif
+                                </div>
+                            </label>
+
+                            {{-- Notes Textarea (only show when selected) --}}
+                            <div x-show="isSelected({{ $inclusion->id }})" x-transition
+                                class="px-4 pb-4 border-t border-gray-200">
+                                <label class="block text-xs font-medium text-gray-700 mb-2 mt-3">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    Notes for this item (Optional)
+                                </label>
+                                <textarea name="inclusion_notes[{{ $inclusion->id }}]"
+                                    x-model="inclusionNotes[{{ $inclusion->id }}]" rows="2"
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                                    placeholder="Special requests, preferences, or details for {{ $inclusion->name }}..."></textarea>
                             </div>
-                        </label>
+                        </div>
                         @endforeach
                     </div>
                 </div>
@@ -93,6 +137,7 @@
                         <div>
                             <p class="text-sm text-gray-600">Updating inclusions will recalculate the total billing
                                 amount</p>
+                            <p class="text-xs text-gray-500 mt-1">Notes will be saved for each selected inclusion</p>
                         </div>
                         <div class="flex gap-3">
                             <a href="{{ route('admin.events.show', $event) }}"

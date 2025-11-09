@@ -19,6 +19,7 @@
                 packages: @js($packagesData),
                 allInclusions: @js($allInclusions),
                 selectedInclusions: [],
+                inclusionNotes: {}, // Track notes for each inclusion
                 showCustomize: false,
                 coordinationPrice: 25000,
                 stylingPrice: 55000,
@@ -311,6 +312,12 @@
                 <input type="hidden" name="inclusions[]" :value="inclusionId">
             </template>
 
+            {{-- Hidden Inputs for Inclusion Notes --}}
+            <template x-for="inclusionId in selectedInclusions" :key="'note-' + inclusionId">
+                <input type="hidden" :name="'inclusion_notes[' + inclusionId + ']'"
+                    :value="inclusionNotes[inclusionId] || ''">
+            </template>
+
             {{-- Event Details Section --}}
             <div class="bg-white shadow-sm rounded-xl overflow-hidden">
                 <div class="bg-gradient-to-r from-purple-900 to-purple-700 px-6 py-4">
@@ -463,27 +470,41 @@
                             <div class="mb-6">
                                 <h4 class="text-lg font-bold text-gray-900 mb-3 pb-2 border-b-2 border-gray-200"
                                     x-text="category"></h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div class="grid grid-cols-1 gap-4">
                                     <template x-for="inclusion in inclusions" :key="inclusion.id">
-                                        <label
-                                            class="flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition hover:bg-gray-50"
-                                            :class="isInclusionSelected(inclusion.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
-                                            <input type="checkbox" :checked="isInclusionSelected(inclusion.id)"
-                                                @change="toggleInclusion(inclusion.id)"
-                                                class="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0">
+                                        <div class="border-2 rounded-lg transition"
+                                            :class="isInclusionSelected(inclusion.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'">
 
-                                            {{-- Inclusion Image --}}
-                                            <div class="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                                                <img :src="inclusion.image_url" :alt="inclusion.name"
-                                                    class="w-full h-full object-cover" loading="lazy">
-                                            </div>
+                                            {{-- Inclusion Header with Checkbox --}}
+                                            <label class="flex items-start gap-3 p-3 cursor-pointer hover:bg-gray-50">
+                                                <input type="checkbox" :checked="isInclusionSelected(inclusion.id)"
+                                                    @change="toggleInclusion(inclusion.id)"
+                                                    class="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0">
 
-                                            <div class="flex-1 min-w-0">
-                                                <p class="font-medium text-gray-900" x-text="inclusion.name"></p>
-                                                <p class="text-sm text-blue-600 font-semibold"
-                                                    x-text="formatPrice(inclusion.price)"></p>
+                                                {{-- Inclusion Image --}}
+                                                <div
+                                                    class="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                                                    <img :src="inclusion.image_url" :alt="inclusion.name"
+                                                        class="w-full h-full object-cover" loading="lazy">
+                                                </div>
+
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="font-medium text-gray-900" x-text="inclusion.name"></p>
+                                                    <p class="text-sm text-blue-600 font-semibold"
+                                                        x-text="formatPrice(inclusion.price)"></p>
+                                                </div>
+                                            </label>
+
+                                            {{-- Notes Textarea (only show if selected) --}}
+                                            <div x-show="isInclusionSelected(inclusion.id)" class="px-3 pb-3">
+                                                <label class="block text-xs font-medium text-gray-600 mb-1">
+                                                    Add Note (Optional)
+                                                </label>
+                                                <textarea x-model="inclusionNotes[inclusion.id]" rows="2"
+                                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                    :placeholder="'Special requests for ' + inclusion.name + '...'"></textarea>
                                             </div>
-                                        </label>
+                                        </div>
                                     </template>
                                 </div>
                             </div>

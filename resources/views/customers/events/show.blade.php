@@ -257,7 +257,7 @@
                                     <div class="flex items-center justify-between pt-2 border-t border-gray-200">
                                         <span class="text-sm font-bold text-gray-900">Amount to Pay Now</span>
                                         <span class="text-3xl font-bold text-violet-600">₱{{
-                                            number_format($downpaymentAmount, 2) }}</span>
+                                            number_format($requiredDownpayment, 2) }}</span>
                                     </div>
                                 </div>
 
@@ -370,7 +370,7 @@
                     <div class="flex-1">
                         <h3 class="text-lg font-bold text-amber-900 mb-2">⚠️ Downpayment Required First</h3>
                         <p class="text-amber-800 mb-4">
-                            Please complete your downpayment of ₱{{ number_format($downpaymentAmount, 2) }}
+                            Please complete your downpayment of ₱{{ number_format($requiredDownpayment, 2) }}
                             before
                             making balance payments.
                         </p>

@@ -461,8 +461,17 @@
                                                 </span>
                                                 @endif
                                             </div>
-                                            @if(trim($inc->notes))
-                                            <p class="text-xs text-gray-600 mt-1">{{ $inc->notes }}</p>
+                                            @if(!empty($inc->pivot->notes))
+                                            <div
+                                                class="mt-2 flex items-start gap-2 text-xs text-gray-600 bg-white rounded px-2 py-1.5 border border-gray-200">
+                                                <svg class="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                                </svg>
+                                                <span class="flex-1">{{ $inc->pivot->notes }}</span>
+                                            </div>
                                             @endif
                                         </div>
                                         @if(!is_null(optional($inc->pivot)->price_snapshot))

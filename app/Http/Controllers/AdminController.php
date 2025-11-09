@@ -49,10 +49,34 @@ class AdminController extends Controller
             ->with('success', 'User created successfully.');
     }
 
-    public function listUsers()
+    public function listUsers(Request $request)
     {
-        $users = User::select('id', 'name', 'email', 'user_type', 'created_at', 'status')
-            ->latest()->paginate(15);
+        $query = User::query();
+
+        // Search filter (name or email)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // User type filter
+        if ($request->filled('type')) {
+            $query->where('user_type', $request->type);
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Get users with pagination
+        $users = $query->select('id', 'name', 'email', 'user_type', 'created_at', 'status')
+            ->latest()
+            ->paginate(15)
+            ->withQueryString(); // Preserve query parameters in pagination links
 
         return view('admin.users', compact('users'));
     }

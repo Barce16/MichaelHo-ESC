@@ -186,6 +186,8 @@ class CustomerController extends Controller
             // NEW: Inclusions
             'inclusions' => ['nullable', 'array'],
             'inclusions.*' => ['integer', 'exists:inclusions,id'],
+            'inclusion_notes' => ['nullable', 'array'],
+            'inclusion_notes.*' => ['nullable', 'string', 'max:500'],
 
             'send_credentials_email' => ['nullable', 'boolean'],
         ]);
@@ -245,9 +247,14 @@ class CustomerController extends Controller
                         ->where('is_active', true)
                         ->get();
 
+                    $inclusionNotes = $request->input('inclusion_notes', []);
+
                     $attach = [];
                     foreach ($inclusions as $inclusion) {
-                        $attach[$inclusion->id] = ['price_snapshot' => (float) $inclusion->price];
+                        $attach[$inclusion->id] = [
+                            'price_snapshot' => (float) $inclusion->price,
+                            'notes' => $inclusionNotes[$inclusion->id] ?? null,
+                        ];
                     }
 
                     $event->inclusions()->attach($attach);
