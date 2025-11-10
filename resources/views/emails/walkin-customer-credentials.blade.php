@@ -100,7 +100,7 @@
     </div>
 
     <div class="content">
-        <h2 style="margin-top: 0; color: #000;">Hello, {{ $user->name }}!</h2>
+        <h2 style="margin-top: 0; color: #000;">Hello, Mr./Mrs. {{ $user->name }}!</h2>
 
         <p>Thank you for choosing Michael Ho Events for your special occasion. We've created an account for you so you
             can track your event progress online.</p>

@@ -329,8 +329,9 @@
         <!-- Content -->
         <div class="content">
             <div class="greeting">
-                Hello {{ strtolower($customer->gender) === 'male' ? 'Mr.' : (strtolower($customer->gender) === 'female'
-                ? 'Ms.' : '') }} {{ $customer->customer_name }}!
+                Hello {{ strtolower($customer->gender ?? '') === 'male' ? 'Mr.' : (strtolower($customer->gender ?? '')
+                === 'female' ? 'Ms.' : 'Mr./Mrs.') }}
+                {{ $customer->customer_name }}!
             </div>
 
 
