@@ -64,10 +64,10 @@ class Event extends Model
         return $this->hasManyThrough(Payment::class, Billing::class);
     }
 
-    public function inclusions(): BelongsToMany
+    public function inclusions()
     {
-        return $this->belongsToMany(Inclusion::class, 'event_inclusion')
-            ->withPivot('price_snapshot')
+        return $this->belongsToMany(Inclusion::class)
+            ->withPivot('price_snapshot', 'notes')
             ->withTimestamps();
     }
 

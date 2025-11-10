@@ -703,6 +703,23 @@
                             @if($inc->notes)
                             <div class="text-xs text-gray-600 mt-1">{{ $inc->notes }}</div>
                             @endif
+
+                            {{-- Customer's Special Notes from Pivot --}}
+                            @if($inc->pivot->notes)
+                            <div class="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <div class="flex items-start gap-2">
+                                    <svg class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    <div class="flex-1">
+                                        <div class="text-xs font-semibold text-blue-900 mb-1">Your Notes:</div>
+                                        <div class="text-sm text-blue-800">{{ $inc->pivot->notes }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
                         </div>
                         @if(!is_null($price))
                         <div class="text-right flex-shrink-0">

@@ -265,14 +265,17 @@ class EventController extends Controller
             ->orderBy('name')
             ->get();
 
-        $event->load(['package']);
+        $event->load(['package', 'inclusions']);
 
         // Get all active inclusions grouped by category
         $allInclusions = Inclusion::where('is_active', true)
             ->get()
             ->groupBy('category');
 
-        return view('customers.events.edit', compact('event', 'packages', 'allInclusions'));
+        // Get existing inclusion notes from pivot table
+        $existingNotes = $event->inclusions->pluck('pivot.notes', 'id')->toArray();
+
+        return view('customers.events.edit', compact('event', 'packages', 'allInclusions', 'existingNotes'));
     }
 
     public function update(Request $request, Event $event)
@@ -299,6 +302,9 @@ class EventController extends Controller
 
             'inclusions'   => ['nullable', 'array'],
             'inclusions.*' => ['integer', 'exists:inclusions,id'],
+
+            'inclusion_notes' => ['nullable', 'array'],
+            'inclusion_notes.*' => ['nullable', 'string', 'max:500'],
         ]);
 
         $package = Package::findOrFail($data['package_id']);
@@ -322,7 +328,7 @@ class EventController extends Controller
                 ->withInput();
         }
 
-        DB::transaction(function () use ($event, $data, $selectedIds) {
+        DB::transaction(function () use ($event, $data, $selectedIds, $request) {
             $event->update([
                 'name'        => $data['name'],
                 'event_date'  => $data['event_date'],
@@ -334,12 +340,17 @@ class EventController extends Controller
                 'notes'       => $data['notes'] ?? null,
             ]);
 
-            // Sync inclusions with price snapshots
+            // Sync inclusions with price snapshots and notes
             if ($selectedIds->isNotEmpty()) {
                 $inclusionPrices = Inclusion::whereIn('id', $selectedIds)->pluck('price', 'id');
+                $inclusionNotes = $request->input('inclusion_notes', []);
+
                 $attach = [];
                 foreach ($selectedIds as $incId) {
-                    $attach[$incId] = ['price_snapshot' => (float) ($inclusionPrices[$incId] ?? 0)];
+                    $attach[$incId] = [
+                        'price_snapshot' => (float) ($inclusionPrices[$incId] ?? 0),
+                        'notes' => $inclusionNotes[$incId] ?? null,
+                    ];
                 }
                 $event->inclusions()->sync($attach);
             } else {
