@@ -60,7 +60,7 @@
                 @csrf
                 @method('PUT')
 
-                {{-- Event Information Card --}}
+                {{-- Event Information & Additional Details Combined --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div class="bg-gradient-to-r from-violet-50 to-purple-50 border-b border-gray-200 px-6 py-4">
                         <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -68,109 +68,160 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            Event Information
+                            Event Information & Details
                         </h3>
                         <p class="text-sm text-gray-500 mt-1">Update your event details</p>
                     </div>
 
-                    <div class="p-6 space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {{-- Event Name --}}
-                            <div class="md:col-span-2">
-                                <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                    </svg>
-                                    Event Name <span class="text-rose-500">*</span>
-                                </label>
-                                <input type="text" name="name" id="name" required
-                                    value="{{ old('name', $event->name) }}"
-                                    class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition">
-                                @error('name')
-                                <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
-                                @enderror
-                            </div>
+                    <div class="p-6 space-y-6">
+                        {{-- Basic Event Information --}}
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Basic
+                                Information</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {{-- Event Name --}}
+                                <div class="md:col-span-2">
+                                    <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                        </svg>
+                                        Event Name <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="text" name="name" id="name" required
+                                        value="{{ old('name', $event->name) }}"
+                                        class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
+                                        placeholder="e.g., Sarah's 18th Birthday">
+                                    @error('name')
+                                    <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
 
-                            {{-- Event Date --}}
-                            <div>
-                                <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    Event Date <span class="text-rose-500">*</span>
-                                </label>
-                                <x-calendar-picker name="event_date"
-                                    :value="old('event_date', \Illuminate\Support\Carbon::parse($event->event_date)->format('Y-m-d'))"
-                                    required />
-                                @error('event_date')
-                                <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
-                                @enderror
-                            </div>
+                                {{-- Event Date --}}
+                                <div>
+                                    <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        Event Date <span class="text-rose-500">*</span>
+                                    </label>
+                                    <x-calendar-picker name="event_date"
+                                        :value="old('event_date', \Illuminate\Support\Carbon::parse($event->event_date)->format('Y-m-d'))"
+                                        required />
+                                    @error('event_date')
+                                    <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
 
-                            {{-- Package Selection --}}
-                            <div>
-                                <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                    </svg>
-                                    Package <span class="text-rose-500">*</span>
-                                </label>
-                                <select name="package_id" id="package_id" required
-                                    class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
-                                    x-model.number="selectedPackage" @change="loadPackage(selectedPackage)">
-                                    <option value="">Select a package</option>
-                                    @foreach($packages as $p)
-                                    <option value="{{ $p->id }}" @selected(old('package_id', $event->package_id) ==
-                                        $p->id)>
-                                        {{ $p->name }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('package_id')
-                                <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
-                                @enderror
-                            </div>
+                                {{-- Package Selection --}}
+                                <div>
+                                    <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                        </svg>
+                                        Package <span class="text-rose-500">*</span>
+                                    </label>
+                                    <select name="package_id" id="package_id" required
+                                        class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
+                                        x-model.number="selectedPackage" @change="loadPackage(selectedPackage)">
+                                        <option value="">Select a package</option>
+                                        @foreach($packages as $p)
+                                        <option value="{{ $p->id }}" @selected(old('package_id', $event->package_id) ==
+                                            $p->id)>
+                                            {{ $p->name }}
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                    @error('package_id')
+                                    <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
 
-                            {{-- Venue --}}
-                            <div>
-                                <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                    Venue
-                                </label>
-                                <input type="text" name="venue" id="venue" value="{{ old('venue', $event->venue) }}"
-                                    class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition">
-                                @error('venue')
-                                <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
-                                @enderror
-                            </div>
+                                {{-- Venue --}}
+                                <div>
+                                    <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        Venue
+                                    </label>
+                                    <input type="text" name="venue" id="venue" value="{{ old('venue', $event->venue) }}"
+                                        class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
+                                        placeholder="Event location">
+                                    @error('venue')
+                                    <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
 
-                            {{-- Theme --}}
-                            <div>
-                                <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                                    </svg>
-                                    Theme
-                                </label>
-                                <input type="text" name="theme" id="theme" value="{{ old('theme', $event->theme) }}"
-                                    class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition">
-                                @error('theme')
-                                <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
-                                @enderror
+                                {{-- Theme --}}
+                                <div>
+                                    <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                                        </svg>
+                                        Theme
+                                    </label>
+                                    <input type="text" name="theme" id="theme" value="{{ old('theme', $event->theme) }}"
+                                        class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
+                                        placeholder="Event theme or style">
+                                    @error('theme')
+                                    <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Additional Details --}}
+                        <div class="border-t border-gray-200 pt-6">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Additional
+                                Details</h4>
+                            <div class="space-y-4">
+                                {{-- Guests --}}
+                                <div>
+                                    <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                        Guest Details
+                                    </label>
+                                    <textarea name="guests" id="guests" rows="4"
+                                        class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition resize-none"
+                                        placeholder="Guest count, names, or special requirements...">{{ old('guests', $event->guests) }}</textarea>
+                                    @error('guests')
+                                    <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                {{-- Notes --}}
+                                <div>
+                                    <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Additional Notes
+                                    </label>
+                                    <textarea name="notes" id="notes" rows="3"
+                                        class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition resize-none"
+                                        placeholder="Any special requests or requirements...">{{ old('notes', $event->notes) }}</textarea>
+                                    @error('notes')
+                                    <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -179,22 +230,7 @@
                 {{-- Package Details --}}
                 <template x-if="pkg">
                     <div class="space-y-6">
-                        {{-- Package Overview --}}
-                        <div
-                            class="bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
-                            <div class="flex items-start justify-between gap-4">
-                                <div>
-                                    <h3 class="text-2xl font-bold mb-2" x-text="pkg.name"></h3>
-                                    <p class="text-violet-100 text-sm" x-text="pkg.type"></p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-sm text-violet-100">Estimated Total</div>
-                                    <div class="text-3xl font-bold">₱<span x-text="fmt(grandTotal())"></span></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Package Services --}}
+                        {{-- Package Services (Always Included) --}}
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                             <div class="bg-gradient-to-r from-sky-50 to-blue-50 border-b border-gray-200 px-6 py-4">
                                 <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -205,24 +241,25 @@
                                     </svg>
                                     Included Services
                                 </h3>
+                                <p class="text-sm text-gray-500 mt-1">These services are included in your package</p>
                             </div>
 
                             <div class="p-6">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {{-- Coordination --}}
                                     <div
-                                        class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-200">
+                                        class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-5 border-[1px] border-blue-200">
                                         <div class="flex items-start justify-between gap-3 mb-2">
                                             <h4 class="font-semibold text-blue-900">Coordination</h4>
                                             <span class="text-lg font-bold text-blue-600">₱<span
                                                     x-text="fmt(pkg.coordination_price)"></span></span>
                                         </div>
-                                        <p class="text-sm text-blue-800" x-text="pkg.coordination"></p>
+                                        <p class="text-sm text-blue-800 leading-relaxed" x-text="pkg.coordination"></p>
                                     </div>
 
                                     {{-- Event Styling --}}
                                     <div
-                                        class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+                                        class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-5 border-[1px] border-purple-200">
                                         <div class="flex items-start justify-between gap-3 mb-2">
                                             <h4 class="font-semibold text-purple-900">Event Styling</h4>
                                             <span class="text-lg font-bold text-purple-600">₱<span
@@ -231,7 +268,7 @@
                                         <template x-if="pkg.event_styling && pkg.event_styling.length">
                                             <ul class="text-sm text-purple-800 space-y-1">
                                                 <template x-for="item in pkg.event_styling" :key="item">
-                                                    <li class="flex items-start gap-1">
+                                                    <li class="flex items-start gap-2">
                                                         <svg class="w-4 h-4 mt-0.5 text-purple-500 flex-shrink-0"
                                                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -247,7 +284,7 @@
                             </div>
                         </div>
 
-                        {{-- Inclusions by Category --}}
+                        {{-- Inclusions Section --}}
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                             <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-gray-200 px-6 py-4">
                                 <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -258,118 +295,90 @@
                                     </svg>
                                     Select Your Inclusions
                                 </h3>
-                                <p class="text-sm text-gray-500 mt-1">Choose the services you'd like to add to your
-                                    package</p>
+                                <p class="text-sm text-gray-500 mt-1">Choose items from each category</p>
                             </div>
 
                             <div class="p-6 space-y-8">
-                                <template x-for="category in categories" :key="category.category">
-                                    <div>
-                                        <h4
-                                            class="text-md font-semibold text-gray-800 mb-4 pb-2 border-b flex items-center gap-2">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                            </svg>
+                                {{-- Category Tabs --}}
+                                <div class="flex flex-wrap gap-2 mb-6 pb-4 border-b border-gray-200">
+                                    <template x-for="category in categories" :key="category.category">
+                                        <button type="button" @click="activeTab = category.category" :class="activeTab === category.category 
+                                                ? 'bg-emerald-500 text-white shadow-md' 
+                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                                            class="px-4 py-2 rounded-lg font-medium text-sm transition-all">
                                             <span x-text="category.category"></span>
-                                        </h4>
+                                        </button>
+                                    </template>
+                                </div>
 
+                                {{-- Category Content --}}
+                                <template x-for="category in categories" :key="category.category">
+                                    <div x-show="activeTab === category.category" x-transition>
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            <template x-for="inc in category.items" :key="inc.id">
-                                                <div class="group bg-white border-2 rounded-xl overflow-hidden transition-all duration-200 hover:shadow-md"
-                                                    :class="selectedIncs.has(inc.id) ? 'border-emerald-500 bg-emerald-50/50 shadow-sm' : 'border-gray-200 hover:border-gray-300'">
+                                            <template x-for="item in category.items" :key="item.id">
+                                                <div>
+                                                    <div
+                                                        class="bg-gradient-to-br from-gray-50 to-slate-50 rounded-lg border-[1px] border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all overflow-hidden">
+                                                        <label class="flex items-start gap-4 p-4 cursor-pointer group">
+                                                            <input type="checkbox" name="inclusions[]" :value="item.id"
+                                                                @change="toggleInclusion(item.id)"
+                                                                :checked="selectedIncs.has(item.id)"
+                                                                class="mt-1 w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-2 focus:ring-emerald-200 focus:ring-offset-0 cursor-pointer">
 
-                                                    {{-- Inclusion Header (clickable) --}}
-                                                    <div @click="toggleInclusion(inc.id)"
-                                                        class="cursor-pointer p-4 flex gap-4">
-
-                                                        {{-- Checkbox --}}
-                                                        <div class="flex-shrink-0 pt-1">
-                                                            <div class="w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-200"
-                                                                :class="selectedIncs.has(inc.id) ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-gray-300 group-hover:border-gray-400'">
-                                                                <svg class="w-4 h-4 text-white transition-all duration-200"
-                                                                    :class="selectedIncs.has(inc.id) ? 'opacity-100 scale-100' : 'opacity-0 scale-50'"
-                                                                    fill="none" stroke="currentColor"
-                                                                    viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                                        stroke-width="3" d="M5 13l4 4L19 7" />
-                                                                </svg>
-                                                            </div>
-                                                        </div>
-
-                                                        {{-- Image --}}
-                                                        <template x-if="inc.image">
-                                                            <div
-                                                                class="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                                                                <img :src="`/storage/${inc.image}`" :alt="inc.name"
-                                                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 pointer-events-none">
-                                                            </div>
-                                                        </template>
-
-                                                        {{-- Content --}}
-                                                        <div class="flex-1 min-w-0">
-                                                            <div class="flex items-start justify-between gap-2 mb-1">
-                                                                <h5 class="font-semibold text-gray-900"
-                                                                    x-text="inc.name">
-                                                                </h5>
-                                                                <span
-                                                                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
-                                                                    :class="selectedIncs.has(inc.id) ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-700'">
-                                                                    ₱<span x-text="fmt(inc.price)"></span>
-                                                                </span>
-                                                            </div>
-
-                                                            <template x-if="inc.notes && inc.notes.trim()">
-                                                                <p class="text-xs text-gray-600 line-clamp-2 mb-2"
-                                                                    x-text="inc.notes"></p>
+                                                            {{-- Image --}}
+                                                            <template x-if="item.image">
+                                                                <img :src="`/storage/${item.image}`" :alt="item.name"
+                                                                    class="w-20 h-20 object-cover rounded-lg border border-gray-200 flex-shrink-0">
                                                             </template>
 
-                                                            <template x-if="packageInclusions.includes(inc.id)">
-                                                                <span
-                                                                    class="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                                                                    <svg class="w-3 h-3" fill="none"
-                                                                        stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round"
-                                                                            stroke-linejoin="round" stroke-width="2"
-                                                                            d="M5 13l4 4L19 7" />
-                                                                    </svg>
-                                                                    In Package
-                                                                </span>
-                                                            </template>
-                                                        </div>
-
-                                                        {{-- Hidden checkbox input --}}
-                                                        <input type="checkbox" class="sr-only pointer-events-none"
-                                                            name="inclusions[]" :value="inc.id"
-                                                            :checked="selectedIncs.has(inc.id)">
-                                                    </div>
-
-                                                    {{-- Notes Section (only shows when selected) --}}
-                                                    <div x-show="selectedIncs.has(inc.id)" x-transition
-                                                        class="px-4 pb-4 border-t border-gray-200 bg-white" @click.stop>
-                                                        <label
-                                                            class="block text-xs font-medium text-gray-700 mb-2 mt-3">
-                                                            <svg class="w-3.5 h-3.5 inline mr-1" fill="none"
-                                                                stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                    stroke-width="2"
-                                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                            </svg>
-                                                            Add Your Notes (Optional)
+                                                            <div class="flex-1 min-w-0">
+                                                                <div
+                                                                    class="flex items-start justify-between gap-3 mb-2">
+                                                                    <h4 class="font-semibold text-gray-900 group-hover:text-emerald-600 transition"
+                                                                        x-text="item.name"></h4>
+                                                                    <span
+                                                                        class="text-lg font-bold text-emerald-600 whitespace-nowrap">₱<span
+                                                                            x-text="fmt(item.price)"></span></span>
+                                                                </div>
+                                                                <template x-if="item.notes">
+                                                                    <p class="text-sm text-gray-600 leading-relaxed line-clamp-2"
+                                                                        x-text="item.notes"></p>
+                                                                </template>
+                                                                <template x-if="packageInclusions.includes(item.id)">
+                                                                    <span
+                                                                        class="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full mt-2">
+                                                                        <svg class="w-3 h-3" fill="none"
+                                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round"
+                                                                                stroke-linejoin="round" stroke-width="2"
+                                                                                d="M5 13l4 4L19 7" />
+                                                                        </svg>
+                                                                        In Package
+                                                                    </span>
+                                                                </template>
+                                                            </div>
                                                         </label>
-                                                        <textarea :name="'inclusion_notes[' + inc.id + ']'"
-                                                            x-model="inclusionNotes[inc.id]" rows="2"
-                                                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                                            :placeholder="'Special requests or preferences for ' + inc.name + '...'"></textarea>
+                                                        {{-- Notes textarea (shows when item is selected) --}}
+                                                        <div x-show="selectedIncs.has(item.id)" x-transition
+                                                            class="my-3 px-4">
+                                                            <label class="text-xs font-medium text-gray-600 mb-1 block">
+                                                                Add notes for this item (optional)
+                                                            </label>
+                                                            <textarea :name="`inclusion_notes[${item.id}]`" rows="2"
+                                                                x-model="inclusionNotes[item.id]"
+                                                                class="block w-full px-3 py-2 text-sm rounded-lg border-[1px] border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition resize-none"
+                                                                placeholder="e.g., specific color preferences, setup instructions..."></textarea>
+                                                        </div>
                                                     </div>
+
+
                                                 </div>
                                             </template>
                                         </div>
                                     </div>
                                 </template>
 
-                                {{-- Summary --}}
+                                {{-- Summary at Bottom --}}
                                 <div
                                     class="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
                                     <div class="flex items-center justify-between mb-3">
@@ -401,84 +410,6 @@
                         </div>
                     </div>
                 </template>
-
-                {{-- Additional Details --}}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-gray-200 px-6 py-4">
-                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                            </svg>
-                            Additional Details
-                        </h3>
-                    </div>
-
-                    <div class="p-6 space-y-4">
-                        {{-- Budget --}}
-                        <div>
-                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 36 36">
-                                    <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z">
-                                    </path>
-                                    <path d="M14.18,19.7h5.19a4.28,4.28,0,0,0,3.5-1.9H14.18Z"></path>
-                                    <path d="M19.37,10.51H14.18V12h8.37A4.21,4.21,0,0,0,19.37,10.51Z"></path>
-                                    <path
-                                        d="M17.67,2a16,16,0,1,0,16,16A16,16,0,0,0,17.67,2Zm10.5,15.8H25.7a6.87,6.87,0,0,1-6.33,4.4H14.18v6.54a1.25,1.25,0,1,1-2.5,0V17.8H8.76a.9.9,0,1,1,0-1.8h2.92V13.8H8.76a.9.9,0,1,1,0-1.8h2.92V9.26A1.25,1.25,0,0,1,12.93,8h6.44a6.84,6.84,0,0,1,6.15,4h2.65a.9.9,0,0,1,0,1.8H26.09a6.91,6.91,0,0,1,.12,1.3,6.8,6.8,0,0,1-.06.9h2a.9.9,0,0,1,0,1.8Z">
-                                    </path>
-                                </svg>
-                                Budget (Optional)
-                            </label>
-                            <div class="relative">
-                                <span
-                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
-                                <input type="number" name="budget" id="budget" step="0.01" min="0"
-                                    value="{{ old('budget', $event->budget) }}"
-                                    class="block w-full pl-10 pr-4 py-3 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition"
-                                    placeholder="0.00">
-                            </div>
-                            @error('budget')
-                            <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Guests --}}
-                        <div>
-                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                                Guest Details
-                            </label>
-                            <textarea name="guests" id="guests" rows="4"
-                                class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition resize-none"
-                                placeholder="Guest count, names, or special requirements...">{{ old('guests', $event->guests) }}</textarea>
-                            @error('guests')
-                            <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Notes --}}
-                        <div>
-                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                Additional Notes
-                            </label>
-                            <textarea name="notes" id="notes" rows="3"
-                                class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition resize-none"
-                                placeholder="Any special requests or requirements...">{{ old('notes', $event->notes) }}</textarea>
-                            @error('notes')
-                            <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
 
                 {{-- Action Buttons --}}
                 <div class="flex flex-col sm:flex-row gap-3">
@@ -524,19 +455,9 @@
         selectedIncs: new Set(),
         packageInclusions: [],
         categories: [],
-        allCategories: [], // Store all categories
-        inclusionNotes: {}, // Track notes for each inclusion
-
-        init() {
-            // Load existing notes into inclusionNotes
-            Object.keys(existingNotes).forEach(id => {
-                this.inclusionNotes[id] = existingNotes[id];
-            });
-            
-            if (this.selectedPackage) {
-                this.loadPackage(this.selectedPackage);
-            }
-        },
+        allCategories: [],
+        activeTab: '',
+        inclusionNotes: {},
 
         fmt(n){
             return Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -555,21 +476,23 @@
                     return {
                         category: cat.category,
                         items: cat.items.filter(item => {
-                            // Show if package_type matches OR package_type is null (available for all)
                             return item.package_type === p.type || item.package_type === null;
                         })
                     };
-                }).filter(cat => cat.items.length > 0); // Remove empty categories
+                }).filter(cat => cat.items.length > 0);
             } else {
-                // If no package type, show all inclusions
                 this.categories = this.allCategories;
+            }
+
+            // Set first category as active tab
+            if (this.categories.length > 0) {
+                this.activeTab = this.categories[0].category;
             }
 
             // Restore old selections if validation failed
             if (Array.isArray(oldSelections) && oldSelections.length > 0) {
                 oldSelections.forEach(id => {
                     const idNum = Number(id);
-                    // Only restore if the inclusion is visible for this package
                     const isVisible = this.categories.some(cat => 
                         cat.items.some(item => item.id === idNum)
                     );
@@ -582,7 +505,6 @@
             else if (Array.isArray(eventSelections) && eventSelections.length > 0 && Number(@json($event->package_id)) === Number(id)) {
                 eventSelections.forEach(id => {
                     const idNum = Number(id);
-                    // Only restore if the inclusion is visible for this package
                     const isVisible = this.categories.some(cat => 
                         cat.items.some(item => item.id === idNum)
                     );
@@ -627,6 +549,17 @@
             const coord = Number(this.pkg ? this.pkg.coordination_price : 0);
             const styl  = Number(this.pkg ? this.pkg.event_styling_price : 0);
             return this.inclusionsSubtotal() + coord + styl;
+        },
+
+        init() {
+            // Load existing notes into inclusionNotes
+            Object.keys(existingNotes).forEach(id => {
+                this.inclusionNotes[id] = existingNotes[id];
+            });
+            
+            if (this.selectedPackage) {
+                this.loadPackage(this.selectedPackage);
+            }
         }
     }
 }

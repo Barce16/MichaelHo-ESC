@@ -9,6 +9,7 @@ use App\Models\Billing;
 use App\Models\Package;
 use App\Models\Payment;
 use App\Models\Inclusion;
+use App\Models\EventProgress;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Notifications\EventApprovedNotification;
@@ -206,6 +207,15 @@ class AdminEventController extends Controller
         // Update event status to request_meeting
         $event->update(['status' => Event::STATUS_REQUEST_MEETING]);
 
+
+        // Create event progress record
+        EventProgress::create([
+            'event_id' => $event->id,
+            'status' => 'Event Approved',
+            'details' => "Event approved by admin. Customer account " . ($isNewUser ? "created" : "already exists") . ". Total event cost: ₱" . number_format($grandTotal, 2) . ". Introductory payment (₱5,000) required to proceed.",
+            'progress_date' => now(),
+        ]);
+
         // Send in-app notification
         $this->notificationService->notifyCustomerEventStatus($event, $oldStatus, Event::STATUS_REQUEST_MEETING);
 
@@ -269,6 +279,16 @@ class AdminEventController extends Controller
         $event->update([
             'status' => Event::STATUS_REJECTED,
             'rejection_reason' => $data['rejection_reason'],
+        ]);
+
+        // Create event progress record
+        EventProgress::create([
+            'event_id' => $event->id,
+            'status' => 'Event Rejected',
+            'details' => $data['rejection_reason']
+                ? "Event rejected by admin. Reason: {$data['rejection_reason']}"
+                : "Event rejected by admin.",
+            'progress_date' => now(),
         ]);
 
         $customer = $event->customer;
@@ -906,6 +926,14 @@ class AdminEventController extends Controller
 
         $event->update(['status' => Event::STATUS_SCHEDULED]);
 
+        // Create event progress record
+        EventProgress::create([
+            'event_id' => $event->id,
+            'status' => 'Meeting Completed',
+            'details' => 'Event meeting completed by admin. Event is now scheduled and ready for staff assignment.',
+            'progress_date' => now(),
+        ]);
+
         return back()->with('success', 'Meeting marked as complete. Event is now SCHEDULED. You can now add Staffs.');
     }
 
@@ -953,6 +981,9 @@ class AdminEventController extends Controller
         // Store old total before updating
         $oldTotal = $event->billing ? $event->billing->total_amount : 0;
 
+        // Store old inclusions for comparison
+        $oldInclusionIds = $event->inclusions->pluck('id')->toArray();
+
         $selectedInclusionIds = $request->input('inclusions', []);
 
         // Get the inclusions with their prices
@@ -979,6 +1010,32 @@ class AdminEventController extends Controller
         // Refresh event to get updated billing
         $event->refresh();
         $newTotal = $event->billing->total_amount;
+
+        // Track what changed
+        $addedInclusions = array_diff($selectedInclusionIds, $oldInclusionIds);
+        $removedInclusions = array_diff($oldInclusionIds, $selectedInclusionIds);
+
+        $changes = [];
+        if (!empty($addedInclusions)) {
+            $added = Inclusion::whereIn('id', $addedInclusions)->pluck('name')->toArray();
+            $changes[] = "Added: " . implode(', ', $added);
+        }
+        if (!empty($removedInclusions)) {
+            $removed = Inclusion::whereIn('id', $removedInclusions)->pluck('name')->toArray();
+            $changes[] = "Removed: " . implode(', ', $removed);
+        }
+
+        $changeDetails = !empty($changes)
+            ? implode(". ", $changes) . "."
+            : "Inclusions modified.";
+
+        // Create event progress record
+        EventProgress::create([
+            'event_id' => $event->id,
+            'status' => 'Inclusions Updated',
+            'details' => "Event inclusions updated by admin. {$changeDetails} Total amount changed from ₱" . number_format($oldTotal, 2) . " to ₱" . number_format($newTotal, 2) . ".",
+            'progress_date' => now(),
+        ]);
 
         // Send notification to customer
         $customer = $event->customer;

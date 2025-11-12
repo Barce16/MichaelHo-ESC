@@ -39,11 +39,13 @@
             return [$inc->id => $inc->pivot->notes ?? ''];
             })->toArray()
             ];
+            $grouped = $availableInclusions->groupBy('category');
             @endphp
 
             <form method="POST" action="{{ route('admin.events.updateInclusions', $event) }}" x-data='{
                     selectedInclusions: @json($alpineData["selectedInclusions"]),
                     inclusionNotes: @json($alpineData["inclusionNotes"]),
+                    activeCategory: "{{ $grouped->keys()->first() }}",
                     
                     toggleInclusion(id) {
                         const index = this.selectedInclusions.indexOf(id);
@@ -61,75 +63,89 @@
                 @csrf
                 @method('PUT')
 
-                {{-- Available Inclusions by Category --}}
-                @php
-                $grouped = $availableInclusions->groupBy('category');
-                @endphp
-
-                @foreach($grouped as $category => $inclusions)
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 bg-violet-50 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {{-- Tabbed Categories --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="bg-gradient-to-r from-violet-50 to-purple-50 border-b border-gray-200 px-6 py-4">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                             </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-900">{{ $category }}</h3>
+                            Select Inclusions
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">Choose items from each category</p>
                     </div>
 
-                    <div class="grid md:grid-cols-2 gap-3">
-                        @foreach($inclusions as $inclusion)
-                        <div class="border-2 rounded-lg transition"
-                            :class="isSelected({{ $inclusion->id }}) ? 'border-violet-500 bg-violet-50' : 'border-gray-200 bg-white'">
+                    <div class="p-6">
+                        {{-- Category Tabs --}}
+                        <div class="flex flex-wrap gap-2 mb-6 pb-4 border-b border-gray-200">
+                            @foreach($grouped->keys() as $category)
+                            <button type="button" @click="activeCategory = '{{ $category }}'" :class="activeCategory === '{{ $category }}' 
+                                    ? 'bg-violet-500 text-white shadow-md' 
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                                class="px-4 py-2 rounded-lg font-medium text-sm transition-all">
+                                {{ $category }}
+                            </button>
+                            @endforeach
+                        </div>
 
-                            {{-- Inclusion Header --}}
-                            <label class="flex items-start gap-3 p-4 cursor-pointer hover:bg-gray-50">
-                                <input type="checkbox" name="inclusions[]" value="{{ $inclusion->id }}"
-                                    @change="toggleInclusion({{ $inclusion->id }})"
-                                    :checked="isSelected({{ $inclusion->id }})"
-                                    class="mt-1 w-5 h-5 text-violet-600 border-gray-300 rounded focus:ring-violet-500 flex-shrink-0">
+                        {{-- Category Content --}}
+                        @foreach($grouped as $category => $inclusions)
+                        <div x-show="activeCategory === '{{ $category }}'" x-transition>
+                            <div class="grid md:grid-cols-2 gap-3">
+                                @foreach($inclusions as $inclusion)
+                                <div class="border-2 rounded-lg transition"
+                                    :class="isSelected({{ $inclusion->id }}) ? 'border-violet-500 bg-violet-50' : 'border-gray-200 bg-white'">
 
-                                @if($inclusion->image)
-                                <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                                    <img src="{{ asset('storage/' . $inclusion->image) }}" alt="{{ $inclusion->name }}"
-                                        class="w-full h-full object-cover">
+                                    {{-- Inclusion Header --}}
+                                    <label class="flex items-start gap-3 p-4 cursor-pointer hover:bg-gray-50">
+                                        <input type="checkbox" name="inclusions[]" value="{{ $inclusion->id }}"
+                                            @change="toggleInclusion({{ $inclusion->id }})"
+                                            :checked="isSelected({{ $inclusion->id }})"
+                                            class="mt-1 w-5 h-5 text-violet-600 border-gray-300 rounded focus:ring-violet-500 flex-shrink-0">
+
+                                        @if($inclusion->image)
+                                        <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                                            <img src="{{ asset('storage/' . $inclusion->image) }}"
+                                                alt="{{ $inclusion->name }}" class="w-full h-full object-cover">
+                                        </div>
+                                        @endif
+
+                                        <div class="flex-1">
+                                            <div class="font-medium text-gray-900">{{ $inclusion->name }}</div>
+                                            @if($inclusion->notes)
+                                            <div class="text-xs text-gray-600 mt-1">{{ $inclusion->notes }}</div>
+                                            @endif
+                                            @if($inclusion->price > 0)
+                                            <div class="text-sm font-semibold text-violet-600 mt-1">₱{{
+                                                number_format($inclusion->price, 2) }}</div>
+                                            @endif
+                                        </div>
+                                    </label>
+
+                                    {{-- Notes Textarea (only show when selected) --}}
+                                    <div x-show="isSelected({{ $inclusion->id }})" x-transition
+                                        class="px-4 pb-4 border-t border-gray-200">
+                                        <label class="block text-xs font-medium text-gray-700 mb-2 mt-3">
+                                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                            Notes for this item (Optional)
+                                        </label>
+                                        <textarea name="inclusion_notes[{{ $inclusion->id }}]"
+                                            x-model="inclusionNotes[{{ $inclusion->id }}]" rows="2"
+                                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                                            placeholder="Special requests, preferences, or details for {{ $inclusion->name }}..."></textarea>
+                                    </div>
                                 </div>
-                                @endif
-
-                                <div class="flex-1">
-                                    <div class="font-medium text-gray-900">{{ $inclusion->name }}</div>
-                                    @if($inclusion->notes)
-                                    <div class="text-xs text-gray-600 mt-1">{{ $inclusion->notes }}</div>
-                                    @endif
-                                    @if($inclusion->price > 0)
-                                    <div class="text-sm font-semibold text-violet-600 mt-1">₱{{
-                                        number_format($inclusion->price, 2) }}</div>
-                                    @endif
-                                </div>
-                            </label>
-
-                            {{-- Notes Textarea (only show when selected) --}}
-                            <div x-show="isSelected({{ $inclusion->id }})" x-transition
-                                class="px-4 pb-4 border-t border-gray-200">
-                                <label class="block text-xs font-medium text-gray-700 mb-2 mt-3">
-                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                    Notes for this item (Optional)
-                                </label>
-                                <textarea name="inclusion_notes[{{ $inclusion->id }}]"
-                                    x-model="inclusionNotes[{{ $inclusion->id }}]" rows="2"
-                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                                    placeholder="Special requests, preferences, or details for {{ $inclusion->name }}..."></textarea>
+                                @endforeach
                             </div>
                         </div>
                         @endforeach
                     </div>
                 </div>
-                @endforeach
 
                 {{-- Submit --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

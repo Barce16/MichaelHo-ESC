@@ -28,15 +28,20 @@ class EventController extends Controller
         $customer = $request->user()->customer;
         abort_if(!$customer, 403);
 
-        $events = Event::with(['package'])
+        $events = Event::with([
+            'package',
+            'progress' => function ($query) {
+                $query->orderBy('progress_date', 'desc');
+            }
+        ])
             ->where('customer_id', $customer->id)
             ->orderByDesc('event_date')
             ->paginate(12);
 
         $hasPendingBillings = $customer->hasPendingPayments();
+
         return view('customers.events.index', compact('events', 'hasPendingBillings'));
     }
-
     public function create(Request $request)
     {
         // Get authenticated customer
@@ -328,6 +333,38 @@ class EventController extends Controller
                 ->withInput();
         }
 
+        // Track changes for notification
+        $changes = [];
+        $oldInclusions = $event->inclusions->pluck('id')->toArray();
+
+        // Check what changed
+        if ($event->name !== $data['name']) {
+            $changes[] = "Event name changed from '{$event->name}' to '{$data['name']}'";
+        }
+        if ($event->event_date->format('Y-m-d') !== $data['event_date']) {
+            $changes[] = "Event date changed from {$event->event_date->format('M d, Y')} to " . date('M d, Y', strtotime($data['event_date']));
+        }
+        if ($event->package_id != $data['package_id']) {
+            $oldPackage = Package::find($event->package_id);
+            $newPackage = Package::find($data['package_id']);
+            $changes[] = "Package changed from '{$oldPackage->name}' to '{$newPackage->name}'";
+        }
+        if ($event->venue !== $data['venue']) {
+            $changes[] = "Venue changed to '{$data['venue']}'";
+        }
+        if ($event->theme !== $data['theme']) {
+            $changes[] = "Theme changed to '{$data['theme']}'";
+        }
+        if ($event->budget != $data['budget']) {
+            $changes[] = "Budget updated to ₱" . number_format($data['budget'], 2);
+        }
+        if ($event->guests !== $data['guests']) {
+            $changes[] = "Guest details updated";
+        }
+        if ($event->notes !== $data['notes']) {
+            $changes[] = "Event notes updated";
+        }
+
         DB::transaction(function () use ($event, $data, $selectedIds, $request) {
             $event->update([
                 'name'        => $data['name'],
@@ -357,6 +394,26 @@ class EventController extends Controller
                 $event->inclusions()->detach();
             }
         });
+
+        // Check if inclusions changed
+        $newInclusions = $selectedIds->toArray();
+        $addedInclusions = array_diff($newInclusions, $oldInclusions);
+        $removedInclusions = array_diff($oldInclusions, $newInclusions);
+
+        if (!empty($addedInclusions)) {
+            $added = Inclusion::whereIn('id', $addedInclusions)->pluck('name')->toArray();
+            $changes[] = "Added inclusions: " . implode(', ', $added);
+        }
+        if (!empty($removedInclusions)) {
+            $removed = Inclusion::whereIn('id', $removedInclusions)->pluck('name')->toArray();
+            $changes[] = "Removed inclusions: " . implode(', ', $removed);
+        }
+
+        // Notify admin if there were changes
+        if (!empty($changes)) {
+            $changeMessage = implode("\n", $changes);
+            $this->notificationService->notifyAdminEventUpdated($event, $changeMessage);
+        }
 
         return redirect()
             ->route('customer.events.show', $event)

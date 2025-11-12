@@ -35,7 +35,6 @@ class Event extends Model
         'notes',
         'status',
         'rejection_reason',
-
     ];
 
     protected $casts = [
@@ -74,7 +73,7 @@ class Event extends Model
     public function staffs(): BelongsToMany
     {
         return $this->belongsToMany(Staff::class, 'event_staff')
-            ->withPivot('assignment_role', 'pay_rate', 'pay_status')
+            ->withPivot('assignment_role', 'pay_rate', 'pay_status', 'work_status') // ADDED: work_status
             ->withTimestamps();
     }
 

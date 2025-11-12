@@ -355,4 +355,53 @@ class NotificationService
             'link' => route('customer.payments.index'),
         ]);
     }
+
+    /**
+     * Notify admin when customer updates their event
+     */
+    public function notifyAdminEventUpdated(Event $event, string $changeMessage): void
+    {
+        $admins = User::where('user_type', 'admin')->get();
+
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'event_updated',
+                'title' => 'Event Updated by Customer',
+                'message' => "{$event->customer->customer_name} updated their event '{$event->name}'.\n\nChanges:\n{$changeMessage}",
+                'link' => route('admin.events.show', $event),
+                'is_read' => false,
+            ]);
+        }
+    }
+
+    /**
+     * Notify admin when staff marks work as finished
+     */
+    public function notifyAdminStaffWorkFinished($staff, $event)
+    {
+        $admins = User::where('user_type', 'admin')
+            ->where('status', 'active')
+            ->get();
+
+        $title = "Staff Work Completed";
+        $message = "{$staff->name} has marked their work as finished for the event '{$event->name}' on " .
+            \Carbon\Carbon::parse($event->event_date)->format('M d, Y');
+
+        $actionUrl = route('admin.payroll.viewStaffs', $event);
+
+        foreach ($admins as $admin) {
+            // Create in-app notification
+            Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'staff_work_finished',
+                'title' => $title,
+                'message' => $message,
+                'link' => $actionUrl,
+                'is_read' => false,
+            ]);
+        }
+
+        return true;
+    }
 }

@@ -175,6 +175,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/schedules', [StaffScheduleController::class, 'index'])->name('schedules.index');
             Route::get('/schedules/{event}', [StaffScheduleController::class, 'show'])->name('schedules.show');
             Route::get('/earnings', [StaffScheduleController::class, 'earnings'])->name('earnings');
+            Route::post('/schedules/{event}/finish', [StaffScheduleController::class, 'finishWork'])->name('schedules.finish');
         });
 
     // ========== ADMIN AREA ==========

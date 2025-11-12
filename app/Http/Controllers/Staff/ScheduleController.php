@@ -5,12 +5,20 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\Staff;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ScheduleController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -41,9 +49,26 @@ class ScheduleController extends Controller
 
         $events = $query->paginate(10)->withQueryString();
 
-        // Get staff assignments with pivot data
+        // Get staff assignments with pivot data and auto-update work status
         $events->getCollection()->transform(function ($event) use ($staff) {
             $pivot = $event->staffs()->where('staff_id', $staff->id)->first()?->pivot;
+
+            // Auto-update work_status to 'ongoing' if event date is today
+            if ($pivot && $pivot->work_status === 'pending') {
+                $eventDate = \Carbon\Carbon::parse($event->event_date);
+                $today = \Carbon\Carbon::today();
+
+                if ($eventDate->isSameDay($today)) {
+                    DB::table('event_staff')
+                        ->where('event_id', $event->id)
+                        ->where('staff_id', $staff->id)
+                        ->update(['work_status' => 'ongoing']);
+
+                    // Refresh pivot data
+                    $pivot = $event->staffs()->where('staff_id', $staff->id)->first()?->pivot;
+                }
+            }
+
             $event->staff_assignment = $pivot;
             return $event;
         });
@@ -89,7 +114,62 @@ class ScheduleController extends Controller
 
         $assignment = $event->staffs()->where('staff_id', $staff->id)->first()?->pivot;
 
+        // Auto-update work_status to 'ongoing' if event date is today
+        if ($assignment && $assignment->work_status === 'pending') {
+            $eventDate = \Carbon\Carbon::parse($event->event_date);
+            $today = \Carbon\Carbon::today();
+
+            if ($eventDate->isSameDay($today)) {
+                DB::table('event_staff')
+                    ->where('event_id', $event->id)
+                    ->where('staff_id', $staff->id)
+                    ->update(['work_status' => 'ongoing']);
+
+                // Refresh assignment data
+                $assignment = $event->staffs()->where('staff_id', $staff->id)->first()?->pivot;
+            }
+        }
+
         return view('staff.schedules.show', compact('event', 'staff', 'assignment'));
+    }
+
+    /**
+     * Mark staff work as finished for an event
+     */
+    public function finishWork(Event $event)
+    {
+        $user = Auth::user();
+        $staff = Staff::where('user_id', $user->id)->first();
+
+        if (!$staff) {
+            return redirect()->route('dashboard')->with('error', 'Staff profile not found.');
+        }
+
+        // Check if staff is assigned to this event
+        $assignment = $event->staffs()->where('staff_id', $staff->id)->first();
+
+        if (!$assignment) {
+            return redirect()->route('staff.schedules.index')->with('error', 'You are not assigned to this event.');
+        }
+
+        // Check if already finished
+        if ($assignment->pivot->work_status === 'finished') {
+            return back()->with('info', 'You have already marked this work as finished.');
+        }
+
+        // Update work status to finished
+        DB::table('event_staff')
+            ->where('event_id', $event->id)
+            ->where('staff_id', $staff->id)
+            ->update([
+                'work_status' => 'finished',
+                'updated_at' => now(),
+            ]);
+
+        // Notify admin that staff has finished their work
+        $this->notificationService->notifyAdminStaffWorkFinished($staff, $event);
+
+        return back()->with('success', 'Your work has been marked as finished. Admin has been notified.');
     }
 
     public function earnings(Request $request)
