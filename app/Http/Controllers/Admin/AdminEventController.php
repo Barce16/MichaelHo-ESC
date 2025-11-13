@@ -981,13 +981,14 @@ class AdminEventController extends Controller
         // Store old total before updating
         $oldTotal = $event->billing ? $event->billing->total_amount : 0;
 
-        // Store old inclusions for comparison
+        // Store old inclusions for comparison - LOAD FULL OBJECTS
         $oldInclusionIds = $event->inclusions->pluck('id')->toArray();
+        $oldInclusions = $event->inclusions; // Keep the collection
 
         $selectedInclusionIds = $request->input('inclusions', []);
 
         // Get the inclusions with their prices
-        $inclusions = \App\Models\Inclusion::whereIn('id', $selectedInclusionIds)->get();
+        $inclusions = Inclusion::whereIn('id', $selectedInclusionIds)->get();
 
         // Get inclusion notes
         $inclusionNotes = $request->input('inclusion_notes', []);
@@ -1011,17 +1012,26 @@ class AdminEventController extends Controller
         $event->refresh();
         $newTotal = $event->billing->total_amount;
 
-        // Track what changed
-        $addedInclusions = array_diff($selectedInclusionIds, $oldInclusionIds);
-        $removedInclusions = array_diff($oldInclusionIds, $selectedInclusionIds);
+        // Track what changed - GET FULL INCLUSION OBJECTS
+        $addedInclusionIds = array_diff($selectedInclusionIds, $oldInclusionIds);
+        $removedInclusionIds = array_diff($oldInclusionIds, $selectedInclusionIds);
 
+        // Get full inclusion objects for added items
+        $addedInclusions = Inclusion::whereIn('id', $addedInclusionIds)->get();
+
+        // Get full inclusion objects for removed items (from old collection)
+        $removedInclusions = $oldInclusions->filter(function ($inclusion) use ($removedInclusionIds) {
+            return in_array($inclusion->id, $removedInclusionIds);
+        });
+
+        // Build change details for progress log
         $changes = [];
-        if (!empty($addedInclusions)) {
-            $added = Inclusion::whereIn('id', $addedInclusions)->pluck('name')->toArray();
+        if ($addedInclusions->count() > 0) {
+            $added = $addedInclusions->pluck('name')->toArray();
             $changes[] = "Added: " . implode(', ', $added);
         }
-        if (!empty($removedInclusions)) {
-            $removed = Inclusion::whereIn('id', $removedInclusions)->pluck('name')->toArray();
+        if ($removedInclusions->count() > 0) {
+            $removed = $removedInclusions->pluck('name')->toArray();
             $changes[] = "Removed: " . implode(', ', $removed);
         }
 
@@ -1037,10 +1047,16 @@ class AdminEventController extends Controller
             'progress_date' => now(),
         ]);
 
-        // Send notification to customer
+        // Send notification to customer - PASS DETAILED CHANGES
         $customer = $event->customer;
         if ($customer->user) {
-            $customer->user->notify(new \App\Notifications\InclusionsUpdatedNotification($event, $oldTotal, $newTotal));
+            $customer->user->notify(new \App\Notifications\InclusionsUpdatedNotification(
+                $event,
+                $oldTotal,
+                $newTotal,
+                $addedInclusions,
+                $removedInclusions
+            ));
         }
 
         // Create in-app notification
@@ -1048,7 +1064,7 @@ class AdminEventController extends Controller
 
         return redirect()
             ->route('admin.events.show', $event)
-            ->with('success', 'Event inclusions updated successfully. Customer has been notified via email.');
+            ->with('success', 'Event inclusions updated successfully. Customer has been notified via email with detailed changes.');
     }
 
     /**
@@ -1058,10 +1074,13 @@ class AdminEventController extends Controller
     {
         $event->load(['package', 'inclusions', 'billing']);
 
-        // Calculate total from package + inclusions
-        $packagePrice = $event->package->price;
+        // Calculate total from coordination + event_styling + inclusions
+        // DO NOT use package->price as it includes base inclusions
+        $coordinationPrice = $event->package->coordination_price ?? 0;
+        $eventStylingPrice = $event->package->event_styling_price ?? 0;
         $inclusionsTotal = $event->inclusions->sum('pivot.price_snapshot');
-        $newTotal = $packagePrice + $inclusionsTotal;
+
+        $newTotal = $coordinationPrice + $eventStylingPrice + $inclusionsTotal;
 
         // Get or create billing
         $billing = $event->billing;

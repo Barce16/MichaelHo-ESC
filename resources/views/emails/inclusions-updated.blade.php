@@ -14,7 +14,7 @@
         }
 
         .email-container {
-            max-width: 600px;
+            max-width: 650px;
             margin: 40px auto;
             background-color: #ffffff;
             border-radius: 12px;
@@ -58,6 +58,331 @@
             margin-bottom: 30px;
         }
 
+        /* Changes Summary Section */
+        .changes-summary {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+
+        .changes-summary h2 {
+            margin: 0 0 20px 0;
+            color: #0c4a6e;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e0f2fe;
+        }
+
+        .stat-box .number {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-box.added .number {
+            color: #059669;
+        }
+
+        .stat-box.removed .number {
+            color: #dc2626;
+        }
+
+        .stat-box.total .number {
+            color: #0284c7;
+        }
+
+        .stat-box .label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Added Inclusions Section */
+        .changes-section {
+            margin: 30px 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .changes-section.added {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #10b981;
+        }
+
+        .changes-section.removed {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border: 2px solid #ef4444;
+        }
+
+        .section-header {
+            padding: 20px 25px;
+            border-bottom: 2px solid currentColor;
+        }
+
+        .section-header.added {
+            background: #059669;
+            border-color: #047857;
+            color: white;
+        }
+
+        .section-header.removed {
+            background: #dc2626;
+            border-color: #b91c1c;
+            color: white;
+        }
+
+        .section-header h3 {
+            margin: 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-header .count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+
+        .changes-list {
+            padding: 20px 25px;
+        }
+
+        .change-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .change-item .item-info {
+            flex: 1;
+        }
+
+        .change-item .item-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .change-item .item-category {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .change-item .item-price {
+            font-size: 18px;
+            font-weight: 700;
+            margin-left: 20px;
+        }
+
+        .changes-section.added .item-price {
+            color: #059669;
+        }
+
+        .changes-section.removed .item-price {
+            color: #dc2626;
+        }
+
+        .change-item .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 15px;
+        }
+
+        .changes-section.added .icon {
+            background: #dcfce7;
+            color: #059669;
+        }
+
+        .changes-section.removed .icon {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .empty-state {
+            padding: 30px;
+            text-align: center;
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        /* Billing Comparison */
+        .billing-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .billing-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .billing-card h4 {
+            margin: 0 0 15px 0;
+            color: #64748b;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .billing-card .amount {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .billing-card.new {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-color: #10b981;
+        }
+
+        .billing-card.new h4 {
+            color: #065f46;
+        }
+
+        .billing-card.new .amount {
+            color: #059669;
+        }
+
+        .change-indicator {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .change-indicator.increase {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .change-indicator.decrease {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        /* Current Inclusions */
+        .current-inclusions {
+            background: #faf5ff;
+            border: 2px solid #e9d5ff;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 12px;
+        }
+
+        .current-inclusions h3 {
+            margin: 0 0 20px 0;
+            color: #6b21a8;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .inclusion-category {
+            margin-bottom: 20px;
+        }
+
+        .category-name {
+            font-weight: 600;
+            color: #7c3aed;
+            margin-bottom: 12px;
+            font-size: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e9d5ff;
+        }
+
+        .inclusion-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: white;
+            margin: 8px 0;
+            border-radius: 6px;
+            border-left: 3px solid #8b5cf6;
+        }
+
+        .inclusion-name {
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+        .inclusion-price {
+            color: #7c3aed;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Billing Summary */
+        .billing-summary {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border: 2px solid #3b82f6;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 12px;
+        }
+
+        .billing-summary h3 {
+            margin: 0 0 20px 0;
+            color: #1e40af;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .billing-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            font-size: 15px;
+            color: #1e3a8a;
+        }
+
+        .billing-row.total {
+            border-top: 2px solid #3b82f6;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
         .info-box {
             background-color: #f7fafc;
             border-left: 4px solid #8b5cf6;
@@ -93,129 +418,6 @@
             color: #2d3748;
             font-weight: 600;
             text-align: right;
-        }
-
-        .billing-comparison {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 25px 0;
-        }
-
-        .billing-card {
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .billing-card h4 {
-            margin: 0 0 10px 0;
-            color: #718096;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .billing-card .amount {
-            font-size: 24px;
-            font-weight: 700;
-            color: #2d3748;
-        }
-
-        .billing-card.new {
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            border-color: #10b981;
-        }
-
-        .billing-card.new h4 {
-            color: #065f46;
-        }
-
-        .billing-card.new .amount {
-            color: #059669;
-        }
-
-        .inclusions-list {
-            background: #faf5ff;
-            border: 2px solid #e9d5ff;
-            padding: 20px;
-            margin: 25px 0;
-            border-radius: 8px;
-        }
-
-        .inclusions-list h3 {
-            margin: 0 0 15px 0;
-            color: #6b21a8;
-            font-size: 16px;
-        }
-
-        .inclusion-category {
-            margin-bottom: 20px;
-        }
-
-        .inclusion-category:last-child {
-            margin-bottom: 0;
-        }
-
-        .category-name {
-            font-weight: 600;
-            color: #7c3aed;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .inclusion-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 12px;
-            background: white;
-            margin: 5px 0;
-            border-radius: 4px;
-            border-left: 3px solid #8b5cf6;
-        }
-
-        .inclusion-name {
-            color: #4a5568;
-            font-size: 14px;
-        }
-
-        .inclusion-price {
-            color: #7c3aed;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .billing-summary {
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-            border: 2px solid #3b82f6;
-            padding: 25px;
-            margin: 25px 0;
-            border-radius: 8px;
-        }
-
-        .billing-summary h3 {
-            margin: 0 0 20px 0;
-            color: #1e40af;
-            font-size: 18px;
-            text-align: center;
-        }
-
-        .billing-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            font-size: 14px;
-            color: #1e3a8a;
-        }
-
-        .billing-row.total {
-            border-top: 2px solid #3b82f6;
-            margin-top: 10px;
-            padding-top: 15px;
-            font-size: 18px;
-            font-weight: 700;
         }
 
         .highlight-box {
@@ -296,25 +498,6 @@
             text-decoration: none;
             font-weight: 600;
         }
-
-        .change-indicator {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-
-        .change-indicator.increase {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .change-indicator.decrease {
-            background: #dcfce7;
-            color: #166534;
-        }
     </style>
 </head>
 
@@ -323,7 +506,7 @@
         <!-- Header -->
         <div class="header">
             <img src="{{ asset('images/favicon.png') }}" alt="Michael Ho Events" class="logo">
-            <h1>📝 Event Updated</h1>
+            <h1>📝 Inclusions Updated</h1>
         </div>
 
         <!-- Content -->
@@ -334,11 +517,102 @@
                 {{ $customer->customer_name }}!
             </div>
 
-
             <div class="message">
                 <p>We've updated the inclusions for your event <strong>{{ $event->name }}</strong>.</p>
-                <p>Your new billing details are shown below.</p>
+                <p>Below is a detailed summary of what has changed.</p>
             </div>
+
+            <!-- Changes Summary -->
+            @if($addedInclusions->count() > 0 || $removedInclusions->count() > 0)
+            <div class="changes-summary">
+                <h2>📊 Summary of Changes</h2>
+                <div class="summary-stats">
+                    <div class="stat-box added">
+                        <div class="number">{{ $addedInclusions->count() }}</div>
+                        <div class="label">Added</div>
+                    </div>
+                    <div class="stat-box removed">
+                        <div class="number">{{ $removedInclusions->count() }}</div>
+                        <div class="label">Removed</div>
+                    </div>
+                    <div class="stat-box total">
+                        <div class="number">{{ $event->inclusions->count() }}</div>
+                        <div class="label">Total Now</div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Added Inclusions -->
+            @if($addedInclusions->count() > 0)
+            <div class="changes-section added">
+                <div class="section-header added">
+                    <h3>
+                        ✅ Added Inclusions
+                        <span class="count">{{ $addedInclusions->count() }} {{ $addedInclusions->count() === 1 ? 'item'
+                            : 'items' }}</span>
+                    </h3>
+                </div>
+                <div class="changes-list">
+                    @foreach($addedInclusions as $inclusion)
+                    <div class="change-item">
+                        <div class="icon">+</div>
+                        <div class="item-info">
+                            <div class="item-name">{{ $inclusion->name }}</div>
+                            <div class="item-category">{{ $inclusion->category }}</div>
+                        </div>
+                        <div class="item-price">₱{{ number_format($inclusion->price, 2) }}</div>
+                    </div>
+                    @endforeach
+
+                    @if($addedInclusions->sum('price') > 0)
+                    <div
+                        style="text-align: right; margin-top: 15px; padding-top: 15px; border-top: 2px solid #10b981; font-size: 16px; font-weight: 600; color: #059669;">
+                        Subtotal Added: ₱{{ number_format($addedInclusions->sum('price'), 2) }}
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
+
+            <!-- Removed Inclusions -->
+            @if($removedInclusions->count() > 0)
+            <div class="changes-section removed">
+                <div class="section-header removed">
+                    <h3>
+                        ❌ Removed Inclusions
+                        <span class="count">{{ $removedInclusions->count() }} {{ $removedInclusions->count() === 1 ?
+                            'item' : 'items' }}</span>
+                    </h3>
+                </div>
+                <div class="changes-list">
+                    @foreach($removedInclusions as $inclusion)
+                    <div class="change-item">
+                        <div class="icon">-</div>
+                        <div class="item-info">
+                            <div class="item-name">{{ $inclusion->name }}</div>
+                            <div class="item-category">{{ $inclusion->category }}</div>
+                        </div>
+                        <div class="item-price">₱{{ number_format($inclusion->pivot->price_snapshot ??
+                            $inclusion->price, 2) }}</div>
+                    </div>
+                    @endforeach
+
+                    @php
+                    $removedTotal = $removedInclusions->sum(function($item) {
+                    return $item->pivot->price_snapshot ?? $item->price;
+                    });
+                    @endphp
+
+                    @if($removedTotal > 0)
+                    <div
+                        style="text-align: right; margin-top: 15px; padding-top: 15px; border-top: 2px solid #ef4444; font-size: 16px; font-weight: 600; color: #dc2626;">
+                        Subtotal Removed: ₱{{ number_format($removedTotal, 2) }}
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
 
             <!-- Billing Comparison -->
             @if($oldTotal != $newTotal)
@@ -358,6 +632,8 @@
                 </div>
             </div>
             @endif
+
+            <div class="divider"></div>
 
             <!-- Event Details -->
             <div class="info-box">
@@ -382,18 +658,16 @@
                 </div>
             </div>
 
-            <div class="divider"></div>
-
-            <!-- Current Inclusions -->
+            <!-- Current Inclusions (All) -->
             @if($event->inclusions->count() > 0)
-            <div class="inclusions-list">
-                <h3>✓ Current Inclusions</h3>
+            <div class="current-inclusions">
+                <h3>✓ All Current Inclusions ({{ $event->inclusions->count() }} items)</h3>
                 @php
                 $grouped = $event->inclusions->groupBy('category');
                 @endphp
                 @foreach($grouped as $category => $items)
                 <div class="inclusion-category">
-                    <div class="category-name">{{ $category }}</div>
+                    <div class="category-name">{{ $category }} ({{ $items->count() }})</div>
                     @foreach($items as $inclusion)
                     <div class="inclusion-item">
                         <span class="inclusion-name">{{ $inclusion->name }}</span>
@@ -411,12 +685,21 @@
             @if($event->billing)
             <div class="billing-summary">
                 <h3>💰 Updated Billing Summary</h3>
+                @php
+                $coordinationPrice = $event->package->coordination_price ?? 0;
+                $eventStylingPrice = $event->package->event_styling_price ?? 0;
+                $packageBasePrice = $coordinationPrice + $eventStylingPrice;
+                @endphp
                 <div class="billing-row">
-                    <span>Package Base Price:</span>
-                    <span>₱{{ number_format($event->package->price, 2) }}</span>
+                    <span>Coordination:</span>
+                    <span>₱{{ number_format($coordinationPrice, 2) }}</span>
                 </div>
                 <div class="billing-row">
-                    <span>Inclusions Total:</span>
+                    <span>Event Styling:</span>
+                    <span>₱{{ number_format($eventStylingPrice, 2) }}</span>
+                </div>
+                <div class="billing-row">
+                    <span>Additional Inclusions:</span>
                     <span>₱{{ number_format($event->inclusions->sum('pivot.price_snapshot'), 2) }}</span>
                 </div>
                 <div class="billing-row total">
@@ -424,13 +707,13 @@
                     <span>₱{{ number_format($event->billing->total_amount, 2) }}</span>
                 </div>
                 @if($event->billing->total_paid > 0)
-                <div class="billing-row">
-                    <span style="color: #059669;">Amount Paid:</span>
-                    <span style="color: #059669;">₱{{ number_format($event->billing->total_paid, 2) }}</span>
+                <div class="billing-row" style="color: #059669;">
+                    <span style="font-weight: 600;">Amount Paid:</span>
+                    <span style="font-weight: 600;">₱{{ number_format($event->billing->total_paid, 2) }}</span>
                 </div>
                 @endif
                 @if($event->billing->remaining_balance > 0)
-                <div class="billing-row">
+                <div class="billing-row" style="color: #dc2626;">
                     <span style="font-weight: 600;">Remaining Balance:</span>
                     <span style="font-weight: 600;">₱{{ number_format($event->billing->remaining_balance, 2) }}</span>
                 </div>
@@ -441,19 +724,20 @@
             <!-- Important Note -->
             <div class="highlight-box">
                 <h4>📌 Important Note</h4>
-                <p>These changes have been made to better accommodate your event requirements.</p>
+                <p>These changes have been made to better accommodate your event requirements and preferences.</p>
+                <p>Your current billing reflects all changes listed above.</p>
                 <p>If you have any questions about these updates, please don't hesitate to contact us.</p>
             </div>
 
             <div style="text-align: center; margin: 30px 0;">
-                <a href="{{ route('customer.events.show', $event) }}" class="button">View Event Details</a>
+                <a href="{{ route('customer.events.show', $event) }}" class="button">View Complete Event Details</a>
             </div>
 
             <div class="divider"></div>
 
             <!-- Contact Information -->
             <div class="contact-card">
-                <h4>📞 Questions?</h4>
+                <h4>📞 Questions or Concerns?</h4>
                 <div class="contact-item">
                     <span>📧</span>
                     <span>Email: <a href="mailto:michaelhoevents@gmail.com">michaelhoevents@gmail.com</a></span>
