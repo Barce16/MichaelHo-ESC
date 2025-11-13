@@ -220,8 +220,20 @@ class EventController extends Controller
 
         $totalPaid = $approvedIntroPayments + $approvedDownpayments + $approvedBalancePayments;
 
+        $introAmount = 5000.00;
         // balance calculation
         $remainingBalance = $grandTotal - $totalPaid;
+
+        // Required downpayment calculation
+        if ($event->billing && $event->billing->downpayment_amount > 0) {
+            if ($approvedIntroPayments > 0) {
+                $requiredDownpayment = max(0, $event->billing->downpayment_amount - $introAmount);
+            } else {
+                $requiredDownpayment = $event->billing->downpayment_amount;
+            }
+        } else {
+            $requiredDownpayment = 0;
+        }
 
         // payment checks
         $canPayIntro = $event->isReadyForIntroPayment();
@@ -251,7 +263,9 @@ class EventController extends Controller
             'styl',
             'grandTotal',
             'totalPaid',
-            'remainingBalance'
+            'remainingBalance',
+            'introAmount',
+            'requiredDownpayment',
         ));
     }
 
