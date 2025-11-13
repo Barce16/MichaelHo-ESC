@@ -87,7 +87,6 @@ class EventController extends Controller
             'package_id'   => ['required', 'exists:packages,id'],
             'venue'        => ['nullable', 'string', 'max:255'],
             'theme'        => ['nullable', 'string', 'max:255'],
-            'budget'       => ['nullable', 'numeric', 'min:0'],
             'guests'       => ['nullable', 'string', 'max:5000'],
             'notes'        => ['nullable', 'string', 'max:5000'],
 
@@ -150,7 +149,6 @@ class EventController extends Controller
                 'package_id'  => $data['package_id'],
                 'venue'       => $data['venue'] ?? null,
                 'theme'       => $data['theme'] ?? null,
-                'budget'      => $data['budget'] ?? null,
                 'guests'      => $data['guests'] ?? null,
                 'notes'       => $data['notes'] ?? null,
                 'status'      => Event::STATUS_REQUESTED,
@@ -259,7 +257,7 @@ class EventController extends Controller
         abort_if(!$customer || $event->customer_id !== $customer->id, 403);
 
         // Can only edit if status is requested, request_meeting, or meeting
-        if (!in_array($event->status, [Event::STATUS_REQUESTED, Event::STATUS_REQUEST_MEETING, Event::STATUS_MEETING])) {
+        if (in_array($event->status, [Event::STATUS_REJECTED, Event::STATUS_COMPLETED])) {
             return redirect()
                 ->route('customer.events.show', $event)
                 ->with('error', 'Cannot edit event in current status.');
@@ -289,7 +287,7 @@ class EventController extends Controller
         abort_if(!$customer || $event->customer_id !== $customer->id, 403);
 
         // Can only edit if status is requested, request_meeting, or meeting
-        if (!in_array($event->status, [Event::STATUS_REQUESTED, Event::STATUS_REQUEST_MEETING, Event::STATUS_MEETING])) {
+        if (in_array($event->status, [Event::STATUS_REJECTED, Event::STATUS_COMPLETED])) {
             return redirect()
                 ->route('customer.events.show', $event)
                 ->with('error', 'Cannot edit event in current status.');
@@ -301,7 +299,6 @@ class EventController extends Controller
             'package_id'   => ['required', 'exists:packages,id'],
             'venue'        => ['nullable', 'string', 'max:255'],
             'theme'        => ['nullable', 'string', 'max:255'],
-            'budget'       => ['nullable', 'numeric', 'min:0'],
             'guests'       => ['nullable', 'string', 'max:5000'],
             'notes'        => ['nullable', 'string', 'max:5000'],
 
@@ -335,7 +332,11 @@ class EventController extends Controller
 
         // Track changes for notification
         $changes = [];
-        $oldInclusions = $event->inclusions->pluck('id')->toArray();
+
+        // Store old data for inclusion change detection
+        $oldInclusionIds = $event->inclusions->pluck('id')->toArray();
+        $oldInclusions = $event->inclusions; // Keep collection for detailed email
+        $oldTotal = $event->billing ? $event->billing->total_amount : 0;
 
         // Check what changed
         if ($event->name !== $data['name']) {
@@ -355,9 +356,6 @@ class EventController extends Controller
         if ($event->theme !== $data['theme']) {
             $changes[] = "Theme changed to '{$data['theme']}'";
         }
-        if ($event->budget != $data['budget']) {
-            $changes[] = "Budget updated to ₱" . number_format($data['budget'], 2);
-        }
         if ($event->guests !== $data['guests']) {
             $changes[] = "Guest details updated";
         }
@@ -372,7 +370,6 @@ class EventController extends Controller
                 'package_id'  => $data['package_id'],
                 'venue'       => $data['venue'] ?? null,
                 'theme'       => $data['theme'] ?? null,
-                'budget'      => $data['budget'] ?? null,
                 'guests'      => $data['guests'] ?? null,
                 'notes'       => $data['notes'] ?? null,
             ]);
@@ -397,26 +394,125 @@ class EventController extends Controller
 
         // Check if inclusions changed
         $newInclusions = $selectedIds->toArray();
-        $addedInclusions = array_diff($newInclusions, $oldInclusions);
-        $removedInclusions = array_diff($oldInclusions, $newInclusions);
+        $addedInclusionIds = array_diff($newInclusions, $oldInclusionIds);
+        $removedInclusionIds = array_diff($oldInclusionIds, $newInclusions);
 
-        if (!empty($addedInclusions)) {
-            $added = Inclusion::whereIn('id', $addedInclusions)->pluck('name')->toArray();
-            $changes[] = "Added inclusions: " . implode(', ', $added);
-        }
-        if (!empty($removedInclusions)) {
-            $removed = Inclusion::whereIn('id', $removedInclusions)->pluck('name')->toArray();
-            $changes[] = "Removed inclusions: " . implode(', ', $removed);
+        $inclusionsChanged = !empty($addedInclusionIds) || !empty($removedInclusionIds);
+
+        if ($inclusionsChanged) {
+            // Get full inclusion objects for detailed email
+            $addedInclusions = Inclusion::whereIn('id', $addedInclusionIds)->get();
+            $removedInclusions = $oldInclusions->filter(function ($inclusion) use ($removedInclusionIds) {
+                return in_array($inclusion->id, $removedInclusionIds);
+            });
+
+            // Add to changes array for simple notification
+            if (!empty($addedInclusionIds)) {
+                $added = $addedInclusions->pluck('name')->toArray();
+                $changes[] = "Added inclusions: " . implode(', ', $added);
+            }
+            if (!empty($removedInclusionIds)) {
+                $removed = $removedInclusions->pluck('name')->toArray();
+                $changes[] = "Removed inclusions: " . implode(', ', $removed);
+            }
+
+            // Recalculate billing when inclusions change
+            $this->recalculateBilling($event);
+
+            // Refresh event to get updated billing
+            $event->refresh();
+            $newTotal = $event->billing ? $event->billing->total_amount : 0;
+
+            // Create event progress record for inclusion changes
+            $changeDetails = [];
+            if ($addedInclusions->count() > 0) {
+                $changeDetails[] = "Added: " . implode(', ', $addedInclusions->pluck('name')->toArray());
+            }
+            if ($removedInclusions->count() > 0) {
+                $changeDetails[] = "Removed: " . implode(', ', $removedInclusions->pluck('name')->toArray());
+            }
+
+            $progressDetails = !empty($changeDetails)
+                ? "Customer updated event inclusions. " . implode(". ", $changeDetails) . ". Total amount changed from ₱" . number_format($oldTotal, 2) . " to ₱" . number_format($newTotal, 2) . "."
+                : "Customer updated event inclusions.";
+
+            \App\Models\EventProgress::create([
+                'event_id' => $event->id,
+                'status' => 'Inclusions Updated by Customer',
+                'details' => $progressDetails,
+                'progress_date' => now(),
+            ]);
+
+            // Send detailed email to admins about inclusion changes
+            $admins = \App\Models\User::where('user_type', 'admin')
+                ->where('status', 'active')
+                ->get();
+
+            foreach ($admins as $admin) {
+                // Send email notification
+                $admin->notify(new \App\Notifications\CustomerInclusionsUpdatedNotification(
+                    $event,
+                    $customer,
+                    $oldTotal,
+                    $newTotal,
+                    $addedInclusions,
+                    $removedInclusions
+                ));
+            }
+
+            // Create in-app notification for admins
+            $this->notificationService->notifyAdminCustomerInclusionsUpdated(
+                $event,
+                $customer,
+                $oldTotal,
+                $newTotal,
+                $addedInclusions,
+                $removedInclusions
+            );
         }
 
-        // Notify admin if there were changes
+        // Notify admin if there were ANY changes (including non-inclusion changes)
         if (!empty($changes)) {
             $changeMessage = implode("\n", $changes);
-            $this->notificationService->notifyAdminEventUpdated($event, $changeMessage);
+
+            // Only send regular update notification if inclusions didn't change
+            // (if inclusions changed, detailed email was already sent above)
+            if (!$inclusionsChanged) {
+                $this->notificationService->notifyAdminEventUpdated($event, $changeMessage);
+            }
         }
 
         return redirect()
             ->route('customer.events.show', $event)
-            ->with('success', 'Event updated successfully.');
+            ->with('success', 'Event updated successfully.' . ($inclusionsChanged ? ' Admin has been notified of your inclusion changes.' : ''));
+    }
+
+
+    /**
+     * Recalculate billing based on package and inclusions
+     */
+    protected function recalculateBilling(Event $event)
+    {
+        $event->load(['package', 'inclusions', 'billing']);
+
+        // Calculate total from coordination + event_styling + inclusions
+        // DO NOT use package->price as it includes base inclusions
+        $coordinationPrice = $event->package->coordination_price ?? 0;
+        $eventStylingPrice = $event->package->event_styling_price ?? 0;
+        $inclusionsTotal = $event->inclusions->sum('pivot.price_snapshot');
+
+        $newTotal = $coordinationPrice + $eventStylingPrice + $inclusionsTotal;
+
+        // Get or create billing
+        $billing = $event->billing;
+        if (!$billing) {
+            $billing = new \App\Models\Billing();
+            $billing->event_id = $event->id;
+        }
+
+        // Update billing total only
+        $billing->total_amount = $newTotal;
+
+        $billing->save();
     }
 }

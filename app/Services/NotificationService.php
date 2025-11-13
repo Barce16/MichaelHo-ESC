@@ -404,4 +404,49 @@ class NotificationService
 
         return true;
     }
+
+    /**
+     * Notify admins when customer updates their event inclusions
+     */
+    public function notifyAdminCustomerInclusionsUpdated($event, $customer, $oldTotal, $newTotal, $addedInclusions, $removedInclusions)
+    {
+        $admins = User::where('user_type', 'admin')
+            ->where('status', 'active')
+            ->get();
+
+        // Build change summary
+        $changeSummary = [];
+        if ($addedInclusions->count() > 0) {
+            $changeSummary[] = $addedInclusions->count() . " added";
+        }
+        if ($removedInclusions->count() > 0) {
+            $changeSummary[] = $removedInclusions->count() . " removed";
+        }
+
+        $changeText = !empty($changeSummary) ? implode(", ", $changeSummary) : "modified";
+
+        $totalChange = $newTotal - $oldTotal;
+        $changeAmount = $totalChange >= 0
+            ? "+₱" . number_format($totalChange, 2)
+            : "-₱" . number_format(abs($totalChange), 2);
+
+        $title = "Customer Updated Event Inclusions";
+        $message = "{$customer->customer_name} updated inclusions for '{$event->name}' ({$changeText}). " .
+            "Total changed from ₱" . number_format($oldTotal, 2) . " to ₱" . number_format($newTotal, 2) . " ({$changeAmount}).";
+
+        $actionUrl = route('admin.events.show', $event);
+
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'customer_inclusions_updated',
+                'title' => $title,
+                'message' => $message,
+                'link' => $actionUrl,
+                'is_read' => false,
+            ]);
+        }
+
+        return true;
+    }
 }
