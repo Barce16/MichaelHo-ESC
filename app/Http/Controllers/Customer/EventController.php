@@ -278,7 +278,7 @@ class EventController extends Controller
         // Get existing inclusion notes from pivot table
         $existingNotes = $event->inclusions->pluck('pivot.notes', 'id')->toArray();
 
-        return view('customers.events.edit', compact('event', 'packages', 'allInclusions', 'existingNotes'));
+        return view('customers.events.edit', compact('event', 'packages', 'allInclusions', 'existingNotes', 'customer'));
     }
 
     public function update(Request $request, Event $event)
@@ -301,6 +301,7 @@ class EventController extends Controller
             'theme'        => ['nullable', 'string', 'max:255'],
             'guests'       => ['nullable', 'string', 'max:5000'],
             'notes'        => ['nullable', 'string', 'max:5000'],
+            'phone'        => ['nullable', 'string', 'max:20'], // NEW: Phone number
 
             'inclusions'   => ['nullable', 'array'],
             'inclusions.*' => ['integer', 'exists:inclusions,id'],
@@ -338,6 +339,15 @@ class EventController extends Controller
         $oldInclusions = $event->inclusions; // Keep collection for detailed email
         $oldTotal = $event->billing ? $event->billing->total_amount : 0;
 
+        // Check if phone number changed
+        $phoneChanged = false;
+        if ($customer->phone !== $data['phone']) {
+            $phoneChanged = true;
+            $oldPhone = $customer->phone ?? 'Not set';
+            $newPhone = $data['phone'] ?? 'Not set';
+            $changes[] = "Contact number changed from '{$oldPhone}' to '{$newPhone}'";
+        }
+
         // Check what changed
         if ($event->name !== $data['name']) {
             $changes[] = "Event name changed from '{$event->name}' to '{$data['name']}'";
@@ -363,7 +373,8 @@ class EventController extends Controller
             $changes[] = "Event notes updated";
         }
 
-        DB::transaction(function () use ($event, $data, $selectedIds, $request) {
+        DB::transaction(function () use ($event, $data, $selectedIds, $request, $customer, $phoneChanged) {
+            // Update event details
             $event->update([
                 'name'        => $data['name'],
                 'event_date'  => $data['event_date'],
@@ -373,6 +384,13 @@ class EventController extends Controller
                 'guests'      => $data['guests'] ?? null,
                 'notes'       => $data['notes'] ?? null,
             ]);
+
+            // Update customer phone number if changed
+            if ($phoneChanged) {
+                $customer->update([
+                    'phone' => $data['phone']
+                ]);
+            }
 
             // Sync inclusions with price snapshots and notes
             if ($selectedIds->isNotEmpty()) {
@@ -469,6 +487,11 @@ class EventController extends Controller
                 $addedInclusions,
                 $removedInclusions
             );
+        }
+
+        // Send in-app notification if phone number changed (NO EMAIL)
+        if ($phoneChanged) {
+            $this->notificationService->notifyAdminCustomerPhoneUpdated($event, $customer, $oldPhone, $newPhone);
         }
 
         // Notify admin if there were ANY changes (including non-inclusion changes)

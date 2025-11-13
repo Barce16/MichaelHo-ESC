@@ -69,4 +69,24 @@ class NotificationController extends Controller
         // Return JSON for AJAX request
         return response()->json(['success' => true]);
     }
+
+    /**
+     * Display all notifications page
+     */
+    public function viewAll()
+    {
+        $user = Auth::user();
+
+        // Get all notifications with pagination
+        $notifications = Notification::where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        // Get unread count
+        $unreadCount = Notification::where('user_id', $user->id)
+            ->where('is_read', false)
+            ->count();
+
+        return view('notifications.all', compact('notifications', 'unreadCount'));
+    }
 }

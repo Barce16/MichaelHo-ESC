@@ -175,7 +175,7 @@
 
                             {{-- sticky footer (always visible at bottom) --}}
                             <div class="px-4 py-3 border-t border-gray-100 bg-white flex items-center justify-center">
-                                <a href="{{ route('notifications.index') }}"
+                                <a href="{{ route('notifications.all') }}"
                                     class="w-full inline-flex items-center justify-center gap-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md transition">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                                         aria-hidden="true">

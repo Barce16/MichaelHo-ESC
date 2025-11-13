@@ -113,8 +113,13 @@ Route::middleware('auth')->group(function () {
 
     // Notifications
     Route::middleware(['auth'])->group(function () {
+        // API endpoint for dropdown (returns JSON)
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+
+        Route::get('/notifications/all', [NotificationController::class, 'viewAll'])->name('notifications.all');
+
         Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
+
         Route::get('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     });
 

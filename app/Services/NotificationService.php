@@ -449,4 +449,34 @@ class NotificationService
 
         return true;
     }
+
+    /**
+     * Notify admins when customer updates their phone number
+     * (In-app notification only, no email)
+     */
+    public function notifyAdminCustomerPhoneUpdated($event, $customer, $oldPhone, $newPhone)
+    {
+        $admins = User::where('user_type', 'admin')
+            ->where('status', 'active')
+            ->get();
+
+        $title = "Customer Contact Number Updated";
+        $message = "{$customer->customer_name} updated their contact number for event '{$event->name}'. " .
+            "Changed from '{$oldPhone}' to '{$newPhone}'.";
+
+        $actionUrl = route('admin.events.show', $event);
+
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'customer_phone_updated',
+                'title' => $title,
+                'message' => $message,
+                'link' => $actionUrl,
+                'is_read' => false,
+            ]);
+        }
+
+        return true;
+    }
 }
