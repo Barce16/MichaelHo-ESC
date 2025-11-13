@@ -36,7 +36,6 @@ use App\Models\EventShowcase;
 use Illuminate\Support\Facades\Mail;
 
 
-
 Route::get('/', function () {
     // Get event showcases for display
     $eventShowcases = EventShowcase::latest()->take(6)->get();

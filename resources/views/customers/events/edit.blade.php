@@ -56,7 +56,8 @@
     <div class="py-6" x-data="editEventForm()" x-init="init()">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
-            <form method="POST" action="{{ route('customer.events.update', $event) }}" class="space-y-6">
+            <form method="POST" action="{{ route('customer.events.update', $event) }}" class="space-y-6"
+                @submit="handleSubmit($event)">
                 @csrf
                 @method('PUT')
 
@@ -206,7 +207,7 @@
                             <h4 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Additional
                                 Details</h4>
                             <div class="space-y-4">
-                                {{-- Guests --}}
+                                {{-- Guest Count --}}
                                 <div>
                                     <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
@@ -214,11 +215,12 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                         </svg>
-                                        Guest Details
+                                        Guest Count
                                     </label>
-                                    <textarea name="guests" id="guests" rows="4"
-                                        class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition resize-none"
-                                        placeholder="Guest count, names, or special requirements...">{{ old('guests', $event->guests) }}</textarea>
+                                    <input type="number" name="guests" id="guests" min="1"
+                                        value="{{ old('guests', $event->guests) }}"
+                                        class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
+                                        placeholder="e.g., 50">
                                     @error('guests')
                                     <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
                                     @enderror
@@ -450,6 +452,211 @@
                 </div>
             </form>
         </div>
+
+        {{-- Confirmation Modal --}}
+        <div x-show="showConfirmModal" x-cloak @keydown.escape.window="showConfirmModal = false"
+            class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+
+            {{-- Backdrop --}}
+            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" x-show="showConfirmModal"
+                x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                @click="showConfirmModal = false">
+            </div>
+
+            {{-- Modal Content --}}
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl transform transition-all"
+                    x-show="showConfirmModal" x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" @click.stop>
+
+                    {{-- Header --}}
+                    <div class="bg-gradient-to-r from-violet-500 to-purple-600 px-6 py-5 rounded-t-2xl">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-white">Confirm Changes</h3>
+                                    <p class="text-sm text-violet-100">Review your inclusion changes</p>
+                                </div>
+                            </div>
+                            <button @click="showConfirmModal = false" class="text-white/80 hover:text-white transition">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Body --}}
+                    <div class="px-6 py-6 max-h-[60vh] overflow-y-auto">
+
+                        {{-- Changes Summary --}}
+                        <div class="space-y-4 mb-6">
+
+                            {{-- Added Inclusions --}}
+                            <div x-show="changesSummary.added.length > 0"
+                                class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <div class="flex items-start gap-3">
+                                    <div
+                                        class="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold text-green-900 mb-2">Added Inclusions</h4>
+                                        <ul class="space-y-2">
+                                            <template x-for="item in changesSummary.added" :key="item.id">
+                                                <li class="flex items-center justify-between text-sm">
+                                                    <span class="text-green-800" x-text="item.name"></span>
+                                                    <span class="font-semibold text-green-700">+₱<span
+                                                            x-text="fmt(item.price)"></span></span>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Removed Inclusions --}}
+                            <div x-show="changesSummary.removed.length > 0"
+                                class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div class="flex items-start gap-3">
+                                    <div
+                                        class="flex-shrink-0 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M20 12H4" />
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold text-red-900 mb-2">Removed Inclusions</h4>
+                                        <ul class="space-y-2">
+                                            <template x-for="item in changesSummary.removed" :key="item.id">
+                                                <li class="flex items-center justify-between text-sm">
+                                                    <span class="text-red-800" x-text="item.name"></span>
+                                                    <span class="font-semibold text-red-700">-₱<span
+                                                            x-text="fmt(item.price)"></span></span>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- No Changes Message --}}
+                            <div x-show="changesSummary.added.length === 0 && changesSummary.removed.length === 0"
+                                class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <p class="text-sm text-gray-600">No inclusion changes detected</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Billing Summary --}}
+                        <div
+                            class="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-5 border border-violet-200">
+                            <h4 class="font-semibold text-violet-900 mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                Billing Summary
+                            </h4>
+
+                            <div class="space-y-3">
+                                {{-- Old Total --}}
+                                <div class="flex items-center justify-between pb-3 border-b border-violet-200">
+                                    <span class="text-sm text-violet-700">Current Total</span>
+                                    <span class="text-lg font-bold text-violet-900">₱<span
+                                            x-text="fmt(changesSummary.oldTotal)"></span></span>
+                                </div>
+
+                                {{-- New Total --}}
+                                <div class="flex items-center justify-between pb-3 border-b border-violet-200">
+                                    <span class="text-sm text-violet-700">New Total</span>
+                                    <span class="text-lg font-bold text-violet-900">₱<span
+                                            x-text="fmt(changesSummary.newTotal)"></span></span>
+                                </div>
+
+                                {{-- Difference --}}
+                                <div class="flex items-center justify-between pt-2">
+                                    <span class="text-sm font-semibold text-violet-900">Difference</span>
+                                    <div class="flex items-center gap-2">
+                                        <template x-if="changesSummary.difference > 0">
+                                            <span class="text-xl font-bold text-red-600">
+                                                +₱<span x-text="fmt(changesSummary.difference)"></span>
+                                            </span>
+                                        </template>
+                                        <template x-if="changesSummary.difference < 0">
+                                            <span class="text-xl font-bold text-green-600">
+                                                -₱<span x-text="fmt(Math.abs(changesSummary.difference))"></span>
+                                            </span>
+                                        </template>
+                                        <template x-if="changesSummary.difference === 0">
+                                            <span class="text-xl font-bold text-gray-600">
+                                                ₱0.00
+                                            </span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Warning Message --}}
+                        <div class="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                            <div class="flex gap-3">
+                                <svg class="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-medium text-amber-900 mb-1">Important Notice</p>
+                                    <p class="text-sm text-amber-800">
+                                        Admin will be notified of these changes. Your billing total will be updated
+                                        accordingly.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Footer --}}
+                    <div class="bg-gray-50 px-6 py-4 rounded-b-2xl flex items-center justify-end gap-3">
+                        <button type="button" @click="showConfirmModal = false"
+                            class="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition">
+                            Cancel
+                        </button>
+                        <button type="button" @click="confirmAndSubmit()"
+                            class="px-5 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold rounded-lg hover:from-violet-600 hover:to-purple-700 transition shadow-md hover:shadow-lg">
+                            Confirm Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <style>
@@ -459,6 +666,10 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
 
     <script>
@@ -467,6 +678,10 @@
     const oldSelections = @json(old('inclusions', [])) || [];
     const eventSelections = @json($event->inclusions->pluck('id')->toArray());
     const existingNotes = @json($existingNotes ?? []);
+    
+    // Store original event data for comparison
+    const originalInclusions = new Set(eventSelections);
+    const originalTotal = @json($event->billing ? $event->billing->total_amount : 0);
 
     return {
         selectedPackage: initialPkg,
@@ -477,6 +692,15 @@
         allCategories: [],
         activeTab: '',
         inclusionNotes: {},
+        showConfirmModal: false,
+        changesSummary: {
+            added: [],
+            removed: [],
+            oldTotal: 0,
+            newTotal: 0,
+            difference: 0
+        },
+        formSubmitted: false,
 
         fmt(n){
             return Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -570,6 +794,87 @@
             return this.inclusionsSubtotal() + coord + styl;
         },
 
+        detectChanges() {
+            // Get added inclusions
+            const added = [];
+            this.selectedIncs.forEach(incId => {
+                if (!originalInclusions.has(incId)) {
+                    this.categories.forEach(cat => {
+                        const item = cat.items.find(i => i.id === incId);
+                        if (item) {
+                            added.push({
+                                id: item.id,
+                                name: item.name,
+                                price: item.price
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Get removed inclusions
+            const removed = [];
+            originalInclusions.forEach(incId => {
+                if (!this.selectedIncs.has(incId)) {
+                    this.categories.forEach(cat => {
+                        const item = cat.items.find(i => i.id === incId);
+                        if (item) {
+                            removed.push({
+                                id: item.id,
+                                name: item.name,
+                                price: item.price
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Calculate totals
+            const newTotal = this.grandTotal();
+            const difference = newTotal - originalTotal;
+
+            this.changesSummary = {
+                added,
+                removed,
+                oldTotal: originalTotal,
+                newTotal: newTotal,
+                difference: difference
+            };
+
+            return added.length > 0 || removed.length > 0;
+        },
+
+        handleSubmit(event) {
+            event.preventDefault();
+            
+            // If already confirmed, proceed with submission
+            if (this.formSubmitted) {
+                event.target.submit();
+                return;
+            }
+
+            // Check if inclusions changed
+            const hasChanges = this.detectChanges();
+            
+            if (hasChanges) {
+                // Show confirmation modal
+                this.showConfirmModal = true;
+            } else {
+                // No changes, submit directly
+                event.target.submit();
+            }
+        },
+
+        confirmAndSubmit() {
+            this.formSubmitted = true;
+            this.showConfirmModal = false;
+            
+            // Submit the form
+            this.$nextTick(() => {
+                document.querySelector('form').submit();
+            });
+        },
+
         init() {
             // Load existing notes into inclusionNotes
             Object.keys(existingNotes).forEach(id => {
@@ -578,6 +883,12 @@
             
             if (this.selectedPackage) {
                 this.loadPackage(this.selectedPackage);
+            }
+
+            // Attach submit handler to form
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', (e) => this.handleSubmit(e));
             }
         }
     }
