@@ -80,7 +80,7 @@
                                 Information</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {{-- Event Name --}}
-                                <div class="md:col-span-2">
+                                <div>
                                     <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
@@ -99,7 +99,7 @@
                                 </div>
 
                                 {{-- Contact Number --}}
-                                <div class="md:col-span-2">
+                                <div>
                                     <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
@@ -112,9 +112,6 @@
                                         value="{{ old('phone', $customer->phone) }}"
                                         class="block w-full px-4 py-3 rounded-lg border-[1px] border-gray-300 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 transition"
                                         placeholder="e.g., 09171234567">
-                                    <p class="mt-1 text-xs text-gray-500">
-                                        This will update your contact information for this event.
-                                    </p>
                                     @error('phone')
                                     <p class="mt-1 text-sm text-rose-600">{{ $message }}</p>
                                     @enderror
