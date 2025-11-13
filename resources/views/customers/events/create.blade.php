@@ -472,6 +472,126 @@ window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $
                     </button>
                 </div>
             </form>
+            <div x-show="showConfirmModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto"
+                x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+                <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:p-0">
+                    {{-- Background overlay --}}
+                    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                        @click="showConfirmModal = false"></div>
+
+                    {{-- Modal panel --}}
+                    <div class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full"
+                        x-transition:enter="ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave="ease-in duration-200"
+                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+
+                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <div class="sm:flex sm:items-start">
+                                <div
+                                    class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-violet-100 sm:mx-0 sm:h-10 sm:w-10">
+                                    <svg class="h-6 w-6 text-violet-600" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                        Confirm Event Request
+                                    </h3>
+                                    <div class="mt-4">
+                                        <p class="text-sm text-gray-500 mb-4">
+                                            Please review your event details before submitting:
+                                        </p>
+
+                                        {{-- Event Summary --}}
+                                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                                            <h4 class="text-sm font-semibold text-gray-700 mb-2">Event Information</h4>
+                                            <div class="text-sm text-gray-600 space-y-1">
+                                                <p><strong>Package:</strong> <span
+                                                        x-text="pkg?.name || 'Not selected'"></span></p>
+                                                <p><strong>Selected Inclusions:</strong> <span
+                                                        x-text="selectedIncs.size"></span> items</p>
+                                            </div>
+                                        </div>
+
+                                        {{-- Selected Inclusions --}}
+                                        <div class="max-h-60 overflow-y-auto mb-4">
+                                            <h4 class="text-sm font-semibold text-gray-700 mb-2">Selected Inclusions:
+                                            </h4>
+                                            <ul class="space-y-2">
+                                                <template x-for="cat in categories" :key="cat.category">
+                                                    <template x-for="item in cat.items" :key="item.id">
+                                                        <li x-show="selectedIncs.has(item.id)"
+                                                            class="flex justify-between items-center text-sm bg-white p-2 rounded border border-gray-200">
+                                                            <span x-text="item.name" class="text-gray-700"></span>
+                                                            <span class="font-medium text-violet-600">
+                                                                ₱<span
+                                                                    x-text="Number(item.price).toLocaleString()"></span>
+                                                            </span>
+                                                        </li>
+                                                    </template>
+                                                </template>
+                                            </ul>
+                                        </div>
+
+                                        {{-- Price Breakdown --}}
+                                        <div
+                                            class="bg-gradient-to-r from-violet-50 to-purple-50 rounded-lg p-4 border border-violet-200">
+                                            <h4 class="text-sm font-semibold text-gray-800 mb-3">Price Breakdown</h4>
+                                            <div class="space-y-2 text-sm">
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Inclusions Subtotal:</span>
+                                                    <span class="font-medium">₱<span
+                                                            x-text="inclusionsSubtotal().toLocaleString()"></span></span>
+                                                </div>
+                                                <div class="flex justify-between"
+                                                    x-show="pkg && pkg.coordination_price">
+                                                    <span class="text-gray-600">Event Coordination:</span>
+                                                    <span class="font-medium">₱<span
+                                                            x-text="Number(pkg?.coordination_price || 0).toLocaleString()"></span></span>
+                                                </div>
+                                                <div class="flex justify-between"
+                                                    x-show="pkg && pkg.event_styling_price">
+                                                    <span class="text-gray-600">Event Styling:</span>
+                                                    <span class="font-medium">₱<span
+                                                            x-text="Number(pkg?.event_styling_price || 0).toLocaleString()"></span></span>
+                                                </div>
+                                                <div class="border-t-2 border-violet-300 pt-2 flex justify-between">
+                                                    <span class="font-bold text-gray-900">Grand Total:</span>
+                                                    <span class="font-bold text-violet-600 text-lg">₱<span
+                                                            x-text="grandTotal().toLocaleString()"></span></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <p class="mt-4 text-xs text-gray-500">
+                                            * This is an estimate. Final pricing will be confirmed after admin approval.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                            <button type="button" @click="confirmAndSubmit()"
+                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-violet-600 text-base font-medium text-white hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                Confirm & Submit Request
+                            </button>
+                            <button type="button" @click="showConfirmModal = false"
+                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                Go Back & Edit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -481,6 +601,10 @@ window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+        }
+
+        [x-cloak] {
+            display: none !important;
         }
     </style>
     <script>
@@ -497,6 +621,8 @@ window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $
         categories: [],
         allCategories: [], // Store all categories
         activeTab: '', // Track active tab
+        showConfirmModal: false,
+        formSubmitted: false,
 
         fmt(n){
             return Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -582,9 +708,59 @@ window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $
             return this.inclusionsSubtotal() + coord + styl;
         },
 
-        init(){
+        handleSubmit(event) {
+        event.preventDefault();
+        
+        // If already confirmed, let form submit
+        if (this.formSubmitted) {
+            return true;
+        }
+
+        // Check if package is selected
+        if (!this.selectedPackage) {
+            alert('Please select a package first.');
+            return false;
+        }
+
+        // Check if at least one inclusion is selected
+        if (this.selectedIncs.size === 0) {
+            alert('Please select at least one inclusion.');
+            return false;
+        }
+
+        // Show confirmation modal
+        this.showConfirmModal = true;
+        return false;
+    },
+
+    confirmAndSubmit() {
+        this.formSubmitted = true;
+        this.showConfirmModal = false;
+        
+        // Submit the form
+        const form = document.getElementById('eventCreateForm');
+        if (form) {
+            form.submit();
+        }
+    },
+
+    
+
+    init(){
             if (this.selectedPackage) {
                 this.loadPackage(this.selectedPackage);
+            }
+
+            // 🆕 ADD THIS SECTION:
+            const form = document.getElementById('eventCreateForm');
+            if (form) {
+                form.onsubmit = (e) => {
+                    if (!this.handleSubmit(e)) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    return true;
+                };
             }
         }
     }

@@ -94,6 +94,84 @@
                 </div>
             </div>
 
+            @if($event->hasPendingChangeRequest())
+            @php
+            $changeRequest = $event->pendingChangeRequest;
+            @endphp
+
+            <div class="bg-amber-50 border-l-4 border-amber-400 p-6 rounded-lg shadow-sm mb-6">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-4 flex-1">
+                        <h3 class="text-lg font-semibold text-amber-800 mb-2">
+                            Inclusion Changes Pending Approval
+                        </h3>
+                        <p class="text-sm text-amber-700 mb-4">
+                            You have requested changes to your event inclusions. The admin will review your request
+                            shortly.
+                        </p>
+
+                        {{-- Change Summary --}}
+                        <div class="bg-white rounded-lg p-4 space-y-3">
+                            @if(count($changeRequest->getAddedInclusions()) > 0)
+                            <div>
+                                <h4 class="text-sm font-semibold text-green-900 mb-2">Added Inclusions:</h4>
+                                <ul class="space-y-1">
+                                    @foreach($changeRequest->getAddedInclusions() as $inc)
+                                    <li class="text-sm text-green-800 flex items-center justify-between">
+                                        <span>{{ $inc['name'] }}</span>
+                                        <span class="font-semibold">+₱{{ number_format($inc['price'], 2) }}</span>
+                                    </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                            @endif
+
+                            @if(count($changeRequest->getRemovedInclusions()) > 0)
+                            <div>
+                                <h4 class="text-sm font-semibold text-red-900 mb-2">Removed Inclusions:</h4>
+                                <ul class="space-y-1">
+                                    @foreach($changeRequest->getRemovedInclusions() as $inc)
+                                    <li class="text-sm text-red-800 flex items-center justify-between">
+                                        <span>{{ $inc['name'] }}</span>
+                                        <span class="font-semibold">-₱{{ number_format($inc['price'], 2) }}</span>
+                                    </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                            @endif
+
+                            <div class="border-t border-gray-200 pt-3 mt-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-semibold text-gray-900">Total Change:</span>
+                                    <span
+                                        class="text-lg font-bold {{ $changeRequest->difference > 0 ? 'text-red-600' : ($changeRequest->difference < 0 ? 'text-green-600' : 'text-gray-600') }}">
+                                        @if($changeRequest->difference > 0)
+                                        +₱{{ number_format($changeRequest->difference, 2) }}
+                                        @elseif($changeRequest->difference < 0) -₱{{ number_format(abs($changeRequest->
+                                            difference), 2) }}
+                                            @else
+                                            ₱0.00
+                                            @endif
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-amber-600 mt-3">
+                            <strong>Note:</strong> Your current event details show the previous inclusions until this
+                            request is approved.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             {{-- ========================================
             PAYMENT ACTION ALERTS (Organized by Status)
             ======================================== --}}

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Notification;
 use App\Models\User;
 use App\Models\Event;
+use App\Models\InclusionChangeRequest;
 use App\Models\Payment;
 
 class NotificationService
@@ -478,5 +479,102 @@ class NotificationService
         }
 
         return true;
+    }
+    /**
+     * Notify admins about new or updated inclusion change request (IN-APP ONLY)
+     */
+    public function notifyAdminsInclusionChangeRequest(InclusionChangeRequest $changeRequest, bool $isUpdate = false): void
+    {
+        // Get all active admin users
+        $admins = User::where('user_type', 'admin')
+            ->where('status', 'active')
+            ->get();
+
+        $event = $changeRequest->event;
+        $customer = $changeRequest->customer;
+
+        // Count added and removed inclusions
+        $addedCount = count($changeRequest->getAddedInclusions());
+        $removedCount = count($changeRequest->getRemovedInclusions());
+
+        // Calculate price difference
+        $difference = $changeRequest->difference;
+        $differenceText = $difference > 0
+            ? '+₱' . number_format($difference, 2)
+            : ($difference < 0
+                ? '-₱' . number_format(abs($difference), 2)
+                : '₱0.00');
+
+        // Build notification title and message
+        $title = $isUpdate ? 'Inclusion Change Request Updated' : 'New Inclusion Change Request';
+
+        $message = "{$customer->customer_name} " . ($isUpdate ? 'updated' : 'submitted') .
+            " inclusion changes for '{$event->name}'. " .
+            "Changes: +{$addedCount} / -{$removedCount} items ({$differenceText})";
+
+        $actionUrl = route('admin.change-requests.show', $changeRequest);
+
+        // Create in-app notification for each admin
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'inclusion_change_request',
+                'title' => $title,
+                'message' => $message,
+                'link' => $actionUrl,
+                'is_read' => false,
+            ]);
+        }
+    }
+
+    /**
+     * Notify customer that their change request was approved (IN-APP ONLY)
+     */
+    public function notifyCustomerChangeRequestApproved(InclusionChangeRequest $changeRequest): void
+    {
+        $event = $changeRequest->event;
+        $customer = $changeRequest->customer;
+        $user = $customer->user;
+
+        if (!$user) return;
+
+        $difference = $changeRequest->difference;
+        $differenceText = $difference > 0
+            ? '+₱' . number_format($difference, 2)
+            : ($difference < 0
+                ? '-₱' . number_format(abs($difference), 2)
+                : 'No change');
+
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => 'change_request_approved',
+            'title' => 'Inclusion Change Request Approved',
+            'message' => "Your inclusion changes for '{$event->name}' have been approved. New total: ₱" . number_format($changeRequest->new_total, 2) . " ({$differenceText})",
+            'link' => route('customer.events.show', $event),
+            'is_read' => false,
+        ]);
+    }
+
+    /**
+     * Notify customer that their change request was rejected (IN-APP ONLY)
+     */
+    public function notifyCustomerChangeRequestRejected(InclusionChangeRequest $changeRequest): void
+    {
+        $event = $changeRequest->event;
+        $customer = $changeRequest->customer;
+        $user = $customer->user;
+
+        if (!$user) return;
+
+        $reason = $changeRequest->admin_notes ?? 'No reason provided';
+
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => 'change_request_rejected',
+            'title' => 'Inclusion Change Request Rejected',
+            'message' => "Your inclusion changes for '{$event->name}' were not approved. Reason: {$reason}",
+            'link' => route('customer.events.show', $event),
+            'is_read' => false,
+        ]);
     }
 }

@@ -8,11 +8,11 @@ use App\Models\Package;
 use App\Models\Inclusion;
 use App\Models\Payment;
 use App\Models\Customer;
+use App\Models\InclusionChangeRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Services\NotificationService;
-
 
 class EventController extends Controller
 {
@@ -206,40 +206,44 @@ class EventController extends Controller
             ->first();
 
         // approved sums
-        $totalPaid = (float) $payments->where('status', Payment::STATUS_APPROVED)->sum('amount');
-
-        // remaining
-        $remainingBalance = max(0, $grandTotal - $totalPaid);
-
-        // intro/downpayment specifics
-        $introAmount = 5000;
-        $introPaid = (float) $payments->where('payment_type', Payment::TYPE_INTRODUCTORY)
+        $approvedIntroPayments = $payments->where('payment_type', Payment::TYPE_INTRODUCTORY)
             ->where('status', Payment::STATUS_APPROVED)
             ->sum('amount');
 
-        $requiredDownpayment = $event->billing->downpayment_amount ?? 0;
-        $requiredDownpaymentAfterIntro = max(0, $requiredDownpayment - $introPaid);
-
-        $downpaymentPaid = (float) $payments->where('payment_type', Payment::TYPE_DOWNPAYMENT)
+        $approvedDownpayments = $payments->where('payment_type', Payment::TYPE_DOWNPAYMENT)
             ->where('status', Payment::STATUS_APPROVED)
             ->sum('amount');
 
-        $downpaymentRemaining = max(0, $requiredDownpaymentAfterIntro - $downpaymentPaid);
+        $approvedBalancePayments = $payments->where('payment_type', Payment::TYPE_BALANCE)
+            ->where('status', Payment::STATUS_APPROVED)
+            ->sum('amount');
 
-        // flags
-        $isDownpaymentPaid = $event->hasDownpaymentPaid() || ($downpaymentPaid >= $requiredDownpaymentAfterIntro && $requiredDownpaymentAfterIntro > 0);
-        $canPayBalance = $isDownpaymentPaid && $event->billing && $remainingBalance > 0;
+        $totalPaid = $approvedIntroPayments + $approvedDownpayments + $approvedBalancePayments;
 
-        // view
+        // balance calculation
+        $remainingBalance = $grandTotal - $totalPaid;
+
+        // payment checks
+        $canPayIntro = $event->isReadyForIntroPayment();
+        $isIntroPaid = ($approvedIntroPayments > 0);
+        $canPayDownpayment = $event->isReadyForDownpayment() && $isIntroPaid;
+        $isDownpaymentPaid = ($approvedDownpayments > 0);
+        $canPayBalance = $isIntroPaid && $isDownpaymentPaid && $remainingBalance > 0;
+
+        // progress
+        $progress = $event->progress()->orderBy('progress_date', 'desc')->get();
+
         return view('customers.events.show', compact(
             'event',
+            'payments',
             'pendingIntroPayment',
             'pendingDownpayment',
-            'introAmount',
-            'downpaymentRemaining',
-            'downpaymentPaid',
-            'requiredDownpayment',
-            'requiredDownpaymentAfterIntro',
+            'approvedIntroPayments',
+            'approvedDownpayments',
+            'approvedBalancePayments',
+            'canPayIntro',
+            'isIntroPaid',
+            'canPayDownpayment',
             'isDownpaymentPaid',
             'canPayBalance',
             'incSubtotal',
@@ -283,15 +287,9 @@ class EventController extends Controller
 
     public function update(Request $request, Event $event)
     {
+        // Ensure customer owns this event
         $customer = $request->user()->customer;
         abort_if(!$customer || $event->customer_id !== $customer->id, 403);
-
-        // Can only edit if status is requested, request_meeting, or meeting
-        if (in_array($event->status, [Event::STATUS_REJECTED, Event::STATUS_COMPLETED])) {
-            return redirect()
-                ->route('customer.events.show', $event)
-                ->with('error', 'Cannot edit event in current status.');
-        }
 
         $data = $request->validate([
             'name'         => ['required', 'string', 'max:150'],
@@ -299,243 +297,165 @@ class EventController extends Controller
             'package_id'   => ['required', 'exists:packages,id'],
             'venue'        => ['nullable', 'string', 'max:255'],
             'theme'        => ['nullable', 'string', 'max:255'],
-            'guests'       => ['nullable', 'string', 'max:5000'],
+            'guests'       => ['nullable', 'integer', 'min:1'],
             'notes'        => ['nullable', 'string', 'max:5000'],
-            'phone'        => ['nullable', 'string', 'max:20'], // NEW: Phone number
-
             'inclusions'   => ['nullable', 'array'],
             'inclusions.*' => ['integer', 'exists:inclusions,id'],
-
             'inclusion_notes' => ['nullable', 'array'],
             'inclusion_notes.*' => ['nullable', 'string', 'max:500'],
         ]);
 
         $package = Package::findOrFail($data['package_id']);
 
-        // Get selected inclusions
-        $selectedIds = collect($request->input('inclusions', []))
+        // Get current inclusions
+        $currentInclusionIds = $event->inclusions->pluck('id')->sort()->values();
+
+        // Get new inclusions
+        $newInclusionIds = collect($request->input('inclusions', []))
             ->map(fn($id) => (int) $id)
             ->filter()
             ->unique()
+            ->sort()
             ->values();
 
-        // Validate that all selected inclusions are active
-        $validInclusions = Inclusion::where('is_active', true)
-            ->whereIn('id', $selectedIds)
-            ->pluck('id');
+        // Check if inclusions changed - Using Laravel-compatible comparison
+        // Convert collections to arrays and compare
+        $currentArray = $currentInclusionIds->toArray();
+        $newArray = $newInclusionIds->toArray();
 
-        $invalid = $selectedIds->diff($validInclusions);
-        if ($invalid->isNotEmpty()) {
-            return back()
-                ->withErrors(['inclusions' => 'Some selected inclusions are not available.'])
-                ->withInput();
-        }
-
-        // Track changes for notification
-        $changes = [];
-
-        // Store old data for inclusion change detection
-        $oldInclusionIds = $event->inclusions->pluck('id')->toArray();
-        $oldInclusions = $event->inclusions; // Keep collection for detailed email
-        $oldTotal = $event->billing ? $event->billing->total_amount : 0;
-
-        // Check if phone number changed
-        $phoneChanged = false;
-        if ($customer->phone !== $data['phone']) {
-            $phoneChanged = true;
-            $oldPhone = $customer->phone ?? 'Not set';
-            $newPhone = $data['phone'] ?? 'Not set';
-            $changes[] = "Contact number changed from '{$oldPhone}' to '{$newPhone}'";
-        }
-
-        // Check what changed
-        if ($event->name !== $data['name']) {
-            $changes[] = "Event name changed from '{$event->name}' to '{$data['name']}'";
-        }
-        if ($event->event_date->format('Y-m-d') !== $data['event_date']) {
-            $changes[] = "Event date changed from {$event->event_date->format('M d, Y')} to " . date('M d, Y', strtotime($data['event_date']));
-        }
-        if ($event->package_id != $data['package_id']) {
-            $oldPackage = Package::find($event->package_id);
-            $newPackage = Package::find($data['package_id']);
-            $changes[] = "Package changed from '{$oldPackage->name}' to '{$newPackage->name}'";
-        }
-        if ($event->venue !== $data['venue']) {
-            $changes[] = "Venue changed to '{$data['venue']}'";
-        }
-        if ($event->theme !== $data['theme']) {
-            $changes[] = "Theme changed to '{$data['theme']}'";
-        }
-        if ($event->guests !== $data['guests']) {
-            $changes[] = "Guest details updated";
-        }
-        if ($event->notes !== $data['notes']) {
-            $changes[] = "Event notes updated";
-        }
-
-        DB::transaction(function () use ($event, $data, $selectedIds, $request, $customer, $phoneChanged) {
-            // Update event details
-            $event->update([
-                'name'        => $data['name'],
-                'event_date'  => $data['event_date'],
-                'package_id'  => $data['package_id'],
-                'venue'       => $data['venue'] ?? null,
-                'theme'       => $data['theme'] ?? null,
-                'guests'      => $data['guests'] ?? null,
-                'notes'       => $data['notes'] ?? null,
-            ]);
-
-            // Update customer phone number if changed
-            if ($phoneChanged) {
-                $customer->update([
-                    'phone' => $data['phone']
-                ]);
-            }
-
-            // Sync inclusions with price snapshots and notes
-            if ($selectedIds->isNotEmpty()) {
-                $inclusionPrices = Inclusion::whereIn('id', $selectedIds)->pluck('price', 'id');
-                $inclusionNotes = $request->input('inclusion_notes', []);
-
-                $attach = [];
-                foreach ($selectedIds as $incId) {
-                    $attach[$incId] = [
-                        'price_snapshot' => (float) ($inclusionPrices[$incId] ?? 0),
-                        'notes' => $inclusionNotes[$incId] ?? null,
-                    ];
-                }
-                $event->inclusions()->sync($attach);
-            } else {
-                $event->inclusions()->detach();
-            }
-        });
-
-        // Check if inclusions changed
-        $newInclusions = $selectedIds->toArray();
-        $addedInclusionIds = array_diff($newInclusions, $oldInclusionIds);
-        $removedInclusionIds = array_diff($oldInclusionIds, $newInclusions);
-
-        $inclusionsChanged = !empty($addedInclusionIds) || !empty($removedInclusionIds);
+        // Check if arrays are different
+        $inclusionsChanged = (count($currentArray) !== count($newArray)) ||
+            (count(array_diff($currentArray, $newArray)) > 0) ||
+            (count(array_diff($newArray, $currentArray)) > 0);
 
         if ($inclusionsChanged) {
-            // Get full inclusion objects for detailed email
-            $addedInclusions = Inclusion::whereIn('id', $addedInclusionIds)->get();
-            $removedInclusions = $oldInclusions->filter(function ($inclusion) use ($removedInclusionIds) {
-                return in_array($inclusion->id, $removedInclusionIds);
-            });
+            // Create change request instead of updating directly
+            return $this->createChangeRequest($event, $customer, $package, $currentInclusionIds, $newInclusionIds, $request->input('inclusion_notes', []), $data);
+        }
 
-            // Add to changes array for simple notification
-            if (!empty($addedInclusionIds)) {
-                $added = $addedInclusions->pluck('name')->toArray();
-                $changes[] = "Added inclusions: " . implode(', ', $added);
-            }
-            if (!empty($removedInclusionIds)) {
-                $removed = $removedInclusions->pluck('name')->toArray();
-                $changes[] = "Removed inclusions: " . implode(', ', $removed);
-            }
+        // No inclusion changes - update event normally
+        $event->update([
+            'name'        => $data['name'],
+            'event_date'  => $data['event_date'],
+            'package_id'  => $data['package_id'],
+            'venue'       => $data['venue'] ?? null,
+            'theme'       => $data['theme'] ?? null,
+            'guests'      => $data['guests'] ?? null,
+            'notes'       => $data['notes'] ?? null,
+        ]);
 
-            // Recalculate billing when inclusions change
-            $this->recalculateBilling($event);
+        return redirect()
+            ->route('customer.events.show', $event)
+            ->with('success', 'Event updated successfully.');
+    }
 
-            // Refresh event to get updated billing
-            $event->refresh();
-            $newTotal = $event->billing ? $event->billing->total_amount : 0;
+    protected function createChangeRequest($event, $customer, $package, $currentInclusionIds, $newInclusionIds, $inclusionNotes, $eventData)
+    {
+        // Get current inclusions with details
+        $currentInclusions = Inclusion::whereIn('id', $currentInclusionIds)
+            ->get()
+            ->map(fn($inc) => [
+                'id' => $inc->id,
+                'name' => $inc->name,
+                'price' => (float) $inc->price,
+                'category' => $inc->category,
+            ])
+            ->toArray();
 
-            // Create event progress record for inclusion changes
-            $changeDetails = [];
-            if ($addedInclusions->count() > 0) {
-                $changeDetails[] = "Added: " . implode(', ', $addedInclusions->pluck('name')->toArray());
-            }
-            if ($removedInclusions->count() > 0) {
-                $changeDetails[] = "Removed: " . implode(', ', $removedInclusions->pluck('name')->toArray());
-            }
+        // Get new inclusions with details
+        $newInclusions = Inclusion::whereIn('id', $newInclusionIds)
+            ->get()
+            ->map(fn($inc) => [
+                'id' => $inc->id,
+                'name' => $inc->name,
+                'price' => (float) $inc->price,
+                'category' => $inc->category,
+            ])
+            ->toArray();
 
-            $progressDetails = !empty($changeDetails)
-                ? "Customer updated event inclusions. " . implode(". ", $changeDetails) . ". Total amount changed from ₱" . number_format($oldTotal, 2) . " to ₱" . number_format($newTotal, 2) . "."
-                : "Customer updated event inclusions.";
+        // Calculate totals
+        $coordination = (float) ($package->coordination_price ?? 25000);
+        $styling = (float) ($package->event_styling_price ?? 55000);
 
-            \App\Models\EventProgress::create([
-                'event_id' => $event->id,
-                'status' => 'Inclusions Updated by Customer',
-                'details' => $progressDetails,
-                'progress_date' => now(),
+        $oldInclusionsTotal = collect($currentInclusions)->sum('price');
+        $oldTotal = $oldInclusionsTotal + $coordination + $styling;
+
+        $newInclusionsTotal = collect($newInclusions)->sum('price');
+        $newTotal = $newInclusionsTotal + $coordination + $styling;
+
+        $difference = $newTotal - $oldTotal;
+
+        // Check if there's already a pending change request
+        $existingRequest = InclusionChangeRequest::where('event_id', $event->id)
+            ->where('status', InclusionChangeRequest::STATUS_PENDING)
+            ->first();
+
+        if ($existingRequest) {
+            // Update existing pending request
+            $existingRequest->update([
+                'new_inclusions' => $newInclusions,
+                'inclusion_notes' => $inclusionNotes,
+                'new_total' => $newTotal,
+                'difference' => $difference,
             ]);
 
-            // Send detailed email to admins about inclusion changes
+            // 🔔 NOTIFY ADMINS - Request Updated
+            // 1. Send email notification
             $admins = \App\Models\User::where('user_type', 'admin')
                 ->where('status', 'active')
                 ->get();
 
             foreach ($admins as $admin) {
-                // Send email notification
-                $admin->notify(new \App\Notifications\CustomerInclusionsUpdatedNotification(
-                    $event,
-                    $customer,
-                    $oldTotal,
-                    $newTotal,
-                    $addedInclusions,
-                    $removedInclusions
-                ));
+                $admin->notify(new \App\Notifications\InclusionChangeRequestNotification($existingRequest, true));
             }
 
-            // Create in-app notification for admins
-            $this->notificationService->notifyAdminCustomerInclusionsUpdated(
-                $event,
-                $customer,
-                $oldTotal,
-                $newTotal,
-                $addedInclusions,
-                $removedInclusions
-            );
+            // 2. Create in-app notification
+            $this->notificationService->notifyAdminsInclusionChangeRequest($existingRequest, true);
+
+            return redirect()
+                ->route('customer.events.show', $event)
+                ->with('info', 'Your previous change request has been updated and is awaiting admin approval.');
         }
 
-        // Send in-app notification if phone number changed (NO EMAIL)
-        if ($phoneChanged) {
-            $this->notificationService->notifyAdminCustomerPhoneUpdated($event, $customer, $oldPhone, $newPhone);
+        // Create new change request
+        $changeRequest = InclusionChangeRequest::create([
+            'event_id' => $event->id,
+            'customer_id' => $customer->id,
+            'old_inclusions' => $currentInclusions,
+            'new_inclusions' => $newInclusions,
+            'inclusion_notes' => $inclusionNotes,
+            'old_total' => $oldTotal,
+            'new_total' => $newTotal,
+            'difference' => $difference,
+            'status' => InclusionChangeRequest::STATUS_PENDING,
+        ]);
+
+        // Update non-inclusion fields
+        $event->update([
+            'name' => $eventData['name'],
+            'event_date' => $eventData['event_date'],
+            'package_id' => $eventData['package_id'],
+            'venue' => $eventData['venue'] ?? null,
+            'theme' => $eventData['theme'] ?? null,
+            'guests' => $eventData['guests'] ?? null,
+            'notes' => $eventData['notes'] ?? null,
+        ]);
+
+        // 🔔 NOTIFY ADMINS - New Request
+        // 1. Send email notification
+        $admins = \App\Models\User::where('user_type', 'admin')
+            ->where('status', 'active')
+            ->get();
+
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\InclusionChangeRequestNotification($changeRequest, false));
         }
 
-        // Notify admin if there were ANY changes (including non-inclusion changes)
-        if (!empty($changes)) {
-            $changeMessage = implode("\n", $changes);
-
-            // Only send regular update notification if inclusions didn't change
-            // (if inclusions changed, detailed email was already sent above)
-            if (!$inclusionsChanged) {
-                $this->notificationService->notifyAdminEventUpdated($event, $changeMessage);
-            }
-        }
+        // 2. Create in-app notification
+        $this->notificationService->notifyAdminsInclusionChangeRequest($changeRequest, false);
 
         return redirect()
             ->route('customer.events.show', $event)
-            ->with('success', 'Event updated successfully.' . ($inclusionsChanged ? ' Admin has been notified of your inclusion changes.' : ''));
-    }
-
-
-    /**
-     * Recalculate billing based on package and inclusions
-     */
-    protected function recalculateBilling(Event $event)
-    {
-        $event->load(['package', 'inclusions', 'billing']);
-
-        // Calculate total from coordination + event_styling + inclusions
-        // DO NOT use package->price as it includes base inclusions
-        $coordinationPrice = $event->package->coordination_price ?? 0;
-        $eventStylingPrice = $event->package->event_styling_price ?? 0;
-        $inclusionsTotal = $event->inclusions->sum('pivot.price_snapshot');
-
-        $newTotal = $coordinationPrice + $eventStylingPrice + $inclusionsTotal;
-
-        // Get or create billing
-        $billing = $event->billing;
-        if (!$billing) {
-            $billing = new \App\Models\Billing();
-            $billing->event_id = $event->id;
-        }
-
-        // Update billing total only
-        $billing->total_amount = $newTotal;
-
-        $billing->save();
+            ->with('info', 'Event updated. Your inclusion changes are pending admin approval.');
     }
 }

@@ -123,6 +123,62 @@ class Event extends Model
         return $this->status === self::STATUS_REJECTED;
     }
 
+    // NEW METHODS - Payment Readiness Checks
+    public function isReadyForIntroPayment(): bool
+    {
+        // Event is ready for intro payment if status is request_meeting
+        // and there's no approved intro payment yet
+        if ($this->status !== self::STATUS_REQUEST_MEETING) {
+            return false;
+        }
+
+        // Check if intro payment already exists and is approved
+        if ($this->billing) {
+            $hasApprovedIntro = $this->billing->payments()
+                ->where('payment_type', Payment::TYPE_INTRODUCTORY)
+                ->where('status', Payment::STATUS_APPROVED)
+                ->exists();
+
+            return !$hasApprovedIntro;
+        }
+
+        return true;
+    }
+
+    public function isReadyForDownpayment(): bool
+    {
+        // Event is ready for downpayment if:
+        // 1. Status is meeting (meeting confirmed)
+        // 2. Intro payment has been paid
+        // 3. No approved downpayment exists yet
+
+        if ($this->status !== self::STATUS_MEETING) {
+            return false;
+        }
+
+        if (!$this->billing) {
+            return false;
+        }
+
+        // Check if intro payment is approved
+        $hasApprovedIntro = $this->billing->payments()
+            ->where('payment_type', Payment::TYPE_INTRODUCTORY)
+            ->where('status', Payment::STATUS_APPROVED)
+            ->exists();
+
+        if (!$hasApprovedIntro) {
+            return false; // Can't pay downpayment without intro payment
+        }
+
+        // Check if downpayment already exists and is approved
+        $hasApprovedDownpayment = $this->billing->payments()
+            ->where('payment_type', Payment::TYPE_DOWNPAYMENT)
+            ->where('status', Payment::STATUS_APPROVED)
+            ->exists();
+
+        return !$hasApprovedDownpayment;
+    }
+
     // Payment Status Methods
     public function needsIntroPayment(): bool
     {
@@ -244,5 +300,25 @@ class Event extends Model
     public function progress()
     {
         return $this->hasMany(EventProgress::class)->orderBy('progress_date', 'desc');
+    }
+
+    public function changeRequests(): HasMany
+    {
+        return $this->hasMany(InclusionChangeRequest::class);
+    }
+
+    public function pendingChangeRequest(): HasOne
+    {
+        return $this->hasOne(InclusionChangeRequest::class)
+            ->where('status', InclusionChangeRequest::STATUS_PENDING)
+            ->latestOfMany();
+    }
+
+    // Helper method
+    public function hasPendingChangeRequest(): bool
+    {
+        return $this->changeRequests()
+            ->where('status', InclusionChangeRequest::STATUS_PENDING)
+            ->exists();
     }
 }

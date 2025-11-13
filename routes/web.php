@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\InclusionController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\FeedbackController;
+use App\Http\Controllers\Admin\InclusionChangeRequestController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Staff\ScheduleController as StaffScheduleController;
 use App\Http\Middleware\CheckAdmin;
@@ -311,6 +312,19 @@ Route::middleware('auth')->group(function () {
 
             Route::post('/events/{event}/progress', [EventProgressController::class, 'store'])
                 ->name('events.progress.store');
+
+            // Inclusion Change Requests
+            Route::get('/change-requests', [InclusionChangeRequestController::class, 'index'])
+                ->name('change-requests.index');
+
+            Route::get('/change-requests/{changeRequest}', [InclusionChangeRequestController::class, 'show'])
+                ->name('change-requests.show');
+
+            Route::post('/change-requests/{changeRequest}/approve', [InclusionChangeRequestController::class, 'approve'])
+                ->name('change-requests.approve');
+
+            Route::post('/change-requests/{changeRequest}/reject', [InclusionChangeRequestController::class, 'reject'])
+                ->name('change-requests.reject');
         });
 
 
