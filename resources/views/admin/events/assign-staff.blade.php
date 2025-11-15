@@ -55,7 +55,16 @@
                                         @change="toggleStaff({{ $staff->id }})">
                                     <div class="flex-1">
                                         <div class="font-medium text-gray-900">{{ $staff->name }}</div>
-                                        <div class="text-xs text-gray-500">{{ $staff->position ?? 'Staff' }}</div>
+                                        <div class="text-xs text-gray-500">
+                                            {{ $staff->role_type ?? 'Staff' }}
+                                            @if($staff->rate)
+                                            • ₱{{ number_format($staff->rate, 2) }}
+                                            @if($staff->rate_type)
+                                            <span class="text-gray-400">({{ str_replace('_', ' ', $staff->rate_type)
+                                                }})</span>
+                                            @endif
+                                            @endif
+                                        </div>
                                     </div>
                                 </label>
 
@@ -64,17 +73,34 @@
                                     <div class="mt-3 space-y-2 pl-8">
                                         <div>
                                             <label class="block text-xs font-medium text-gray-700 mb-1">Assignment
-                                                Role</label>
+                                                Role
+                                                @if($staff->role_type)
+                                                <span class="text-gray-500 font-normal">- Usual: {{ $staff->role_type
+                                                    }}</span>
+                                                @endif
+                                            </label>
                                             <input type="text" name="staff[{{ $staff->id }}][role]"
-                                                placeholder="e.g., Event Coordinator, Photographer"
+                                                value="{{ old('staff.'.$staff->id.'.role', $staff->role_type ?? '') }}"
+                                                placeholder="{{ $staff->role_type ?? 'e.g., Event Coordinator, Photographer' }}"
                                                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                                 required>
                                         </div>
                                         <div>
                                             <label class="block text-xs font-medium text-gray-700 mb-1">Pay Rate
-                                                (₱)</label>
+                                                (₱)
+                                                @if($staff->rate)
+                                                <span class="text-gray-500 font-normal">
+                                                    - Default: ₱{{ number_format($staff->rate, 2) }}
+                                                    @if($staff->rate_type)
+                                                    ({{ ucfirst(str_replace('_', ' ', $staff->rate_type)) }})
+                                                    @endif
+                                                </span>
+                                                @endif
+                                            </label>
                                             <input type="number" step="0.01" min="0"
-                                                name="staff[{{ $staff->id }}][rate]" placeholder="0.00"
+                                                name="staff[{{ $staff->id }}][rate]"
+                                                value="{{ old('staff.'.$staff->id.'.rate', $staff->rate ?? '') }}"
+                                                placeholder="{{ $staff->rate ? number_format($staff->rate, 2) : '0.00' }}"
                                                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                                 required>
                                         </div>
@@ -116,7 +142,7 @@
                                     </div>
                                     <div>
                                         <div class="font-medium text-gray-900">{{ $staff->name }}</div>
-                                        <div class="text-xs text-gray-600">{{ $staff->position ?? 'Staff' }}</div>
+                                        <div class="text-xs text-gray-600">{{ $staff->role_type ?? 'Staff' }}</div>
                                     </div>
                                 </div>
                                 <form method="POST" action="{{ route('admin.events.assignStaff', $event) }}"
