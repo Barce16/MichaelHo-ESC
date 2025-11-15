@@ -118,7 +118,8 @@
             @endif
 
             {{-- Payment Form --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+                x-data="{ paymentMethod: 'gcash' }">
 
                 {{-- Validation Errors --}}
                 @if ($errors->any())
@@ -354,7 +355,7 @@
                             </label>
                             <select id="payment_method" name="payment_method"
                                 class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition"
-                                required>
+                                required x-model="paymentMethod">
                                 <option value="">Select payment method</option>
                                 <option value="bank_transfer" {{ old('payment_method')=='bank_transfer' ? 'selected'
                                     : '' }}>🏦 Bank Transfer</option>
@@ -376,8 +377,25 @@
                             @enderror
                         </div>
 
-                        {{-- Reference Number --}}
-                        <div>
+                        {{-- Cash Payment Info --}}
+                        <div x-show="paymentMethod === 'cash'" x-transition
+                            class="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4">
+                            <div class="flex gap-3">
+                                <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div class="text-sm text-blue-900">
+                                    <p class="font-semibold mb-1">Cash Payment</p>
+                                    <p>For cash payments, you don't need to provide payment proof or reference number.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Reference Number (Hidden for Cash) --}}
+                        <div x-show="paymentMethod !== 'cash'" x-transition>
                             <label for="reference_number"
                                 class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
@@ -405,8 +423,8 @@
                             @enderror
                         </div>
 
-                        {{-- File Upload / Preview --}}
-                        <div>
+                        {{-- File Upload / Preview (Hidden for Cash) --}}
+                        <div x-show="paymentMethod !== 'cash'" x-transition>
                             <label for="payment_receipt"
                                 class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
@@ -466,7 +484,8 @@
                             </div>
 
                             <input id="payment_receipt" name="payment_receipt" type="file" class="hidden"
-                                accept="image/png,image/jpeg,image/jpg" required onchange="previewImage(event)" />
+                                accept="image/png,image/jpeg,image/jpg" :required="paymentMethod !== 'cash'"
+                                onchange="previewImage(event)" />
                             @error('payment_receipt')
                             <p class="mt-2 text-sm text-rose-600 flex items-center gap-1">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -525,7 +544,7 @@
                 previewArea.classList.remove('hidden');
             };
             reader.readAsDataURL(file);
-        }
+        }Cash Payment
 
         function removeImage() {
             const fileInput = document.getElementById('payment_receipt');

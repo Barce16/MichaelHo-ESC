@@ -216,7 +216,12 @@ class PaymentController extends Controller
 
         $data = $request->validate([
             'payment_type' => ['required', 'in:introductory,downpayment,balance'],
-            'payment_receipt' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'payment_receipt' => [
+                $request->payment_method === 'cash' ? 'nullable' : 'required',
+                'file',
+                'mimes:jpg,jpeg,png,pdf',
+                'max:10240'
+            ],
             'amount' => ['required', 'numeric', 'min:0'],
             'payment_method' => ['required', 'string', 'max:255'],
             'reference_number' => ['nullable', 'string', 'max:255'],
@@ -329,8 +334,11 @@ class PaymentController extends Controller
             return back()->with('error', 'Billing information not found for this event.');
         }
 
-        // Store payment receipt
-        $filePath = $request->file('payment_receipt')->store('payment_receipts', 'public');
+        // Store payment receipt (if provided)
+        $filePath = null;
+        if ($request->hasFile('payment_receipt')) {
+            $filePath = $request->file('payment_receipt')->store('payment_receipts', 'public');
+        }
 
         // Create payment record
         $payment = Payment::create([
