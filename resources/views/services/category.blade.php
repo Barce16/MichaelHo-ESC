@@ -199,7 +199,7 @@
                                 class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">About</a>
                             <a href="{{ route('services.index') }}"
                                 class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Services</a>
-                            <a href="{{ url('/portfolio') }}"
+                            <a href="{{ url('/events-showcase') }}"
                                 class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Portfolio</a>
                             <a href="{{ url('/contact') }}"
                                 class="block text-sm uppercase tracking-wider text-gray-700 hover:text-black">Contact
