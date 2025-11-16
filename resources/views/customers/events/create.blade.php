@@ -37,7 +37,7 @@ window.__allInclusions = @js($allInclusions->map(function($categoryInclusions, $
             'name' => $i->name,
             'price' => $i->price,
             'notes' => $i->notes,
-            'image' => $i->image,
+            'image' => $i->image_url,
             'category' => $i->category,
             'package_type' => $i->package_type, // Add this line
         ])->values()

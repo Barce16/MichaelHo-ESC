@@ -487,9 +487,10 @@ class AdminEventController extends Controller
 
         $reason = $request->input('rejection_reason');
 
+        // Fix: Specify the table name for the status column
         $payment = $event->payments()
             ->where('payment_type', Payment::TYPE_INTRODUCTORY)
-            ->where('status', Payment::STATUS_PENDING)
+            ->where('payments.status', Payment::STATUS_PENDING) // Add table prefix here
             ->latest()
             ->first();
 
