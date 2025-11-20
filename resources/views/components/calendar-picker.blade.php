@@ -153,11 +153,9 @@
             this.inputName = name;
             this.selectedDate = initialValue || '';
             
-            // Calculate minimum allowed date (3 months from now, first day of that month)
             const today = new Date();
             this.minAllowedDate = new Date(today.getFullYear(), today.getMonth() + 3, 1);
             
-            // If opening calendar, start at minimum allowed month
             if (!this.selectedDate) {
                 this.currentDate = new Date(this.minAllowedDate);
             }
@@ -192,13 +190,23 @@
         async previousMonth() {
             if (!this.canGoPrevious()) return;
             
-            this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+            // FIX: Create new Date object for proper Alpine.js reactivity
+            this.currentDate = new Date(
+                this.currentDate.getFullYear(), 
+                this.currentDate.getMonth() - 1, 
+                1
+            );
             await this.loadAvailability();
             this.renderCalendar();
         },
 
         async nextMonth() {
-            this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+            // FIX: Create new Date object for proper Alpine.js reactivity
+            this.currentDate = new Date(
+                this.currentDate.getFullYear(), 
+                this.currentDate.getMonth() + 1, 
+                1
+            );
             await this.loadAvailability();
             this.renderCalendar();
         },
@@ -207,7 +215,6 @@
             const year = this.currentDate.getFullYear();
             const month = this.currentDate.getMonth();
             
-            // Update month display
             const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                 'July', 'August', 'September', 'October', 'November', 'December'];
             this.currentMonthDisplay = `${monthNames[month]} ${year}`;
@@ -219,7 +226,6 @@
 
             this.calendarDays = [];
 
-            // Add empty cells for days before month starts
             for (let i = 0; i < firstDay; i++) {
                 this.calendarDays.push({
                     day: '',
@@ -233,13 +239,11 @@
                 });
             }
 
-            // Add days of month
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
                 const dateString = this.formatDate(date);
                 const dayData = this.availabilityData[dateString] || { status: 'available', count: 0, available: 2 };
 
-                // Check if date is before minimum allowed date (3 months from today)
                 let status = dayData.status;
                 if (date < this.minAllowedDate) {
                     status = 'too_soon';
