@@ -173,7 +173,7 @@ class AdminEventController extends Controller
 
         if (!$customer->user_id) {
             $isNewUser = true;
-            $password = '12345678';
+            $password = Str::password(12);
 
             $baseName = Str::slug(Str::lower($customer->customer_name));
             $username = $baseName;
