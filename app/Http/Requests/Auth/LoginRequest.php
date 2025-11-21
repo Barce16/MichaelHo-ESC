@@ -57,8 +57,8 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        // Get the user by username
-        $user = \App\Models\User::where('username', $this->username)->first();
+        // Get the user by username - case-sensitive
+        $user = \App\Models\User::whereRaw('BINARY username = ?', [$this->username])->first();
 
         // Blocked check
         if ($user && $user->status === 'blocked') {
