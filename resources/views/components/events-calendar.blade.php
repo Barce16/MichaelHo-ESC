@@ -93,43 +93,43 @@ return $data;
                     <button type="button" x-show="day.inCurrentMonth && day.events.length > 0"
                         @click="showDayEvents(day)" :class="{
                             'ring-1 ring-violet-400 ring-offset-1': day.isToday,
-                            'bg-amber-50 hover:bg-amber-100 border-amber-200': day.events[0].status === 'requested',
-                            'bg-blue-50 hover:bg-blue-100 border-blue-200': day.events[0].status === 'meeting' || day.events[0].status === 'request_meeting',
-                            'bg-sky-50 hover:bg-sky-100 border-sky-200': day.events[0].status === 'approved',
-                            'bg-violet-50 hover:bg-violet-100 border-violet-200': day.events[0].status === 'scheduled',
-                            'bg-emerald-50 hover:bg-emerald-100 border-emerald-200': day.events[0].status === 'completed',
-                            'bg-gray-50 hover:bg-gray-100 border-gray-200': day.events[0].status === 'cancelled' || day.events[0].status === 'rejected'
+                            'bg-amber-50 hover:bg-amber-100 border-amber-200': day.events[0]?.status === 'requested',
+                            'bg-blue-50 hover:bg-blue-100 border-blue-200': day.events[0]?.status === 'meeting' || day.events[0]?.status === 'request_meeting',
+                            'bg-sky-50 hover:bg-sky-100 border-sky-200': day.events[0]?.status === 'approved',
+                            'bg-violet-50 hover:bg-violet-100 border-violet-200': day.events[0]?.status === 'scheduled',
+                            'bg-emerald-50 hover:bg-emerald-100 border-emerald-200': day.events[0]?.status === 'completed',
+                            'bg-gray-50 hover:bg-gray-100 border-gray-200': day.events[0]?.status === 'cancelled' || day.events[0]?.status === 'rejected'
                         }"
                         class="w-full h-14 flex flex-col items-start justify-start p-1.5 rounded-md border transition-all cursor-pointer">
 
                         {{-- day num --}}
                         <span class="text-[10px] font-bold" :class="{
-                                'text-amber-700': day.events[0].status === 'requested',
-                                'text-blue-700': day.events[0].status === 'meeting' || day.events[0].status === 'request_meeting',
-                                'text-sky-700': day.events[0].status === 'approved',
-                                'text-violet-700': day.events[0].status === 'scheduled',
-                                'text-emerald-700': day.events[0].status === 'completed',
-                                'text-gray-600': day.events[0].status === 'cancelled' || day.events[0].status === 'rejected'
+                                'text-amber-700': day.events[0]?.status === 'requested',
+                                'text-blue-700': day.events[0]?.status === 'meeting' || day.events[0]?.status === 'request_meeting',
+                                'text-sky-700': day.events[0]?.status === 'approved',
+                                'text-violet-700': day.events[0]?.status === 'scheduled',
+                                'text-emerald-700': day.events[0]?.status === 'completed',
+                                'text-gray-600': day.events[0]?.status === 'cancelled' || day.events[0]?.status === 'rejected'
                             }" x-text="day.day"></span>
 
                         {{-- event title --}}
                         <p class="text-[9px] font-medium leading-tight line-clamp-1 w-full" :class="{
-                                'text-amber-700': day.events[0].status === 'requested',
-                                'text-blue-700': day.events[0].status === 'meeting' || day.events[0].status === 'request_meeting',
-                                'text-sky-700': day.events[0].status === 'approved',
-                                'text-violet-700': day.events[0].status === 'scheduled',
-                                'text-emerald-700': day.events[0].status === 'completed',
-                                'text-gray-600': day.events[0].status === 'cancelled' || day.events[0].status === 'rejected'
-                            }" x-text="day.events[0].name"></p>
+                                'text-amber-700': day.events[0]?.status === 'requested',
+                                'text-blue-700': day.events[0]?.status === 'meeting' || day.events[0]?.status === 'request_meeting',
+                                'text-sky-700': day.events[0]?.status === 'approved',
+                                'text-violet-700': day.events[0]?.status === 'scheduled',
+                                'text-emerald-700': day.events[0]?.status === 'completed',
+                                'text-gray-600': day.events[0]?.status === 'cancelled' || day.events[0]?.status === 'rejected'
+                            }" x-text="day.events[0]?.name"></p>
 
                         {{-- more badge --}}
                         <span x-show="day.events.length > 1" class="text-[8px] font-semibold mt-auto" :class="{
-                                'text-amber-600': day.events[0].status === 'requested',
-                                'text-blue-600': day.events[0].status === 'meeting' || day.events[0].status === 'request_meeting',
-                                'text-sky-600': day.events[0].status === 'approved',
-                                'text-violet-600': day.events[0].status === 'scheduled',
-                                'text-emerald-600': day.events[0].status === 'completed',
-                                'text-gray-500': day.events[0].status === 'cancelled' || day.events[0].status === 'rejected'
+                                'text-amber-600': day.events[0]?.status === 'requested',
+                                'text-blue-600': day.events[0]?.status === 'meeting' || day.events[0]?.status === 'request_meeting',
+                                'text-sky-600': day.events[0]?.status === 'approved',
+                                'text-violet-600': day.events[0]?.status === 'scheduled',
+                                'text-emerald-600': day.events[0]?.status === 'completed',
+                                'text-gray-500': day.events[0]?.status === 'cancelled' || day.events[0]?.status === 'rejected'
                             }" x-text="'+' + (day.events.length - 1)"></span>
                     </button>
 

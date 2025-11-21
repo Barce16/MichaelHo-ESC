@@ -268,12 +268,20 @@
             <x-responsive-nav-link :href="route('admin.events.index')" :active="request()->routeIs('admin.events.*')">
                 {{ __('Events') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('admin.customers.index')" :active="request()->routeIs('customers.*')">
+            <x-responsive-nav-link :href="route('admin.customers.index')"
+                :active="request()->routeIs('admin.customers.*')">
                 {{ __('Customers') }}
             </x-responsive-nav-link>
-            <x-nav-link :href="route('admin.staff.index')" :active="request()->routeIs('staff.*')">
+            <x-responsive-nav-link :href="route('admin.staff.index')" :active="request()->routeIs('admin.staff.*')">
                 {{ __('Staff') }}
-            </x-nav-link>
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.payments.index')"
+                :active="request()->routeIs('admin.payments.*')">
+                {{ __('Payments') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.payroll.index')" :active="request()->routeIs('admin.payroll.*')">
+                {{ __('Payroll') }}
+            </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('reports.*')">
                 {{ __('Reports') }}
             </x-responsive-nav-link>
