@@ -26,12 +26,33 @@ class AdminController extends Controller
     public function createUser(Request $request)
     {
         $data = $request->validate([
-            'name'      => ['required', 'string', 'max:255'],
-            'username'  => ['required', 'string', 'max:50', 'unique:users,username'],
+            'name'      => [
+                'required',
+                'string',
+                'min:2',
+                'max:255',
+                'regex:/^[a-zA-Z\s\-\.]+$/', // Only letters, spaces, hyphens, and periods
+            ],
+            'username'  => [
+                'required',
+                'string',
+                'min:3',
+                'max:50',
+                'unique:users,username',
+                'regex:/^[a-zA-Z0-9_\-]+$/', // Only alphanumeric, underscores, and hyphens
+                'not_regex:/^[0-9_\-]+$/', // Cannot be only numbers and special chars
+            ],
             'email'     => ['required', 'email', 'max:255', 'unique:users,email'],
             'user_type' => ['required', Rule::in(['admin'])],
             'password'  => ['required', 'string', 'min:8', 'confirmed'],
             'avatar'    => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ], [
+            // Custom error messages
+            'name.regex' => 'Name must contain only letters, spaces, hyphens, and periods.',
+            'name.min' => 'Name must be at least 2 characters.',
+            'username.regex' => 'Username can only contain letters, numbers, underscores, and hyphens.',
+            'username.not_regex' => 'Username must contain at least one letter.',
+            'username.min' => 'Username must be at least 3 characters.',
         ]);
 
         $photoPath = $this->storeProfilePhoto($request->file('avatar'));

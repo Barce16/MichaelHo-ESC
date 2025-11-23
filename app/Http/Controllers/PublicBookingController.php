@@ -29,6 +29,7 @@ class PublicBookingController extends Controller
             'event_date' => ['required', 'date', 'after:today'],
             'venue' => ['required', 'string', 'min:10', 'max:255'],
             'theme' => ['nullable', 'string', 'max:255'],
+            'notes'        => ['nullable', 'string', 'max:5000'],
             'inclusions' => ['nullable', 'array'],
             'inclusions.*' => ['integer', 'exists:inclusions,id'],
         ]);
@@ -65,7 +66,6 @@ class PublicBookingController extends Controller
             'gender' => ['required', 'string'],
             'address' => ['nullable', 'string', 'min:10', 'max:255'],
             'guests' => ['nullable', 'integer', 'min:1'],
-            'notes' => ['nullable', 'string', 'max:5000'],
         ]);
 
         try {
@@ -100,7 +100,7 @@ class PublicBookingController extends Controller
                     'venue' => $eventData['venue'],
                     'theme' => $eventData['theme'] ?? null,
                     'guests' => $customerData['guests'] ?? null,
-                    'notes' => $customerData['notes'] ?? null,
+                    'notes' => $eventData['notes'] ?? null,
                     'status' => 'requested',
                 ]);
 

@@ -250,19 +250,6 @@
                                         placeholder="Estimated number of guests">
                                 </div>
 
-                                <!-- Additional Notes -->
-                                <div>
-                                    <label for="notes"
-                                        class="block text-xs uppercase tracking-wider text-gray-600 mb-2">
-                                        Additional Notes
-                                    </label>
-                                    <textarea id="notes" name="notes" rows="4"
-                                        class="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors resize-none"
-                                        placeholder="Any special requests or additional information...">{{ old('notes') }}</textarea>
-                                    <p class="text-xs text-gray-500 mt-1">Share any special requirements or preferences
-                                    </p>
-                                </div>
-
                                 <!-- Submit Button -->
                                 <div class="pt-4">
                                     <button type="submit"

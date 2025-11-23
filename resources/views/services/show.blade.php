@@ -244,11 +244,11 @@
 
                                     <!-- Additional Details -->
                                     <div>
-                                        <label for="additional_details"
+                                        <label for="notes"
                                             class="block text-xs uppercase tracking-wider text-gray-600 mb-2">
                                             Additional Details (Optional)
                                         </label>
-                                        <textarea id="additional_details" name="additional_details" rows="3"
+                                        <textarea id="notes" name="notes" rows="3"
                                             class="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors"
                                             placeholder="Special requests or additional information"></textarea>
                                     </div>

@@ -162,67 +162,162 @@
 
             {{-- Action Buttons (only if pending) --}}
             @if($changeRequest->isPending())
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                x-data="{ showApproveModal: false, showRejectModal: false }">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Review Request</h3>
 
-                <div class="space-y-4">
-                    {{-- Approve Form --}}
-                    <form method="POST" action="{{ route('admin.change-requests.approve', $changeRequest) }}"
-                        x-data="{ showApproveForm: false }">
-                        @csrf
-                        <div class="space-y-3">
-                            <button type="button" @click="showApproveForm = !showApproveForm"
-                                class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transition shadow-md hover:shadow-lg">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 13l4 4L19 7" />
-                                </svg>
-                                Approve Changes
-                            </button>
+                <div class="flex gap-3">
+                    {{-- Approve Button --}}
+                    <button type="button" @click="showApproveModal = true"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transition shadow-md hover:shadow-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Approve Changes
+                    </button>
 
-                            <div x-show="showApproveForm" x-cloak x-transition class="space-y-3">
-                                <label class="block text-sm font-medium text-gray-700">
-                                    Admin Notes (Optional)
-                                </label>
-                                <textarea name="admin_notes" rows="3"
-                                    class="block w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition"
-                                    placeholder="Add any notes about this approval..."></textarea>
+                    {{-- Reject Button --}}
+                    <button type="button" @click="showRejectModal = true"
+                        class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Reject Changes
+                    </button>
+                </div>
+
+                {{-- Approve Modal --}}
+                <div x-show="showApproveModal" x-cloak @click.self="showApproveModal = false"
+                    x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div @click.stop x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-200"
+                        x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                        class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+
+                        {{-- Modal Header --}}
+                        <div class="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-xl font-bold text-white">Approve Change Request</h3>
+                                <button @click="showApproveModal = false"
+                                    class="text-white/80 hover:text-white transition">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Modal Body --}}
+                        <form method="POST" action="{{ route('admin.change-requests.approve', $changeRequest) }}">
+                            @csrf
+                            <div class="p-6 space-y-4">
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <p class="text-sm text-green-800">
+                                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        This will apply the customer's inclusion changes to the event and update the
+                                        billing accordingly.
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Admin Notes (Optional)
+                                    </label>
+                                    <textarea name="admin_notes" rows="4"
+                                        class="block w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition resize-none"
+                                        placeholder="Add any notes about this approval..."></textarea>
+                                </div>
+                            </div>
+
+                            {{-- Modal Footer --}}
+                            <div class="border-t border-gray-200 px-6 py-4 bg-gray-50 flex gap-3">
+                                <button type="button" @click="showApproveModal = false"
+                                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition">
+                                    Cancel
+                                </button>
                                 <button type="submit"
-                                    class="w-full px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition">
+                                    class="flex-1 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition">
                                     Confirm Approval
                                 </button>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
+                </div>
 
-                    {{-- Reject Form --}}
-                    <form method="POST" action="{{ route('admin.change-requests.reject', $changeRequest) }}"
-                        x-data="{ showRejectForm: false }">
-                        @csrf
-                        <div class="space-y-3">
-                            <button type="button" @click="showRejectForm = !showRejectForm"
-                                class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                Reject Changes
-                            </button>
+                {{-- Reject Modal --}}
+                <div x-show="showRejectModal" x-cloak @click.self="showRejectModal = false"
+                    x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div @click.stop x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-200"
+                        x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                        class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
 
-                            <div x-show="showRejectForm" x-cloak x-transition class="space-y-3">
-                                <label class="block text-sm font-medium text-gray-700">
-                                    Rejection Reason <span class="text-red-500">*</span>
-                                </label>
-                                <textarea name="admin_notes" rows="3" required
-                                    class="block w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition"
-                                    placeholder="Please provide a reason for rejecting this request..."></textarea>
-                                <button type="submit"
-                                    class="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition">
-                                    Confirm Rejection
+                        {{-- Modal Header --}}
+                        <div class="bg-gradient-to-r from-red-500 to-rose-600 px-6 py-4">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-xl font-bold text-white">Reject Change Request</h3>
+                                <button @click="showRejectModal = false"
+                                    class="text-white/80 hover:text-white transition">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
                                 </button>
                             </div>
                         </div>
-                    </form>
+
+                        {{-- Modal Body --}}
+                        <form method="POST" action="{{ route('admin.change-requests.reject', $changeRequest) }}">
+                            @csrf
+                            <div class="p-6 space-y-4">
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                    <p class="text-sm text-red-800">
+                                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                        This will reject the customer's request. Please provide a clear reason.
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Rejection Reason <span class="text-red-500">*</span>
+                                    </label>
+                                    <textarea name="admin_notes" rows="4" required
+                                        class="block w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 transition resize-none"
+                                        placeholder="Please provide a clear reason for rejecting this request..."></textarea>
+                                </div>
+                            </div>
+
+                            {{-- Modal Footer --}}
+                            <div class="border-t border-gray-200 px-6 py-4 bg-gray-50 flex gap-3">
+                                <button type="button" @click="showRejectModal = false"
+                                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition">
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                    class="flex-1 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition">
+                                    Confirm Rejection
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
             @endif
