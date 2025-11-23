@@ -13,424 +13,584 @@
         </div>
     </x-slot>
 
-    <div class="py-8">
-        <form method="POST" action="{{ route('admin.customers.storeWithEvent') }}" x-data="{
-                selectedPackage: null,
-                packages: @js($packagesData),
-                allInclusions: @js($allInclusions),
-                selectedInclusions: [],
-                inclusionNotes: {}, // Track notes for each inclusion
-                showCustomize: false,
-                coordinationPrice: 25000,
-                stylingPrice: 55000,
+    <div class="py-8" x-data="{
+        currentStep: 0,
+        selectedPackage: null,
+        selectedPackageType: '',
+        packages: @js($packagesData),
+        allInclusions: @js($allInclusions),
+        selectedInclusions: [],
+        inclusionNotes: {},
+        showCustomize: false,
+        coordinationPrice: 25000,
+        stylingPrice: 55000,
+        
+        get packageTypes() {
+            return [...new Set(this.packages.map(p => p.type))];
+        },
+        
+        get filteredPackages() {
+            if (!this.selectedPackageType) return this.packages;
+            return this.packages.filter(p => p.type === this.selectedPackageType);
+        },
+        
+        init() {
+            // Set first package type as default
+            if (this.packageTypes.length > 0) {
+                this.selectedPackageType = this.packageTypes[0];
+            }
+        },
+        
+        selectPackage(packageId) {
+            this.selectedPackage = this.packages.find(p => p.id == packageId);
+            if (this.selectedPackage) {
+                this.selectedInclusions = this.selectedPackage.inclusions.map(i => i.id);
+                this.coordinationPrice = parseFloat(this.selectedPackage.coordination_price || 25000);
+                this.stylingPrice = parseFloat(this.selectedPackage.event_styling_price || 55000);
+            }
+        },
+        
+        get filteredInclusions() {
+            if (!this.selectedPackage) return {};
+            
+            const packageType = this.selectedPackage.type;
+            const filtered = {};
+            
+            for (let category in this.allInclusions) {
+                const categoryInclusions = this.allInclusions[category].filter(inclusion => {
+                    return inclusion.package_type === packageType || 
+                           inclusion.package_type === null || 
+                           inclusion.package_type === '';
+                });
                 
-                selectPackage(packageId) {
-                    this.selectedPackage = this.packages.find(p => p.id == packageId);
-                    // Auto-select package default inclusions
-                    if (this.selectedPackage) {
-                        this.selectedInclusions = this.selectedPackage.inclusions.map(i => i.id);
-                        this.coordinationPrice = parseFloat(this.selectedPackage.coordination_price || 25000);
-                        this.stylingPrice = parseFloat(this.selectedPackage.event_styling_price || 55000);
-                    }
-                },
-                
-                // Filter inclusions by package type
-                get filteredInclusions() {
-                    if (!this.selectedPackage) return {};
-                    
-                    const packageType = this.selectedPackage.type;
-                    const filtered = {};
-                    
-                    for (let category in this.allInclusions) {
-                        const categoryInclusions = this.allInclusions[category].filter(inclusion => {
-                            // Show if package_type matches OR if package_type is null (available for all)
-                            return inclusion.package_type === packageType || 
-                                   inclusion.package_type === null || 
-                                   inclusion.package_type === '';
-                        });
-                        
-                        if (categoryInclusions.length > 0) {
-                            filtered[category] = categoryInclusions;
-                        }
-                    }
-                    
-                    return filtered;
-                },
-                
-                toggleInclusion(inclusionId) {
-                    const index = this.selectedInclusions.indexOf(inclusionId);
-                    if (index > -1) {
-                        this.selectedInclusions.splice(index, 1);
-                    } else {
-                        this.selectedInclusions.push(inclusionId);
-                    }
-                },
-                
-                isInclusionSelected(inclusionId) {
-                    return this.selectedInclusions.includes(inclusionId);
-                },
-                
-                getInclusionPrice(inclusionId) {
-                    for (let category in this.allInclusions) {
-                        const inclusion = this.allInclusions[category].find(i => i.id === inclusionId);
-                        if (inclusion) return parseFloat(inclusion.price);
-                    }
-                    return 0;
-                },
-                
-                get inclusionsSubtotal() {
-                    return this.selectedInclusions.reduce((sum, id) => {
-                        return sum + this.getInclusionPrice(id);
-                    }, 0);
-                },
-                
-                get grandTotal() {
-                    return this.inclusionsSubtotal + this.coordinationPrice + this.stylingPrice;
-                },
-                
-                formatPrice(amount) {
-                    return '₱' + Number(amount).toLocaleString('en-PH', {minimumFractionDigits: 2});
+                if (categoryInclusions.length > 0) {
+                    filtered[category] = categoryInclusions;
                 }
-            }" class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
-            @csrf
+            }
+            
+            return filtered;
+        },
+        
+        toggleInclusion(inclusionId) {
+            const index = this.selectedInclusions.indexOf(inclusionId);
+            if (index > -1) {
+                this.selectedInclusions.splice(index, 1);
+            } else {
+                this.selectedInclusions.push(inclusionId);
+            }
+        },
+        
+        isInclusionSelected(inclusionId) {
+            return this.selectedInclusions.includes(inclusionId);
+        },
+        
+        getInclusionPrice(inclusionId) {
+            for (let category in this.allInclusions) {
+                const inclusion = this.allInclusions[category].find(i => i.id === inclusionId);
+                if (inclusion) return parseFloat(inclusion.price);
+            }
+            return 0;
+        },
+        
+        get inclusionsSubtotal() {
+            return this.selectedInclusions.reduce((sum, id) => {
+                return sum + this.getInclusionPrice(id);
+            }, 0);
+        },
+        
+        get grandTotal() {
+            return this.inclusionsSubtotal + this.coordinationPrice + this.stylingPrice;
+        },
+        
+        formatPrice(amount) {
+            return '₱' + Number(amount).toLocaleString('en-PH', {minimumFractionDigits: 2});
+        },
+        
+        nextStep() {
+            if (this.currentStep === 0) {
+                // Validate customer info
+                const form = document.getElementById('walkinForm');
+                const customerFields = ['customer_name', 'email', 'phone', 'gender'];
+                let isValid = true;
+                
+                customerFields.forEach(field => {
+                    const input = form.querySelector(`[name='${field}']`);
+                    if (input && input.hasAttribute('required') && !input.value) {
+                        isValid = false;
+                        input.classList.add('border-red-500');
+                    } else if (input) {
+                        input.classList.remove('border-red-500');
+                    }
+                });
+                
+                if (!isValid) {
+                    alert('Please fill in all required customer information fields');
+                    return;
+                }
+            } else if (this.currentStep === 1) {
+                if (!this.selectedPackage) {
+                    alert('Please select a package');
+                    return;
+                }
+            }
+            
+            if (this.currentStep < 2) {
+                this.currentStep++;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        },
+        
+        previousStep() {
+            if (this.currentStep > 0) {
+                this.currentStep--;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+    }">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
-            {{-- Customer Information Section --}}
-            <div class="bg-white shadow-sm rounded-xl overflow-hidden">
-                <div class="bg-gradient-to-r from-gray-900 to-gray-700 px-6 py-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
+            {{-- Progress Steps --}}
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex items-center justify-between">
+                    {{-- Step 1 --}}
+                    <div class="flex items-center flex-1">
+                        <div class="flex items-center gap-3 flex-1">
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold transition"
+                                    :class="currentStep > 0 ? 'bg-emerald-500 text-white' : (currentStep === 0 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600')">
+                                    <span x-show="currentStep <= 0">1</span>
+                                    <svg x-show="currentStep > 0" class="w-5 h-5" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold"
+                                    :class="currentStep >= 0 ? 'text-gray-900' : 'text-gray-500'">Customer Information
+                                </p>
+                                <p class="text-xs text-gray-500">Basic details</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="text-xl font-semibold text-white">Customer Information</h3>
-                            <p class="text-sm text-gray-300">Enter customer's personal details</p>
-                        </div>
+                        <div class="w-16 h-0.5 mx-2" :class="currentStep > 0 ? 'bg-emerald-500' : 'bg-gray-200'"></div>
                     </div>
-                </div>
 
-                <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
-                            <input type="text" name="customer_name" value="{{ old('customer_name') }}" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                                placeholder="e.g., John Doe">
-                            @error('customer_name')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
+                    {{-- Step 2 --}}
+                    <div class="flex items-center flex-1">
+                        <div class="flex items-center gap-3 flex-1">
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold transition"
+                                    :class="currentStep > 1 ? 'bg-emerald-500 text-white' : (currentStep === 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600')">
+                                    <span x-show="currentStep <= 1">2</span>
+                                    <svg x-show="currentStep > 1" class="w-5 h-5" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold"
+                                    :class="currentStep >= 1 ? 'text-gray-900' : 'text-gray-500'">Package & Inclusions
+                                </p>
+                                <p class="text-xs text-gray-500">Select and customize</p>
+                            </div>
                         </div>
+                        <div class="w-16 h-0.5 mx-2" :class="currentStep > 1 ? 'bg-emerald-500' : 'bg-gray-200'"></div>
+                    </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
-                            <input type="email" name="email" value="{{ old('email') }}" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                                placeholder="john@example.com">
-                            <p class="text-xs text-gray-500 mt-1">Login credentials will be sent here</p>
-                            @error('email')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
-                            <input type="text" name="phone" value="{{ old('phone') }}" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                                placeholder="09123456789">
-                            @error('phone')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
-                            <select name="gender" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                                <option value="">Select Gender</option>
-                                <option value="male" {{ old('gender')=='male' ? 'selected' : '' }}>Male</option>
-                                <option value="female" {{ old('gender')=='female' ? 'selected' : '' }}>Female</option>
-                                <option value="other" {{ old('gender')=='other' ? 'selected' : '' }}>Other</option>
-                            </select>
-                            @error('gender')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Address (Optional)</label>
-                            <textarea name="address" rows="2"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                                placeholder="Complete address">{{ old('address') }}</textarea>
-                            @error('address')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
+                    {{-- Step 3 --}}
+                    <div class="flex items-center flex-1">
+                        <div class="flex items-center gap-3 flex-1">
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold transition"
+                                    :class="currentStep === 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'">
+                                    <span>3</span>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold"
+                                    :class="currentStep >= 2 ? 'text-gray-900' : 'text-gray-500'">Event Details</p>
+                                <p class="text-xs text-gray-500">Event information</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Package Selection Section --}}
-            <div class="bg-white shadow-sm rounded-xl overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                            </svg>
+            <form method="POST" action="{{ route('admin.customers.storeWithEvent') }}" id="walkinForm">
+                @csrf
+
+                {{-- STEP 1: Customer Information --}}
+                <div x-show="currentStep === 0" x-transition class="bg-white shadow-sm rounded-xl overflow-hidden">
+                    <div class="bg-gradient-to-r from-gray-900 to-gray-700 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-semibold text-white">Customer Information</h3>
+                                <p class="text-sm text-gray-300">Enter customer's personal details</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="text-xl font-semibold text-white">Select Package</h3>
-                            <p class="text-sm text-gray-300">Choose the perfect package for the event</p>
+                    </div>
+
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                                <input type="text" name="customer_name" value="{{ old('customer_name') }}" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    placeholder="e.g., John Doe">
+                                @error('customer_name')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                                <input type="email" name="email" value="{{ old('email') }}" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    placeholder="john@example.com">
+                                <p class="text-xs text-gray-500 mt-1">Login credentials will be sent here</p>
+                                @error('email')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                                <input type="text" name="phone" value="{{ old('phone') }}" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    placeholder="09123456789">
+                                @error('phone')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
+                                <select name="gender" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                                    <option value="">Select Gender</option>
+                                    <option value="male" {{ old('gender')=='male' ? 'selected' : '' }}>Male</option>
+                                    <option value="female" {{ old('gender')=='female' ? 'selected' : '' }}>Female
+                                    </option>
+                                    <option value="other" {{ old('gender')=='other' ? 'selected' : '' }}>Other</option>
+                                </select>
+                                @error('gender')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Address (Optional)</label>
+                                <textarea name="address" rows="2"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    placeholder="Complete address">{{ old('address') }}</textarea>
+                                @error('address')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="p-6">
-                    {{-- Package Grid --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                        @foreach($packages as $package)
-                        <label class="cursor-pointer group">
-                            <input type="radio" name="package_id" value="{{ $package->id }}" required
-                                class="sr-only peer" @click="selectPackage({{ $package->id }})" {{
-                                old('package_id')==$package->id ? 'checked' : '' }}>
+                {{-- STEP 2: Package Selection & Inclusions --}}
+                <div x-show="currentStep === 1" x-transition class="bg-white shadow-sm rounded-xl overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-semibold text-white">Select Package & Customize</h3>
+                                <p class="text-sm text-gray-300">Choose the perfect package and customize inclusions</p>
+                            </div>
+                        </div>
+                    </div>
 
-                            <div
-                                class="relative overflow-hidden rounded-xl border-2 border-gray-200 transition-all duration-300 peer-checked:border-blue-500 peer-checked:ring-4 peer-checked:ring-blue-100 hover:border-gray-300 hover:shadow-lg">
-                                {{-- Banner Image --}}
-                                <div class="relative h-64 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-                                    @if($package->banner_url)
-                                    <img src="{{ $package->banner_url }}" alt="{{ $package->name }}"
-                                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                                    @else
-                                    <div class="w-full h-full flex items-center justify-center">
-                                        <svg class="w-20 h-20 text-gray-300" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                    </div>
-                                    @endif
+                    <div class="p-6">
+                        {{-- Package Type Tabs --}}
+                        <div class="mb-6">
+                            <div class="border-b border-gray-200">
+                                <nav class="flex gap-4">
+                                    <template x-for="type in packageTypes" :key="type">
+                                        <button type="button" @click="selectedPackageType = type"
+                                            class="px-4 py-2 border-b-2 font-medium text-sm transition capitalize"
+                                            :class="selectedPackageType === type 
+                                                ? 'border-blue-500 text-blue-600' 
+                                                : 'border-transparent text-gray-500 hover:text-gray-700'"
+                                            x-text="type"></button>
+                                    </template>
+                                </nav>
+                            </div>
+                        </div>
 
-                                    {{-- Type Badge --}}
-                                    <div class="absolute top-3 left-3">
-                                        <span
-                                            class="px-3 py-1 bg-black/80 backdrop-blur-sm text-white text-xs font-semibold uppercase tracking-wider rounded-full">
-                                            {{ ucfirst($package->type) }}
-                                        </span>
-                                    </div>
+                        {{-- Package Grid --}}
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                            <template x-for="package in filteredPackages" :key="package.id">
+                                <label class="cursor-pointer group">
+                                    <input type="radio" name="package_id" :value="package.id" required
+                                        class="sr-only peer" @click="selectPackage(package.id)">
 
-                                    {{-- Selected Badge --}}
-                                    <div class="absolute top-3 right-3 hidden peer-checked:block">
+                                    <div
+                                        class="relative overflow-hidden rounded-xl border-2 border-gray-200 transition-all duration-300 peer-checked:border-blue-500 peer-checked:ring-4 peer-checked:ring-blue-100 hover:border-gray-300 hover:shadow-lg">
                                         <div
-                                            class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
-                                                    d="M5 13l4 4L19 7" />
-                                            </svg>
+                                            class="relative h-64 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+                                            <template x-if="package.banner_url">
+                                                <img :src="package.banner_url" :alt="package.name"
+                                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                            </template>
+                                            <template x-if="!package.banner_url">
+                                                <div class="w-full h-full flex items-center justify-center">
+                                                    <svg class="w-20 h-20 text-gray-300" fill="none"
+                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="1"
+                                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>
+                                            </template>
+
+                                            <div class="absolute top-3 left-3">
+                                                <span
+                                                    class="px-3 py-1 bg-black/80 backdrop-blur-sm text-white text-xs font-semibold uppercase tracking-wider rounded-full capitalize"
+                                                    x-text="package.type"></span>
+                                            </div>
+
+                                            <div class="absolute top-3 right-3 hidden peer-checked:block">
+                                                <div
+                                                    class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="3" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="p-4 bg-white">
+                                            <h4 class="font-bold text-lg text-gray-900 mb-1" x-text="package.name"></h4>
+                                            <p class="text-2xl font-bold text-blue-600"
+                                                x-text="formatPrice(package.price)"></p>
+                                            <p class="text-xs text-gray-500 mt-2">
+                                                <span x-text="package.inclusions.length"></span> default inclusions
+                                            </p>
                                         </div>
                                     </div>
+                                </label>
+                            </template>
+                        </div>
+
+                        @error('package_id')
+                        <p class="text-red-500 text-sm mb-4">{{ $message }}</p>
+                        @enderror
+
+                        {{-- Selected Package Summary --}}
+                        <div x-show="selectedPackage" x-cloak x-transition class="mt-6 border-t-2 border-gray-100 pt-6">
+                            <div
+                                class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+                                <div class="flex items-start justify-between gap-4 mb-4">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <h4 class="text-xl font-bold text-gray-900" x-text="selectedPackage?.name">
+                                            </h4>
+                                            <span
+                                                class="px-3 py-1 bg-blue-600 text-white text-xs font-semibold uppercase tracking-wider rounded-full capitalize"
+                                                x-text="selectedPackage?.type"></span>
+                                        </div>
+                                        <div class="text-sm text-gray-600">
+                                            <span x-text="selectedInclusions.length"></span> inclusions selected
+                                        </div>
+                                    </div>
+
+                                    <button type="button" @click="showCustomize = true"
+                                        class="flex items-center gap-2 px-4 py-2 bg-white border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-medium">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                        Customize Inclusions
+                                    </button>
                                 </div>
 
-                                {{-- Package Info --}}
-                                <div class="p-4 bg-white">
-                                    <h4 class="font-bold text-lg text-gray-900 mb-1">{{ $package->name }}</h4>
-                                    <p class="text-2xl font-bold text-blue-600">₱{{ number_format($package->price, 2) }}
-                                    </p>
-                                    <p class="text-xs text-gray-500 mt-2">{{ $package->inclusions->count() }} default
-                                        inclusions</p>
+                                <div class="bg-white rounded-lg p-4 space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Inclusions Subtotal:</span>
+                                        <span class="font-semibold" x-text="formatPrice(inclusionsSubtotal)"></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Coordination:</span>
+                                        <span class="font-semibold" x-text="formatPrice(coordinationPrice)"></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Event Styling:</span>
+                                        <span class="font-semibold" x-text="formatPrice(stylingPrice)"></span>
+                                    </div>
+                                    <div class="border-t pt-2 flex justify-between text-lg">
+                                        <span class="font-bold text-gray-900">Grand Total:</span>
+                                        <span class="font-bold text-blue-600" x-text="formatPrice(grandTotal)"></span>
+                                    </div>
                                 </div>
                             </div>
-                        </label>
-                        @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Hidden Inputs --}}
+                <template x-for="inclusionId in selectedInclusions" :key="inclusionId">
+                    <input type="hidden" name="inclusions[]" :value="inclusionId">
+                </template>
+                <template x-for="inclusionId in selectedInclusions" :key="'note-' + inclusionId">
+                    <input type="hidden" :name="'inclusion_notes[' + inclusionId + ']'"
+                        :value="inclusionNotes[inclusionId] || ''">
+                </template>
+
+                {{-- STEP 3: Event Details --}}
+                <div x-show="currentStep === 2" x-transition class="bg-white shadow-sm rounded-xl overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-900 to-purple-700 px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-semibold text-white">Event Details</h3>
+                                <p class="text-sm text-gray-300">Provide information about the event</p>
+                            </div>
+                        </div>
                     </div>
 
-                    @error('package_id')
-                    <p class="text-red-500 text-sm mb-4">{{ $message }}</p>
-                    @enderror
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Event Name *</label>
+                                <input type="text" name="event_name" value="{{ old('event_name') }}" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                                    placeholder="e.g., John & Jane Wedding">
+                                @error('event_name')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                    {{-- Selected Package Summary with Customize Button --}}
-                    <div x-show="selectedPackage" x-cloak x-transition:enter="transition ease-out duration-300"
-                        x-transition:enter-start="opacity-0 transform scale-95"
-                        x-transition:enter-end="opacity-100 transform scale-100"
-                        class="mt-6 border-t-2 border-gray-100 pt-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Event Date *</label>
+                                <x-calendar-picker name="event_date" :value="old('event_date')" required />
+                                @error('event_date')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
-                            <div class="flex items-start justify-between gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Number of Guests</label>
+                                <input type="number" name="guests" value="{{ old('guests') }}" min="1"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                                    placeholder="150">
+                                @error('guests')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Venue Address *</label>
+                                <textarea name="venue" rows="2" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                                    placeholder="Complete venue name and address">{{ old('venue') }}</textarea>
+                                @error('venue')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Theme (Optional)</label>
+                                <input type="text" name="theme" value="{{ old('theme') }}"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                                    placeholder="e.g., Rustic Garden, Modern Minimalist">
+                                @error('theme')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
+                                <textarea name="notes" rows="3"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                                    placeholder="Special requests or important information...">{{ old('notes') }}</textarea>
+                                @error('notes')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+
+                        {{-- Email Notification --}}
+                        <div
+                            class="mt-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
+                            <label class="flex items-start gap-4 cursor-pointer group">
+                                <input type="checkbox" name="send_credentials_email" value="1" checked
+                                    class="mt-1 w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500">
                                 <div class="flex-1">
-                                    <div class="flex items-center gap-3 mb-2">
-                                        <h4 class="text-xl font-bold text-gray-900" x-text="selectedPackage?.name"></h4>
-                                        <span
-                                            class="px-3 py-1 bg-blue-600 text-white text-xs font-semibold uppercase tracking-wider rounded-full"
-                                            x-text="selectedPackage?.type"></span>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        <span class="font-semibold text-gray-900">Send Login Credentials via
+                                            Email</span>
                                     </div>
-                                    <div class="text-sm text-gray-600">
-                                        <span x-text="selectedInclusions.length"></span> inclusions selected
-                                    </div>
+                                    <p class="text-sm text-gray-600">Customer will receive an email with their account
+                                        login details and event information</p>
                                 </div>
-
-                                {{-- Customize Button --}}
-                                <button type="button" @click="showCustomize = true"
-                                    class="flex items-center gap-2 px-4 py-2 bg-white border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-medium">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                    </svg>
-                                    Customize Inclusions
-                                </button>
-                            </div>
-
-                            {{-- Price Breakdown --}}
-                            <div class="bg-white rounded-lg p-4 space-y-2 text-sm">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Inclusions Subtotal:</span>
-                                    <span class="font-semibold" x-text="formatPrice(inclusionsSubtotal)"></span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Coordination:</span>
-                                    <span class="font-semibold" x-text="formatPrice(coordinationPrice)"></span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Event Styling:</span>
-                                    <span class="font-semibold" x-text="formatPrice(stylingPrice)"></span>
-                                </div>
-                                <div class="border-t pt-2 flex justify-between text-lg">
-                                    <span class="font-bold text-gray-900">Grand Total:</span>
-                                    <span class="font-bold text-blue-600" x-text="formatPrice(grandTotal)"></span>
-                                </div>
-                            </div>
+                            </label>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {{-- Hidden Inputs for Selected Inclusions --}}
-            <template x-for="inclusionId in selectedInclusions" :key="inclusionId">
-                <input type="hidden" name="inclusions[]" :value="inclusionId">
-            </template>
-
-            {{-- Hidden Inputs for Inclusion Notes --}}
-            <template x-for="inclusionId in selectedInclusions" :key="'note-' + inclusionId">
-                <input type="hidden" :name="'inclusion_notes[' + inclusionId + ']'"
-                    :value="inclusionNotes[inclusionId] || ''">
-            </template>
-
-            {{-- Event Details Section --}}
-            <div class="bg-white shadow-sm rounded-xl overflow-hidden">
-                <div class="bg-gradient-to-r from-purple-900 to-purple-700 px-6 py-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {{-- Navigation Buttons --}}
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between gap-4">
+                        <button type="button" @click="previousStep()" x-show="currentStep > 0"
+                            class="inline-flex items-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    d="M15 19l-7-7 7-7" />
                             </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-semibold text-white">Event Details</h3>
-                            <p class="text-sm text-gray-300">Provide information about the event</p>
-                        </div>
-                    </div>
-                </div>
+                            Previous
+                        </button>
 
-                <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Event Name *</label>
-                            <input type="text" name="event_name" value="{{ old('event_name') }}" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                                placeholder="e.g., John & Jane Wedding">
-                            @error('event_name')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        <div class="flex-1"></div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Event Date *</label>
-                            <x-calendar-picker name="event_date" :value="old('event_date')" required />
-                            @error('event_date')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Number of Guests</label>
-                            <input type="number" name="guests" value="{{ old('guests') }}" min="1"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                                placeholder="150">
-                            @error('guests')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Venue Address *</label>
-                            <textarea name="venue" rows="2" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                                placeholder="Complete venue name and address">{{ old('venue') }}</textarea>
-                            @error('venue')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Theme (Optional)</label>
-                            <input type="text" name="theme" value="{{ old('theme') }}"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                                placeholder="e.g., Rustic Garden, Modern Minimalist">
-                            @error('theme')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
-                            <textarea name="notes" rows="3"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                                placeholder="Special requests or important information...">{{ old('notes') }}</textarea>
-                            @error('notes')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Email Notification --}}
-            <div class="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
-                <label class="flex items-start gap-4 cursor-pointer group">
-                    <input type="checkbox" name="send_credentials_email" value="1" checked
-                        class="mt-1 w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2 mb-1">
-                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button type="button" @click="nextStep()" x-show="currentStep < 2"
+                            class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition font-medium shadow-lg hover:shadow-xl">
+                            Continue
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    d="M9 5l7 7-7 7" />
                             </svg>
-                            <span class="font-semibold text-gray-900">Send Login Credentials via Email</span>
-                        </div>
-                        <p class="text-sm text-gray-600">Customer will receive an email with their account login details
-                            and event information</p>
-                    </div>
-                </label>
-            </div>
+                        </button>
 
-            {{-- Action Buttons --}}
-            <div class="flex items-center justify-between gap-4 pt-4">
-                <a href="{{ route('admin.customers.index') }}"
-                    class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-medium">
-                    Cancel
-                </a>
-                <button type="submit"
-                    class="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition font-medium shadow-lg hover:shadow-xl flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Create Customer & Event
-                </button>
-            </div>
+                        <button type="submit" x-show="currentStep === 2"
+                            class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition font-medium shadow-lg hover:shadow-xl">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                            Create Customer & Event
+                        </button>
+                    </div>
+                </div>
+            </form>
 
             {{-- Customize Inclusions Modal --}}
             <div x-show="showCustomize" x-cloak @click.self="showCustomize = false"
@@ -529,6 +689,6 @@
                     </div>
                 </div>
             </div>
-        </form>
+        </div>
     </div>
 </x-app-layout>
