@@ -36,6 +36,9 @@
     <div class="py-8" x-data="{
         grandTotal: {{ json_encode($grandTotal) }},
         status: @js($event->status),
+        showImageModal: false,
+        modalImageSrc: '',
+        showRejectIntro: false,
         showApprove: false,
         showReject: false,
         showRejectIntro: false,
@@ -70,13 +73,12 @@
 
             {{-- Intro Payment Pending Alert --}}
             @if($event->status === 'request_meeting' && $pendingIntroPayment)
-            <div class="bg-orange-50 border border-orange-200 rounded-xl shadow-sm">
+            <div class="bg-orange-50 border border-orange-200 rounded-xl shadow-sm"
+                x-data="{ showImageModal: false, modalImageSrc: '', modalPaymentType: '', modalPaymentAmount: '' }">
                 <div class="p-6">
                     <div class="flex items-start gap-4">
                         <div class="flex-shrink-0">
                             <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-
-
                                 <svg viewBox="0 0 36 36" version="1.1" preserveAspectRatio="xMidYMid meet"
                                     xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
                                     class="w-6 h-6 fill-orange-600">
@@ -100,10 +102,37 @@
                         </div>
                         <div class="flex-1">
                             <h3 class="text-lg font-semibold text-orange-900 mb-1">Introductory Payment Submitted</h3>
-                            <p class="text-sm text-orange-700 mb-4">
+                            <p class="text-sm text-orange-700 mb-3">
                                 Customer has submitted proof of ₱5,000 introductory payment
                             </p>
-                            <div class="flex gap-3">
+
+                            {{-- Payment Details --}}
+                            <div class="bg-white/50 rounded-lg p-3 mb-4 space-y-2 text-sm">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-orange-800 font-medium">Amount:</span>
+                                    <span class="text-orange-900 font-semibold">₱{{
+                                        number_format($pendingIntroPayment->amount, 2) }}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-orange-800 font-medium">Payment Method:</span>
+                                    <span class="text-orange-900 font-semibold">{{
+                                        $pendingIntroPayment->getMethodLabel() }}</span>
+                                </div>
+                                @if($pendingIntroPayment->reference_number)
+                                <div class="flex items-center justify-between">
+                                    <span class="text-orange-800 font-medium">Reference Number:</span>
+                                    <span class="text-orange-900 font-semibold font-mono">{{
+                                        $pendingIntroPayment->reference_number }}</span>
+                                </div>
+                                @endif
+                                <div class="flex items-center justify-between">
+                                    <span class="text-orange-800 font-medium">Payment Date:</span>
+                                    <span class="text-orange-900 font-semibold">{{
+                                        $pendingIntroPayment->payment_date->format('M d, Y') }}</span>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap gap-3">
                                 <form method="POST" action="{{ route('admin.events.approveIntroPayment', $event) }}">
                                     @csrf
                                     <button
@@ -124,16 +153,15 @@
                                     Reject Payment
                                 </button>
                                 @if($pendingIntroPayment->payment_image)
-                                <a href="{{ asset('storage/' . $pendingIntroPayment->payment_image) }}" target="_blank"
-                                    class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition">
+                                <button
+                                    @click="showImageModal = true; modalImageSrc = '{{ asset('storage/' . $pendingIntroPayment->payment_image) }}'; modalPaymentType = 'Introductory Payment'; modalPaymentAmount = '5,000.00'"
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
-                                    View Proof
-                                </a>
+                                    View Payment Proof
+                                </button>
                                 @endif
                             </div>
                         </div>
@@ -171,16 +199,55 @@
                                 class="text-lg font-semibold {{ $isFullPayment ? 'text-green-900' : 'text-blue-900' }} mb-1">
                                 {{ $isFullPayment ? 'Full Payment Submitted' : 'Downpayment Submitted' }}
                             </h3>
-                            <p class="text-sm {{ $isFullPayment ? 'text-green-700' : 'text-blue-700' }} mb-4">
+                            <p class="text-sm {{ $isFullPayment ? 'text-green-700' : 'text-blue-700' }} mb-3">
                                 @if($isFullPayment)
                                 Customer has submitted full payment proof of ₱{{
-                                number_format($pendingDownpayment->amount, 2) }} (remaining balance)
+                                number_format($pendingDownpayment->amount, 2) }}
+                                (remaining balance)
                                 @else
                                 Customer has submitted proof of ₱{{ number_format($pendingDownpayment->amount, 2) }}
                                 downpayment
                                 @endif
                             </p>
-                            <div class="flex gap-3">
+
+                            {{-- Payment Details --}}
+                            <div class="bg-white/50 rounded-lg p-3 mb-4 space-y-2 text-sm">
+                                <div class="flex items-center justify-between">
+                                    <span
+                                        class="{{ $isFullPayment ? 'text-green-800' : 'text-blue-800' }} font-medium">Amount:</span>
+                                    <span
+                                        class="{{ $isFullPayment ? 'text-green-900' : 'text-blue-900' }} font-semibold">₱{{
+                                        number_format($pendingDownpayment->amount, 2) }}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span
+                                        class="{{ $isFullPayment ? 'text-green-800' : 'text-blue-800' }} font-medium">Payment
+                                        Method:</span>
+                                    <span
+                                        class="{{ $isFullPayment ? 'text-green-900' : 'text-blue-900' }} font-semibold">{{
+                                        $pendingDownpayment->getMethodLabel() }}</span>
+                                </div>
+                                @if($pendingDownpayment->reference_number)
+                                <div class="flex items-center justify-between">
+                                    <span
+                                        class="{{ $isFullPayment ? 'text-green-800' : 'text-blue-800' }} font-medium">Reference
+                                        Number:</span>
+                                    <span
+                                        class="{{ $isFullPayment ? 'text-green-900' : 'text-blue-900' }} font-semibold font-mono">{{
+                                        $pendingDownpayment->reference_number }}</span>
+                                </div>
+                                @endif
+                                <div class="flex items-center justify-between">
+                                    <span
+                                        class="{{ $isFullPayment ? 'text-green-800' : 'text-blue-800' }} font-medium">Payment
+                                        Date:</span>
+                                    <span
+                                        class="{{ $isFullPayment ? 'text-green-900' : 'text-blue-900' }} font-semibold">{{
+                                        $pendingDownpayment->payment_date->format('M d, Y') }}</span>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap gap-3">
                                 <form method="POST" action="{{ route('admin.events.approveDownpayment', $event) }}">
                                     @csrf
                                     <button
@@ -201,22 +268,83 @@
                                     Reject Payment
                                 </button>
                                 @if($pendingDownpayment->payment_image)
-                                <a href="{{ asset('storage/' . $pendingDownpayment->payment_image) }}" target="_blank"
-                                    class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition">
+                                <button
+                                    @click="showImageModal = true; modalImageSrc = '{{ asset('storage/' . $pendingDownpayment->payment_image) }}'; modalPaymentType = '{{ $isFullPayment ? 'Full Payment' : 'Downpayment' }}'; modalPaymentAmount = '{{ number_format($pendingDownpayment->amount, 2) }}'"
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
-                                    View Proof
-                                </a>
+                                    View Payment Proof
+                                </button>
                                 @endif
                             </div>
                         </div>
                     </div>
                 </div>
         </div>
+
+        {{-- Image Modal --}}
+        <div x-show="showImageModal" x-cloak @keydown.escape.window="showImageModal = false"
+            class="fixed inset-0 z-50 overflow-y-auto" x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+            x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0">
+
+            {{-- Backdrop --}}
+            <div class="fixed inset-0 bg-black/80 transition-opacity" @click="showImageModal = false"></div>
+
+            {{-- Modal Content --}}
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative max-w-5xl w-full" x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                    x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 scale-100"
+                    x-transition:leave-end="opacity-0 scale-95" @click.stop>
+
+                    {{-- Close Button --}}
+                    <button @click="showImageModal = false"
+                        class="absolute -top-4 -right-4 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition">
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+
+                    {{-- Image --}}
+                    <div class="bg-white rounded-xl shadow-2xl overflow-hidden">
+                        <div class="bg-gray-100 px-6 py-4 border-b">
+                            <h3 class="text-lg font-semibold text-gray-900">Payment Proof</h3>
+                            <p class="text-sm text-gray-500 mt-1"
+                                x-text="modalPaymentType + ' - ₱' + modalPaymentAmount"></p>
+                        </div>
+                        <div class="p-4 bg-gray-50">
+                            <img :src="modalImageSrc" alt="Payment Proof" class="w-full h-auto rounded-lg shadow-md"
+                                style="max-height: 70vh; object-fit: contain;">
+                        </div>
+                        <div class="bg-gray-100 px-6 py-4 border-t flex justify-end gap-3">
+                            <a :href="modalImageSrc" download
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download
+                            </a>
+                            <button @click="showImageModal = false"
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            [x-cloak] {
+                display: none !important;
+            }
+        </style>
         @endif
         {{-- Main Event Information Grid --}}
         <div class="grid lg:grid-cols-3 gap-6">

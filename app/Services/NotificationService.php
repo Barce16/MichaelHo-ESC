@@ -42,7 +42,7 @@ class NotificationService
                 'type' => 'payment_submitted',
                 'title' => 'New Payment Submitted',
                 'message' => "{$event->customer->customer_name} submitted ₱" . number_format($payment->amount, 2) . " payment for {$event->name}",
-                'link' => route('admin.events.show', $event),
+                'link' => route('admin.payments.show', $payment),
             ]);
         }
     }

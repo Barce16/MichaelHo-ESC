@@ -526,34 +526,57 @@
 
     <script>
         function previewImage(event) {
-            const uploadArea = document.getElementById('upload-area');
-            const previewArea = document.getElementById('preview-area');
-            const imagePreview = document.getElementById('image-preview');
-            
-            const file = event.target.files[0];
-            if (!file) {
-                uploadArea.classList.remove('hidden');
-                previewArea.classList.add('hidden');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                imagePreview.src = e.target.result;
-                uploadArea.classList.add('hidden');
-                previewArea.classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-        }Cash Payment
-
-        function removeImage() {
-            const fileInput = document.getElementById('payment_receipt');
-            const uploadArea = document.getElementById('upload-area');
-            const previewArea = document.getElementById('preview-area');
-            
-            fileInput.value = '';
+        const uploadArea = document.getElementById('upload-area');
+        const previewArea = document.getElementById('preview-area');
+        const imagePreview = document.getElementById('image-preview');
+        
+        const file = event.target.files[0];
+        if (!file) {
             uploadArea.classList.remove('hidden');
             previewArea.classList.add('hidden');
+            return;
         }
+
+        // Validate file type
+        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+        if (!validTypes.includes(file.type)) {
+            alert('Please upload a valid image file (PNG, JPG, or JPEG)');
+            event.target.value = '';
+            return;
+        }
+
+        // Validate file size (10MB)
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.size > maxSize) {
+            alert('File size must be less than 10MB');
+            event.target.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imagePreview.src = e.target.result;
+            uploadArea.classList.add('hidden');
+            previewArea.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeImage() {
+        const fileInput = document.getElementById('payment_receipt');
+        const uploadArea = document.getElementById('upload-area');
+        const previewArea = document.getElementById('preview-area');
+        const imagePreview = document.getElementById('image-preview');
+        
+        // Clear the file input
+        fileInput.value = '';
+        
+        // Clear the preview image source
+        imagePreview.src = '';
+        
+        // Toggle visibility
+        uploadArea.classList.remove('hidden');
+        previewArea.classList.add('hidden');
+    }
     </script>
 </x-app-layout>

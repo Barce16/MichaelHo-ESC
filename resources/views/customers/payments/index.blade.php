@@ -145,12 +145,12 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                    @if($payment->payment_image)
                                     <div class="flex flex-col items-end gap-2">
+                                        {{-- View Proof Button (Only if payment_image exists) --}}
+                                        @if($payment->payment_image)
                                         <button
                                             onclick="openImageModal('{{ asset('storage/' . $payment->payment_image) }}')"
                                             class="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 font-medium transition">
-
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -159,7 +159,18 @@
                                             </svg>
                                             View Proof of Payment
                                         </button>
+                                        @else
+                                        <span class="inline-flex items-center gap-1 text-gray-500 text-xs">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Cash Payment
+                                        </span>
+                                        @endif
 
+                                        {{-- Receipt Actions (Show for all approved payments) --}}
                                         @if($payment->status === 'approved')
                                         @if($payment->hasReceiptCreated())
                                         {{-- Status 2: Receipt ready - show download button --}}
@@ -203,10 +214,12 @@
                                         </form>
                                         @endif
                                         @endif
+
+                                        {{-- Show nothing for non-approved payments without image --}}
+                                        @if($payment->status !== 'approved' && !$payment->payment_image)
+                                        <span class="text-gray-400">—</span>
+                                        @endif
                                     </div>
-                                    @else
-                                    <span class="text-gray-400">—</span>
-                                    @endif
                                 </td>
                             </tr>
                             @empty

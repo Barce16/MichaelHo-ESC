@@ -347,6 +347,7 @@ class PaymentController extends Controller
             'payment_image' => $filePath,
             'amount' => $data['amount'],
             'payment_method' => $data['payment_method'],
+            'reference_number' => $data['reference_number'],
             'status' => Payment::STATUS_PENDING,
             'payment_date' => now(),
         ]);
