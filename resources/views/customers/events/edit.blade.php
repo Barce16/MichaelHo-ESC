@@ -56,7 +56,7 @@
     <div class="py-6" x-data="editEventForm()" x-init="init()">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
-            <!-- IMPORTANT: Remove @submit handler from form, we'll handle it programmatically -->
+            <!-- IMPORTANT: Remove @submit handler from form, handle it programmatically -->
             <form method="POST" action="{{ route('customer.events.update', $event) }}" class="space-y-6"
                 id="eventEditForm">
                 @csrf
@@ -244,137 +244,159 @@
 
                 {{-- Inclusions Selection --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div
-                        class="bg-gradient-to-r from-violet-50 to-purple-50 border-b border-gray-200 px-6 py-4 flex justify-between items-start">
-                        <div>
-                            <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                <svg class="w-5 h-5 text-violet-500" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                </svg>
-                                Select Inclusions
-                            </h3>
-                            <p class="text-sm text-gray-500 mt-1">Choose the services you want for your event</p>
-                        </div>
-
-                        {{-- Price Summary Badge --}}
-                        <div class="text-right">
-                            <div class="inline-flex items-center px-3 py-1 rounded-full bg-violet-100 text-violet-700">
-                                <span class="text-sm font-medium">Total:</span>
-                                <span class="text-lg font-bold ml-2">₱<span
-                                        x-text="grandTotal().toLocaleString()"></span></span>
-                            </div>
-                        </div>
+                    <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-gray-200 px-6 py-4">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            Select Your Inclusions
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">Choose the services you'd like to add or remove from your
+                            event</p>
                     </div>
 
                     <div class="p-6">
-                        {{-- Category Tabs --}}
+                        {{-- Tabs Navigation --}}
                         <div class="border-b border-gray-200 mb-6">
-                            <nav class="-mb-px flex space-x-8 overflow-x-auto" aria-label="Inclusion categories">
-                                <template x-for="cat in categories" :key="cat.category">
-                                    <button type="button" @click="activeTab = cat.category" :class="activeTab === cat.category ? 
-                                    'border-violet-500 text-violet-600' : 
-                                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition">
-                                        <span x-text="cat.category"></span>
-                                        <span class="ml-2 px-2 py-0.5 text-xs rounded-full"
-                                            :class="activeTab === cat.category ? 'bg-violet-100 text-violet-600' : 'bg-gray-100 text-gray-600'"
-                                            x-text="cat.items.length"></span>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="(category, index) in categories" :key="category.category">
+                                    <button type="button" @click="activeTab = category.category" :class="{
+                            'border-emerald-500 text-emerald-600 bg-emerald-50': activeTab === category.category,
+                            'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== category.category
+                        }" class="px-4 py-2.5 border-b-2 font-medium text-sm transition-colors duration-200 whitespace-nowrap"
+                                        x-text="category.category">
                                     </button>
                                 </template>
-                            </nav>
+                            </div>
                         </div>
 
-                        {{-- Inclusions Grid --}}
-                        <template x-for="cat in categories" :key="cat.category">
-                            <div x-show="activeTab === cat.category" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <template x-for="item in cat.items" :key="item.id">
-                                    <div class="relative border rounded-lg overflow-hidden transition hover:shadow-md"
-                                        :class="selectedIncs.has(item.id) ? 
-                                    'bg-violet-50 border-violet-300 ring-2 ring-violet-200' : 
-                                    'bg-white border-gray-200 hover:border-gray-300'">
+                        {{-- Tab Content --}}
+                        <div class="space-y-6">
+                            <template x-for="category in categories" :key="category.category">
+                                <div x-show="activeTab === category.category"
+                                    x-transition:enter="transition ease-out duration-200"
+                                    x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                                    {{-- Category Grid --}}
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <template x-for="inc in category.items" :key="inc.id">
+                                            <div class="relative border rounded-xl overflow-hidden transition-all duration-300 cursor-pointer hover:shadow-lg"
+                                                :class="{
+                                    'ring-2 ring-emerald-500 border-emerald-500 shadow-md': selectedIncs.has(inc.id),
+                                    'border-gray-300 hover:border-emerald-300': !selectedIncs.has(inc.id)
+                                }" @click="toggleInclusion(inc.id)">
 
-                                        {{-- Inclusion Image --}}
-                                        <template x-if="item.image">
-                                            <div class="h-32 w-full bg-gray-100 overflow-hidden">
-                                                <img :src="'/storage/' + item.image" :alt="item.name"
-                                                    class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
+                                                {{-- Image --}}
+                                                <div class="aspect-video bg-gray-100 overflow-hidden">
+                                                    <img :src="'/storage/' + inc.image" :alt="inc.name"
+                                                        class="w-full h-full object-cover">
+                                                </div>
+
+                                                {{-- Content --}}
+                                                <div class="p-4">
+                                                    <div class="flex items-start justify-between gap-2 mb-2">
+                                                        <h5 class="font-semibold text-gray-900 line-clamp-2 flex-1"
+                                                            x-text="inc.name"></h5>
+                                                        <span
+                                                            class="text-sm font-bold text-emerald-600 whitespace-nowrap">₱<span
+                                                                x-text="Number(inc.price).toLocaleString()"></span></span>
+                                                    </div>
+
+                                                    <p class="text-xs text-gray-600 line-clamp-2 mb-3"
+                                                        x-text="inc.notes"></p>
+
+                                                    {{-- Selection Indicator --}}
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition"
+                                                            :class="{
+                                                'bg-emerald-500 border-emerald-500': selectedIncs.has(inc.id),
+                                                'border-gray-300': !selectedIncs.has(inc.id)
+                                            }">
+                                                            <svg x-show="selectedIncs.has(inc.id)"
+                                                                class="w-3 h-3 text-white" fill="none"
+                                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="3" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        </div>
+                                                        <span class="text-xs font-medium" :class="{
+                                                'text-emerald-600': selectedIncs.has(inc.id),
+                                                'text-gray-500': !selectedIncs.has(inc.id)
+                                            }" x-text="selectedIncs.has(inc.id) ? 'Selected' : 'Select'">
+                                                        </span>
+
+                                                        {{-- Package Badge --}}
+                                                        <template x-if="packageInclusions.includes(inc.id)">
+                                                            <span
+                                                                class="ml-auto text-xs font-semibold px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full flex items-center gap-1">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                                    viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2" d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                                In Package
+                                                            </span>
+                                                        </template>
+                                                    </div>
+
+                                                    {{-- Hidden checkbox input --}}
+                                                    <input type="checkbox" class="sr-only pointer-events-none"
+                                                        name="inclusions[]" :value="inc.id"
+                                                        :checked="selectedIncs.has(inc.id)">
+                                                </div>
+
+                                                {{-- Notes Section (only shows when selected) --}}
+                                                <div x-show="selectedIncs.has(inc.id)" x-transition
+                                                    class="px-4 pb-4 border-t border-gray-200 bg-white" @click.stop>
+                                                    <label class="block text-xs font-medium text-gray-700 mb-2 mt-3">
+                                                        <svg class="w-3.5 h-3.5 inline mr-1" fill="none"
+                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                        Add Your Notes (Optional)
+                                                    </label>
+                                                    <textarea :name="'inclusion_notes[' + inc.id + ']'"
+                                                        x-model="inclusionNotes[inc.id]" rows="2"
+                                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                                                        :placeholder="'Special requests or preferences for ' + inc.name + '...'"></textarea>
+                                                </div>
                                             </div>
                                         </template>
-
-                                        <div class="p-4">
-                                            <label :for="'inc_' + item.id"
-                                                class="flex items-start cursor-pointer select-none">
-                                                <div class="flex items-center h-5">
-                                                    <input :id="'inc_' + item.id" type="checkbox" :name="'inclusions[]'"
-                                                        :value="item.id" :checked="selectedIncs.has(item.id)"
-                                                        @change="toggleInclusion(item.id)"
-                                                        class="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500">
-                                                </div>
-
-                                                <div class="ml-3 flex-1">
-                                                    <div class="flex justify-between items-start">
-                                                        <div class="flex-1">
-                                                            <p class="text-sm font-semibold text-gray-900"
-                                                                x-text="item.name"></p>
-                                                            <p class="text-xs text-gray-500 mt-1" x-text="item.notes">
-                                                            </p>
-                                                        </div>
-                                                        <span class="text-sm font-bold text-violet-600 ml-2">
-                                                            ₱<span x-text="Number(item.price).toLocaleString()"></span>
-                                                        </span>
-                                                    </div>
-
-                                                    {{-- Notes Input --}}
-                                                    <div x-show="selectedIncs.has(item.id)" class="mt-3"
-                                                        x-transition:enter="transition ease-out duration-200"
-                                                        x-transition:enter-start="opacity-0 transform scale-95"
-                                                        x-transition:enter-end="opacity-100 transform scale-100">
-                                                        <label :for="'notes_' + item.id"
-                                                            class="block text-xs font-medium text-gray-600 mb-1">
-                                                            Special instructions (optional)
-                                                        </label>
-                                                        <input type="text" :id="'notes_' + item.id"
-                                                            :name="'inclusion_notes[' + item.id + ']'"
-                                                            x-model="inclusionNotes[item.id]"
-                                                            class="w-full px-3 py-2 text-xs border border-gray-200 rounded-md focus:border-violet-300 focus:ring focus:ring-violet-200 focus:ring-opacity-50"
-                                                            placeholder="e.g., Specific color, style, or quantity">
-                                                    </div>
-                                                </div>
-                                            </label>
-                                        </div>
                                     </div>
-                                </template>
-                            </div>
-                        </template>
+                                </div>
+                            </template>
+                        </div>
 
-                        {{-- Price Breakdown --}}
-                        <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Price Breakdown</h4>
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Inclusions Subtotal:</span>
-                                    <span class="font-medium">₱<span
+                        {{-- Summary --}}
+                        <div
+                            class="mt-8 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+                            <div class="flex items-center justify-between mb-3">
+                                <div>
+                                    <span class="text-emerald-100 text-sm">Selected Inclusions</span>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-2xl font-bold" x-text="selectedIncs.size"></span>
+                                        <span class="text-emerald-100">item<span
+                                                x-show="selectedIncs.size !== 1">s</span></span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-emerald-100 text-sm block">Subtotal</span>
+                                    <span class="text-2xl font-bold">₱<span
                                             x-text="inclusionsSubtotal().toLocaleString()"></span></span>
                                 </div>
-                                <div class="flex justify-between" x-show="pkg && pkg.coordination_price">
-                                    <span class="text-gray-600">Event Coordination:</span>
-                                    <span class="font-medium">₱<span
-                                            x-text="Number(pkg?.coordination_price || 0).toLocaleString()"></span></span>
-                                </div>
-                                <div class="flex justify-between" x-show="pkg && pkg.event_styling_price">
-                                    <span class="text-gray-600">Event Styling:</span>
-                                    <span class="font-medium">₱<span
-                                            x-text="Number(pkg?.event_styling_price || 0).toLocaleString()"></span></span>
-                                </div>
-                                <div class="border-t pt-2 flex justify-between">
-                                    <span class="font-semibold text-gray-900">Grand Total:</span>
-                                    <span class="font-bold text-violet-600 text-lg">₱<span
-                                            x-text="grandTotal().toLocaleString()"></span></span>
-                                </div>
+                            </div>
+                            <div class="border-t border-white/20 pt-3 flex items-center justify-between">
+                                <span class="text-lg font-semibold">Grand Total</span>
+                                <span class="text-3xl font-bold">₱<span
+                                        x-text="grandTotal().toLocaleString()"></span></span>
                             </div>
                         </div>
+
+                        @error('inclusions')
+                        <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 
@@ -512,7 +534,18 @@
             </div>
         </div>
     </div>
+    <style>
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
 
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
     <script>
         function editEventForm() {
     const eventSelections = @json($event->inclusions->pluck('id'));

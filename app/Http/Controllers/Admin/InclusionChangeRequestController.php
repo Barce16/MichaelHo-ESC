@@ -45,6 +45,9 @@ class InclusionChangeRequestController extends Controller
         DB::transaction(function () use ($changeRequest, $request) {
             $event = $changeRequest->event;
 
+            // Store old values for event progress log
+            $oldTotal = $event->billing ? $event->billing->total_amount : 0;
+
             // Update change request status
             $changeRequest->update([
                 'status' => InclusionChangeRequest::STATUS_APPROVED,
@@ -63,24 +66,51 @@ class InclusionChangeRequestController extends Controller
                 ->toArray();
 
             // Sync inclusions with price snapshots and notes
-            $attach = [];
+            $syncData = [];
             foreach ($newInclusionIds as $incId) {
-                $attach[$incId] = [
+                $syncData[$incId] = [
                     'price_snapshot' => (float) ($inclusionPrices[$incId] ?? 0),
                     'notes' => $inclusionNotes[$incId] ?? null,
                 ];
             }
-            $event->inclusions()->sync($attach);
+            $event->inclusions()->sync($syncData);
 
-            // Update billing if exists
-            if ($event->billing) {
-                $event->billing->update([
-                    'total_amount' => $changeRequest->new_total,
-                    'balance' => $changeRequest->new_total - $event->billing->amount_paid,
-                ]);
+            // Recalculate billing properly (like admin side)
+            $this->recalculateBilling($event);
+
+            // Refresh event to get updated billing
+            $event->refresh();
+            $newTotal = $event->billing->total_amount;
+
+            // Get added and removed inclusions for event progress log
+            $addedInclusions = collect($changeRequest->new_inclusions)
+                ->whereIn('id', collect($changeRequest->added_inclusions)->pluck('id'));
+            $removedInclusions = collect($changeRequest->removed_inclusions);
+
+            // Build change details for progress log
+            $changes = [];
+            if ($addedInclusions->count() > 0) {
+                $added = $addedInclusions->pluck('name')->toArray();
+                $changes[] = "Added: " . implode(', ', $added);
+            }
+            if ($removedInclusions->count() > 0) {
+                $removed = $removedInclusions->pluck('name')->toArray();
+                $changes[] = "Removed: " . implode(', ', $removed);
             }
 
-            // 🔔 NOTIFY CUSTOMER - Change Request Approved
+            $changeDetails = !empty($changes)
+                ? implode(". ", $changes) . "."
+                : "Inclusions modified.";
+
+            // Create event progress record
+            \App\Models\EventProgress::create([
+                'event_id' => $event->id,
+                'status' => 'Change Request Approved',
+                'details' => "Customer's inclusion change request approved. {$changeDetails} Total amount changed from ₱" . number_format($oldTotal, 2) . " to ₱" . number_format($newTotal, 2) . ".",
+                'progress_date' => now(),
+            ]);
+
+            // 📧 NOTIFY CUSTOMER - Change Request Approved
             $customer = $changeRequest->customer;
             if ($customer->user) {
                 // 1. Send email notification
@@ -93,7 +123,36 @@ class InclusionChangeRequestController extends Controller
 
         return redirect()
             ->route('admin.change-requests.index')
-            ->with('success', 'Change request approved and applied successfully.');
+            ->with('success', 'Change request approved and applied successfully. Customer has been notified.');
+    }
+
+    /**
+     * Recalculate billing based on package and inclusions
+     * (Same method from admin EventController)
+     */
+    protected function recalculateBilling(Event $event)
+    {
+        $event->load(['package', 'inclusions', 'billing']);
+
+        // Calculate total from coordination + event_styling + inclusions
+        // DO NOT use package->price as it includes base inclusions
+        $coordinationPrice = $event->package->coordination_price ?? 0;
+        $eventStylingPrice = $event->package->event_styling_price ?? 0;
+        $inclusionsTotal = $event->inclusions->sum('pivot.price_snapshot');
+
+        $newTotal = $coordinationPrice + $eventStylingPrice + $inclusionsTotal;
+
+        // Get or create billing
+        $billing = $event->billing;
+        if (!$billing) {
+            $billing = new \App\Models\Billing();
+            $billing->event_id = $event->id;
+        }
+
+        // Update billing total only (balance is computed via accessor)
+        $billing->total_amount = $newTotal;
+
+        $billing->save();
     }
 
     public function reject(Request $request, InclusionChangeRequest $changeRequest)
