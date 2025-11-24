@@ -90,7 +90,7 @@ class CustomerController extends Controller
                     'id' => $i->id,
                     'name' => $i->name,
                     'price' => $i->price,
-                    'image_url' => $i->image_url,
+                    'image' => $i->image,
                 ])
             ];
         });
@@ -103,7 +103,7 @@ class CustomerController extends Controller
                     'name' => $inclusion->name,
                     'category' => $inclusion->category->value ?? $inclusion->category,
                     'price' => $inclusion->price,
-                    'image_url' => $inclusion->image_url,
+                    'image' => $inclusion->image,
                     'package_type' => $inclusion->package_type,
                 ];
             })
