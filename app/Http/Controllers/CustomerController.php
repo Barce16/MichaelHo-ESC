@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class CustomerController extends Controller
 {
@@ -72,21 +73,27 @@ class CustomerController extends Controller
         $packages = Package::where('is_active', true)
             ->with(['inclusions' => function ($query) {
                 $query->where('is_active', true);
-            }])
+            }, 'images'])
             ->orderBy('type')
             ->orderBy('name')
             ->get();
 
         // Prepare packages data for Alpine.js
         $packagesData = $packages->map(function ($p) {
+
+            $imageUrl = null;
+
+            if ($p->images->isNotEmpty()) {
+                $imageUrl = asset('storage/' . $p->images->first()->path);
+            }
             return [
                 'id' => $p->id,
                 'name' => $p->name,
                 'type' => $p->type,
                 'price' => $p->price,
-                'banner_url' => $p->banner,
                 'coordination_price' => $p->coordination_price,
                 'event_styling_price' => $p->event_styling_price,
+                'banner_url' => $imageUrl,
                 'inclusions' => $p->inclusions->map(fn($i) => [
                     'id' => $i->id,
                     'name' => $i->name,
