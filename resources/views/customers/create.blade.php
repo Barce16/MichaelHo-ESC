@@ -644,7 +644,7 @@
                                                 {{-- Inclusion Image --}}
                                                 <div
                                                     class="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                                                    <img :src="inclusion.image" :alt="inclusion.name"
+                                                    <img :src="inclusion.image_url" :alt="inclusion.name"
                                                         class="w-full h-full object-cover" loading="lazy">
                                                 </div>
 

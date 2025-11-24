@@ -84,13 +84,14 @@ class CustomerController extends Controller
                 'name' => $p->name,
                 'type' => $p->type,
                 'price' => $p->price,
+                'banner_url' => $p->banner,
                 'coordination_price' => $p->coordination_price,
                 'event_styling_price' => $p->event_styling_price,
                 'inclusions' => $p->inclusions->map(fn($i) => [
                     'id' => $i->id,
                     'name' => $i->name,
                     'price' => $i->price,
-                    'image' => $i->image,
+                    'image_url' => $i->image_url,
                 ])
             ];
         });
@@ -103,7 +104,7 @@ class CustomerController extends Controller
                     'name' => $inclusion->name,
                     'category' => $inclusion->category->value ?? $inclusion->category,
                     'price' => $inclusion->price,
-                    'image' => $inclusion->image,
+                    'image_url' => $inclusion->image_url,
                     'package_type' => $inclusion->package_type,
                 ];
             })
