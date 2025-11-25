@@ -4,6 +4,7 @@ namespace App\Services;
 
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use App\Models\Payment;
 use App\Models\Event;
 
@@ -234,5 +235,68 @@ class SmsNotifier
         $message .= "\n\nView details: " . route('customer.events.show', $event);
 
         return $this->sendSms($customer->phone, $message);
+    }
+
+    /**
+     * Get gender-appropriate greeting
+     */
+    protected function getGreeting(?string $gender): string
+    {
+        if (!$gender) {
+            return 'Dear';
+        }
+
+        return match (strtolower($gender)) {
+            'male' => 'Mr.',
+            'female' => 'Ms.',
+            default => 'Dear',
+        };
+    }
+
+    public function notifyEventToday(Event $event): bool
+    {
+        try {
+            $customer = $event->customer;
+
+            if (!$customer || !$customer->contact_number) {
+                Log::warning('Cannot send event today SMS - missing customer or contact number', [
+                    'event_id' => $event->id
+                ]);
+                return false;
+            }
+
+            $phone = $this->formatPhoneNumber($customer->contact_number);
+            $greeting = $this->getGreeting($customer->gender);
+
+            $message = "{$greeting} {$customer->customer_name}, good morning! This is a reminder that your event '{$event->name}' is happening TODAY at " . ($event->venue ?? 'the venue') . ". Our team is ready to make your celebration memorable. For any concerns, contact us immediately. - Michael Ho Events";
+
+            $response = Http::timeout(30)->post($this->apiUrl, [
+                'token' => $this->apiToken,
+                'phone' => $phone,
+                'message' => $message,
+            ]);
+
+            if ($response->successful()) {
+                Log::info('Event today SMS sent successfully', [
+                    'event_id' => $event->id,
+                    'customer_id' => $customer->id,
+                    'phone' => $phone
+                ]);
+                return true;
+            }
+
+            Log::error('Failed to send event today SMS', [
+                'event_id' => $event->id,
+                'status' => $response->status(),
+                'response' => $response->body()
+            ]);
+            return false;
+        } catch (\Exception $e) {
+            Log::error('Exception sending event today SMS', [
+                'event_id' => $event->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
     }
 }

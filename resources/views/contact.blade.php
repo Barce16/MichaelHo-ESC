@@ -118,7 +118,7 @@
                                     <h3 class="text-sm uppercase tracking-wider text-gray-900 font-medium mb-2">Address
                                     </h3>
                                     <p class="text-gray-600 leading-relaxed">
-                                        14 extention st, Cagayan De Oro City, 9000 Misamis Oriental
+                                        Malaybalay City, Bukidnon 8700, Philippines
                                     </p>
                                 </div>
                             </div>
@@ -193,9 +193,8 @@
     <!-- Map Section (Optional) -->
     <section class="border-t border-gray-100">
         <div class="w-full h-96 bg-gray-100">
-            <!-- Replace with your actual Google Maps embed -->
             <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.4547234!2d121.0844!3d14.5764!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTTCsDM0JzM1LjAiTiAxMjHCsDA1JzAzLjgiRQ!5e0!3m2!1sen!2sph!4v1234567890"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d63401.8!2d125.1278!3d8.1531!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x32fff3c8e87e9f1d%3A0x70e93cf85e038!2sMalaybalay%2C%20Bukidnon!5e0!3m2!1sen!2sph!4v1732544094000"
                 width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" class="grayscale">
             </iframe>
         </div>
