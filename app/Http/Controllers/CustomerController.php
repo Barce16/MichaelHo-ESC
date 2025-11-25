@@ -208,7 +208,7 @@ class CustomerController extends Controller
                 // Create User
                 $user = User::create([
                     'name' => $validated['customer_name'],
-                    'username' => Str::slug($validated['customer_name']) . '-' . rand(1000, 9999),
+                    'username' => Str::slug(explode(' ', $validated['customer_name'])[0]) . '-' . rand(100, 999),
                     'email' => $validated['email'],
                     'password' => Hash::make($randomPassword),
                     'user_type' => 'customer',

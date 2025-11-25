@@ -175,13 +175,20 @@ class AdminEventController extends Controller
             $isNewUser = true;
             $password = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 12);
 
-            $baseName = Str::slug(Str::lower($customer->customer_name));
-            $username = $baseName;
+            $firstName = explode(' ', $customer->customer_name)[0];
+            $baseName = Str::slug(Str::lower($firstName));
+            $username = $baseName . '-' . rand(100, 999);
 
             $counter = 1;
             while (User::where('username', $username)->exists()) {
-                $username = $baseName . $counter;
+                $username = $baseName . '-' . rand(100, 999);
                 $counter++;
+
+                // Safety: prevent infinite loop
+                if ($counter > 10) {
+                    $username = $baseName . '-' . rand(1000, 9999);
+                    break;
+                }
             }
 
             $user = User::create([
