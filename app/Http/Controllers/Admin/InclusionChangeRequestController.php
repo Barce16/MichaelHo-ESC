@@ -5,17 +5,21 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\InclusionChangeRequest;
 use App\Models\Event;
+use App\Services\SmsNotifier;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class InclusionChangeRequestController extends Controller
 {
     protected $notificationService;
+    protected $smsNotifier;
 
-    public function __construct(NotificationService $notificationService)
+    public function __construct(NotificationService $notificationService, SmsNotifier $smsNotifier)
     {
         $this->notificationService = $notificationService;
+        $this->smsNotifier = $smsNotifier;
     }
 
     public function index()
@@ -118,6 +122,16 @@ class InclusionChangeRequestController extends Controller
 
                 // 2. Create in-app notification
                 $this->notificationService->notifyCustomerChangeRequestApproved($changeRequest);
+
+                // 3. Send SMS notification - ADD THIS
+                try {
+                    $this->smsNotifier->notifyChangeRequestApproved($changeRequest);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send change request approved SMS', [
+                        'change_request_id' => $changeRequest->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
         });
 
@@ -178,6 +192,16 @@ class InclusionChangeRequestController extends Controller
 
             // 2. Create in-app notification
             $this->notificationService->notifyCustomerChangeRequestRejected($changeRequest);
+
+            // 3. Send SMS notification - ADD THIS
+            try {
+                $this->smsNotifier->notifyChangeRequestRejected($changeRequest);
+            } catch (\Exception $e) {
+                Log::error('Failed to send change request rejected SMS', [
+                    'change_request_id' => $changeRequest->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
         }
 
         return redirect()

@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use App\Models\Payment;
 use App\Models\Event;
+use App\Models\InclusionChangeRequest;
+
 
 class SmsNotifier
 {
@@ -294,6 +296,127 @@ class SmsNotifier
         } catch (\Exception $e) {
             Log::error('Exception sending event today SMS', [
                 'event_id' => $event->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send SMS notification when inclusion change request is approved
+     */
+    public function notifyChangeRequestApproved(InclusionChangeRequest $changeRequest): bool
+    {
+        try {
+            $customer = $changeRequest->customer;
+            $event = $changeRequest->event;
+
+            if (!$customer || !$customer->contact_number) {
+                Log::warning('Cannot send change request approved SMS - missing customer or contact number', [
+                    'change_request_id' => $changeRequest->id
+                ]);
+                return false;
+            }
+
+            $phone = $this->formatPhoneNumber($customer->contact_number);
+            $greeting = $this->getGreeting($customer->gender);
+
+            // Count changes
+            $addedCount = count($changeRequest->added_inclusions ?? []);
+            $removedCount = count($changeRequest->removed_inclusions ?? []);
+
+            $message = "{$greeting} {$customer->customer_name}, your inclusion change request for event '{$event->name}' has been approved! ";
+
+            if ($addedCount > 0) {
+                $message .= "{$addedCount} inclusion(s) added. ";
+            }
+            if ($removedCount > 0) {
+                $message .= "{$removedCount} inclusion(s) removed. ";
+            }
+
+            $message .= "Your billing has been updated. Check your account for details. - Michael Ho Events";
+
+            $response = Http::timeout(30)->post($this->apiUrl, [
+                'token' => $this->apiToken,
+                'phone' => $phone,
+                'message' => $message,
+            ]);
+
+            if ($response->successful()) {
+                Log::info('Change request approved SMS sent successfully', [
+                    'change_request_id' => $changeRequest->id,
+                    'customer_id' => $customer->id,
+                    'phone' => $phone
+                ]);
+                return true;
+            }
+
+            Log::error('Failed to send change request approved SMS', [
+                'change_request_id' => $changeRequest->id,
+                'status' => $response->status(),
+                'response' => $response->body()
+            ]);
+            return false;
+        } catch (\Exception $e) {
+            Log::error('Exception sending change request approved SMS', [
+                'change_request_id' => $changeRequest->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send SMS notification when inclusion change request is rejected
+     */
+    public function notifyChangeRequestRejected(InclusionChangeRequest $changeRequest): bool
+    {
+        try {
+            $customer = $changeRequest->customer;
+            $event = $changeRequest->event;
+
+            if (!$customer || !$customer->contact_number) {
+                Log::warning('Cannot send change request rejected SMS - missing customer or contact number', [
+                    'change_request_id' => $changeRequest->id
+                ]);
+                return false;
+            }
+
+            $phone = $this->formatPhoneNumber($customer->contact_number);
+            $greeting = $this->getGreeting($customer->gender);
+
+            $message = "{$greeting} {$customer->customer_name}, your inclusion change request for event '{$event->name}' has been rejected. ";
+
+            if ($changeRequest->admin_notes) {
+                $message .= "Reason: {$changeRequest->admin_notes}. ";
+            }
+
+            $message .= "Please contact us if you have questions. - Michael Ho Events";
+
+            $response = Http::timeout(30)->post($this->apiUrl, [
+                'token' => $this->apiToken,
+                'phone' => $phone,
+                'message' => $message,
+            ]);
+
+            if ($response->successful()) {
+                Log::info('Change request rejected SMS sent successfully', [
+                    'change_request_id' => $changeRequest->id,
+                    'customer_id' => $customer->id,
+                    'phone' => $phone
+                ]);
+                return true;
+            }
+
+            Log::error('Failed to send change request rejected SMS', [
+                'change_request_id' => $changeRequest->id,
+                'status' => $response->status(),
+                'response' => $response->body()
+            ]);
+            return false;
+        } catch (\Exception $e) {
+            Log::error('Exception sending change request rejected SMS', [
+                'change_request_id' => $changeRequest->id,
                 'error' => $e->getMessage()
             ]);
             return false;
