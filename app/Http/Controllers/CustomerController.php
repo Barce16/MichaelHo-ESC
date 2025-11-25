@@ -11,12 +11,24 @@ use App\Models\Billing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
+use App\Services\SmsNotifier;
+use App\Services\NotificationService;
 
 class CustomerController extends Controller
 {
+
+    protected $smsNotifier;
+    protected $notificationService;
+
+    public function __construct(SmsNotifier $smsNotifier, NotificationService $notificationService)
+    {
+        $this->smsNotifier = $smsNotifier;
+        $this->notificationService = $notificationService;
+    }
+
     public function index()
     {
         $q = request('q');
@@ -201,14 +213,38 @@ class CustomerController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($validated, $request) {
-                // Generate random password
-                $randomPassword = Str::random(12);
+            /** @var User|null $user */
+            $user = null;
+            /** @var Event|null $event */
+            $event = null;
+            /** @var string|null $randomPassword */
+            $randomPassword = null;
+
+            DB::transaction(function () use ($validated, $request, &$user, &$event, &$randomPassword) {
+                // Generate random 8-character password
+                $randomPassword = Str::random(8);
+
+                // Generate username from FIRST NAME only + 3 random digits
+                $firstName = explode(' ', $validated['customer_name'])[0];
+                $baseName = Str::slug(Str::lower($firstName));
+                $username = $baseName . '-' . rand(100, 999);
+
+                // Ensure unique username
+                $counter = 0;
+                while (User::where('username', $username)->exists()) {
+                    $username = $baseName . '-' . rand(100, 999);
+                    $counter++;
+
+                    if ($counter > 10) {
+                        $username = $baseName . '-' . rand(1000, 9999);
+                        break;
+                    }
+                }
 
                 // Create User
                 $user = User::create([
                     'name' => $validated['customer_name'],
-                    'username' => Str::slug(explode(' ', $validated['customer_name'])[0]) . '-' . rand(100, 999),
+                    'username' => $username,
                     'email' => $validated['email'],
                     'password' => Hash::make($randomPassword),
                     'user_type' => 'customer',
@@ -221,7 +257,8 @@ class CustomerController extends Controller
                     'user_id' => $user->id,
                     'customer_name' => $validated['customer_name'],
                     'email' => $validated['email'],
-                    'phone' => $validated['phone'],
+                    'contact_number' => $validated['phone'], // FIXED: use contact_number
+                    'gender' => $validated['gender'],
                     'address' => $validated['address'] ?? null,
                 ]);
 
@@ -285,23 +322,48 @@ class CustomerController extends Controller
                     'downpayment_amount' => $grandTotal / 2,
                     'status' => 'pending',
                 ]);
+            });
 
-                // Send credentials email if requested
-                if ($request->has('send_credentials_email')) {
+            // SEND NOTIFICATIONS AFTER TRANSACTION
+
+            // Send credentials email if requested
+            if ($request->has('send_credentials_email')) {
+                try {
                     Mail::to($user->email)->send(
                         new \App\Mail\WalkinCustomerCredentials($user, $randomPassword, $event)
                     );
+                } catch (\Exception $e) {
+                    Log::error('Failed to send walk-in credentials email', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage()
+                    ]);
                 }
+            }
 
-                // Store password temporarily in session for display
-                session()->flash('new_customer_password', $randomPassword);
-                session()->flash('new_customer_username', $user->username);
-            });
+            // Send SMS notification with credentials
+            try {
+                $this->smsNotifier->notifyEventApproved($event, $user->username, $randomPassword);
+            } catch (\Exception $e) {
+                Log::error('Failed to send walk-in credentials SMS', [
+                    'event_id' => $event->id,
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            // Store password temporarily in session for display
+            session()->flash('new_customer_password', $randomPassword);
+            session()->flash('new_customer_username', $user->username);
 
             return redirect()
                 ->route('admin.customers.index')
-                ->with('success', 'Walk-in customer and event created successfully!');
+                ->with('success', 'Walk-in customer and event created successfully! Credentials sent via ' . ($request->has('send_credentials_email') ? 'email and SMS' : 'SMS') . '.');
         } catch (\Exception $e) {
+            Log::error('Error creating walk-in customer', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return back()
                 ->withInput()
                 ->with('error', 'Error creating customer: ' . $e->getMessage());
