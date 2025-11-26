@@ -15,6 +15,9 @@
 </head>
 
 <body class="bg-white">
+    <!-- Toast Notifications -->
+    @include('components.toast')
+
     <!-- Elegant Header -->
     <header class="border-b border-gray-100 bg-white">
         <div class="max-w-screen-xl mx-auto px-6 lg:px-12 py-6">
@@ -57,19 +60,6 @@
     <section class="py-16">
         <div class="max-w-screen-xl mx-auto px-6 lg:px-12">
 
-            @if(session('error'))
-            <div class="mb-8 p-6 bg-red-50 border border-red-200">
-                <div class="flex items-start gap-3">
-                    <svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p class="text-sm text-red-800">{{ session('error') }}</p>
-                </div>
-            </div>
-            @endif
-
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
 
                 <!-- LEFT COLUMN - Event Summary -->
@@ -106,6 +96,13 @@
                             <div class="pb-4 border-b border-gray-100">
                                 <p class="text-xs uppercase tracking-wider text-gray-500 mb-1">Theme</p>
                                 <p class="text-base text-gray-900">{{ $eventData['theme'] }}</p>
+                            </div>
+                            @endif
+
+                            @if(!empty($eventData['notes']))
+                            <div class="pb-4 border-b border-gray-100">
+                                <p class="text-xs uppercase tracking-wider text-gray-500 mb-1">Additional Notes</p>
+                                <p class="text-base text-gray-900">{{ $eventData['notes'] }}</p>
                             </div>
                             @endif
 
@@ -159,6 +156,7 @@
                             <input type="hidden" name="event_date" value="{{ $eventData['event_date'] }}">
                             <input type="hidden" name="venue" value="{{ $eventData['venue'] }}">
                             <input type="hidden" name="theme" value="{{ $eventData['theme'] ?? '' }}">
+                            <input type="hidden" name="notes" value="{{ $eventData['notes'] ?? '' }}">
 
                             <div class="space-y-6">
 
@@ -168,7 +166,7 @@
                                         class="block text-xs uppercase tracking-wider text-gray-600 mb-2">
                                         Full Name <span class="text-red-500">*</span>
                                     </label>
-                                    <input type="text" id="customer_name" name="customer_name" required
+                                    <input type="text" id="customer_name" name="customer_name"
                                         value="{{ old('customer_name') }}"
                                         class="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors @error('customer_name') border-red-500 @enderror"
                                         placeholder="Enter your full name">
@@ -183,7 +181,7 @@
                                         class="block text-xs uppercase tracking-wider text-gray-600 mb-2">
                                         Gender <span class="text-red-500">*</span>
                                     </label>
-                                    <select id="gender" name="gender" required
+                                    <select id="gender" name="gender"
                                         class="w-full px-4 py-3 border border-gray-200 bg-white text-sm focus:outline-none focus:border-black transition-colors @error('gender') border-red-500 @enderror">
                                         <option value="" disabled {{ old('gender') ? '' : 'selected' }}>Select gender
                                         </option>
@@ -204,7 +202,7 @@
                                         class="block text-xs uppercase tracking-wider text-gray-600 mb-2">
                                         Email Address <span class="text-red-500">*</span>
                                     </label>
-                                    <input type="email" id="email" name="email" required value="{{ old('email') }}"
+                                    <input type="email" id="email" name="email" value="{{ old('email') }}"
                                         class="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors @error('email') border-red-500 @enderror"
                                         placeholder="your.email@example.com">
                                     @error('email')
@@ -218,8 +216,7 @@
                                         class="block text-xs uppercase tracking-wider text-gray-600 mb-2">
                                         Phone Number <span class="text-red-500">*</span>
                                     </label>
-                                    <input type="tel" id="phone" name="phone" required maxlength="12"
-                                        value="{{ old('phone') }}"
+                                    <input type="tel" id="phone" name="phone" maxlength="12" value="{{ old('phone') }}"
                                         class="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors @error('phone') border-red-500 @enderror"
                                         placeholder="+63 912 345 6789">
                                     @error('phone')
@@ -233,8 +230,7 @@
                                         class="block text-xs uppercase tracking-wider text-gray-600 mb-2">
                                         Address
                                     </label>
-                                    <input type="text" id="address" name="address" minlength="10"
-                                        value="{{ old('address') }}"
+                                    <input type="text" id="address" name="address" value="{{ old('address') }}"
                                         class="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors"
                                         placeholder="Complete address (minimum 10 characters)">
                                 </div>
@@ -288,14 +284,10 @@
                     class="px-8 py-3 bg-black text-white text-xs uppercase tracking-widest hover:bg-gray-900 transition-colors">
                     Call Us
                 </a>
-                <a href="mailto:michaelhoevents@gmail.com"
+                <a href="/cdn-cgi/l/email-protection#620f0b010a03070e0a0d0714070c161122050f030b0e4c010d0f"
                     class="px-8 py-3 border border-black text-black text-xs uppercase tracking-widest hover:bg-black hover:text-white transition-all duration-300">
                     Email Us
                 </a>
             </div>
         </div>
-    </section>
-
-</body>
-
-</html>
+        </sec

@@ -61,6 +61,9 @@
 </head>
 
 <body class="bg-white">
+    <!-- Toast Notifications -->
+    @include('components.toast')
+
     <div x-data="{ 
         showLightbox: false,
         openLightbox() {
@@ -203,9 +206,13 @@
                                             class="block text-xs uppercase tracking-wider text-gray-600 mb-2">
                                             Event Name
                                         </label>
-                                        <input type="text" id="event_name" name="event_name" required
-                                            class="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors"
+                                        <input type="text" id="event_name" name="event_name"
+                                            value="{{ old('event_name') }}"
+                                            class="w-full px-4 py-3 border text-sm focus:outline-none focus:border-black transition-colors @error('event_name') border-red-500 @else border-gray-200 @enderror"
                                             placeholder="e.g., John & Jane Wedding">
+                                        @error('event_name')
+                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        @enderror
                                     </div>
 
                                     <!-- Event Date -->
@@ -214,7 +221,7 @@
                                             class="block text-xs uppercase tracking-wider text-gray-600 mb-2">
                                             Event Date
                                         </label>
-                                        <x-calendar-picker name="event_date" :value="old('event_date')" required />
+                                        <x-calendar-picker name="event_date" :value="old('event_date')" />
                                         @error('event_date')
                                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                         @enderror
@@ -226,9 +233,12 @@
                                             class="block text-xs uppercase tracking-wider text-gray-600 mb-2">
                                             Theme
                                         </label>
-                                        <input type="text" id="theme" name="theme" required
-                                            class="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors"
+                                        <input type="text" id="theme" name="theme" value="{{ old('theme') }}"
+                                            class="w-full px-4 py-3 border text-sm focus:outline-none focus:border-black transition-colors @error('theme') border-red-500 @else border-gray-200 @enderror"
                                             placeholder="e.g., Modern Minimalist">
+                                        @error('theme')
+                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        @enderror
                                     </div>
 
                                     <!-- Venue -->
@@ -237,9 +247,12 @@
                                             class="block text-xs uppercase tracking-wider text-gray-600 mb-2">
                                             Venue Address
                                         </label>
-                                        <textarea id="venue" name="venue" rows="3" required
-                                            class="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors"
-                                            placeholder="Complete venue name and address"></textarea>
+                                        <textarea id="venue" name="venue" rows="3"
+                                            class="w-full px-4 py-3 border text-sm focus:outline-none focus:border-black transition-colors @error('venue') border-red-500 @else border-gray-200 @enderror"
+                                            placeholder="Complete venue name and address">{{ old('venue') }}</textarea>
+                                        @error('venue')
+                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                        @enderror
                                     </div>
 
                                     <!-- Additional Details -->
@@ -250,7 +263,7 @@
                                         </label>
                                         <textarea id="notes" name="notes" rows="3"
                                             class="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-black transition-colors"
-                                            placeholder="Special requests or additional information"></textarea>
+                                            placeholder="Special requests or additional information">{{ old('notes') }}</textarea>
                                     </div>
 
                                     <!-- Submit Button -->
@@ -421,100 +434,6 @@
         </div>
         @endif
 
-        <!-- Form Validation Script -->
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-            const form = document.querySelector('form');
-            
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    // Clear previous errors
-                    document.querySelectorAll('.validation-error').forEach(el => el.remove());
-                    document.querySelectorAll('.border-red-500').forEach(el => {
-                        el.classList.remove('border-red-500');
-                        el.classList.add('border-gray-200');
-                    });
-
-                    let hasError = false;
-
-                    // Validate Event Name
-                    const eventName = document.getElementById('event_name');
-                    if (!eventName.value.trim()) {
-                        showError(eventName, 'Event name is required');
-                        hasError = true;
-                    }
-
-                    // Validate Event Date
-                    const eventDate = document.getElementById('event_date');
-                    if (!eventDate.value) {
-                        showError(eventDate, 'Event date is required');
-                        hasError = true;
-                    }
-
-                    // Validate Theme
-                    const theme = document.getElementById('theme');
-                    if (!theme.value.trim()) {
-                        showError(theme, 'Theme is required');
-                        hasError = true;
-                    }
-
-                    // Validate Venue
-                    const venue = document.getElementById('venue');
-                    if (!venue.value.trim()) {
-                        showError(venue, 'Venue address is required');
-                        hasError = true;
-                    }
-
-                    if (hasError) {
-                        e.preventDefault();
-                        showAlert('Please fill in all required fields');
-                        // Scroll to first error
-                        const firstError = document.querySelector('.border-red-500');
-                        if (firstError) {
-                            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                    }
-                });
-            }
-
-            function showError(field, message) {
-                const errorDiv = document.createElement('p');
-                errorDiv.className = 'validation-error text-red-500 text-xs mt-1';
-                errorDiv.textContent = message;
-                
-                field.classList.add('border-red-500');
-                field.classList.remove('border-gray-200');
-                field.parentElement.appendChild(errorDiv);
-            }
-
-            function showAlert(message, type = 'error') {
-                const existingAlert = document.querySelector('.validation-alert');
-                if (existingAlert) existingAlert.remove();
-
-                const alert = document.createElement('div');
-                alert.className = `validation-alert fixed top-4 right-4 z-50 px-6 py-4 border shadow-lg flex items-center gap-3 animate-slide-in ${
-                    type === 'error' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
-                }`;
-                
-                alert.innerHTML = `
-                    <span class="text-sm font-medium ${type === 'error' ? 'text-red-800' : 'text-green-800'}">${message}</span>
-                `;
-                
-                document.body.appendChild(alert);
-                setTimeout(() => alert.remove(), 4000);
-            }
-
-            // Remove error styling on input
-            document.querySelectorAll('input, textarea').forEach(field => {
-                field.addEventListener('input', function() {
-                    this.classList.remove('border-red-500');
-                    this.classList.add('border-gray-200');
-                    const error = this.parentElement.querySelector('.validation-error');
-                    if (error) error.remove();
-                });
-            });
-        });
-        </script>
     </div>
 </body>
 

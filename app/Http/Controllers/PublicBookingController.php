@@ -23,16 +23,34 @@ class PublicBookingController extends Controller
      */
     public function showBookingForm(Request $request, Package $package)
     {
-        // Validate event details
-        $eventData = $request->validate([
-            'event_name' => ['required', 'string', 'max:150'],
+        // Validate event details with custom messages
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'event_name' => ['required', 'string', 'min:5', 'max:150'],
             'event_date' => ['required', 'date', 'after:today'],
             'venue' => ['required', 'string', 'min:10', 'max:255'],
-            'theme' => ['nullable', 'string', 'max:255'],
-            'notes'        => ['nullable', 'string', 'max:5000'],
+            'theme' => ['nullable', 'string', 'min:3', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:5000'],
             'inclusions' => ['nullable', 'array'],
             'inclusions.*' => ['integer', 'exists:inclusions,id'],
+        ], [
+            'event_name.required' => 'Event name is required.',
+            'event_name.min' => 'Event name must be at least 5 characters.',
+            'event_date.required' => 'Event date is required.',
+            'event_date.after' => 'Event date must be a future date.',
+            'venue.required' => 'Venue is required.',
+            'venue.min' => 'Venue must be at least 10 characters. Please provide detailed address.',
+            'theme.min' => 'Theme must be at least 3 characters.',
         ]);
+
+        // Redirect back to package page if validation fails
+        if ($validator->fails()) {
+            return redirect()
+                ->route('services.show', $package)
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $eventData = $validator->validated();
 
         // Store event data in session
         session(['booking_event_data' => $eventData]);
@@ -43,7 +61,6 @@ class PublicBookingController extends Controller
             'eventData' => $eventData
         ]);
     }
-
     /**
      * Step 2: Complete booking with customer details
      */
