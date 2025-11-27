@@ -115,7 +115,7 @@ class PublicBookingController extends Controller
 
             // If email exists in users table, block booking
             if (User::where('email', $email)->exists()) {
-                $validator->errors()->add('email', 'This email is already registered. Please login to your account to book an event.');
+                $validator->errors()->add('email', 'This email is already registered. Please login to your account to book an event. Staff members should use a separate email than your work email.');
             }
         });
 
