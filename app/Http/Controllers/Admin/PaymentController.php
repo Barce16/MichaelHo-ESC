@@ -8,16 +8,22 @@ use App\Models\Event;
 use App\Models\Billing;
 use Illuminate\Http\Request;
 use App\Services\NotificationService;
+use App\Services\SmsNotifier;
+use App\Notifications\IntroPaymentApprovedNotification;
+use App\Notifications\DownpaymentApprovedNotification;
+use App\Notifications\PaymentRejectedNotification;
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
 
     protected $notificationService;
+    protected $smsNotifier;
 
-    public function __construct(NotificationService $notificationService)
+    public function __construct(NotificationService $notificationService, SmsNotifier $smsNotifier)
     {
         $this->notificationService = $notificationService;
+        $this->smsNotifier = $smsNotifier;
     }
 
     public function verifyPayment(Request $request, $eventId)
@@ -75,6 +81,27 @@ class PaymentController extends Controller
 
         $this->notificationService->notifyCustomerPaymentApproved($payment);
 
+        // Send email notification based on payment type
+        $customer = $event->customer;
+        if ($customer->user) {
+            try {
+                if ($payment->payment_type === Payment::TYPE_INTRODUCTORY) {
+                    $customer->user->notify(new IntroPaymentApprovedNotification($event, $payment));
+                } elseif ($payment->payment_type === Payment::TYPE_DOWNPAYMENT) {
+                    $customer->user->notify(new DownpaymentApprovedNotification($event, $payment));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send payment approval email', ['payment_id' => $payment->id, 'error' => $e->getMessage()]);
+            }
+        }
+
+        // Send SMS notification
+        try {
+            $this->smsNotifier->notifyPaymentConfirmed($payment);
+        } catch (\Exception $e) {
+            Log::error('Failed to send payment approval SMS', ['payment_id' => $payment->id, 'error' => $e->getMessage()]);
+        }
+
         return redirect()->route('admin.events.show', $event)
             ->with('success', 'Payment approved successfully.');
     }
@@ -98,6 +125,22 @@ class PaymentController extends Controller
 
 
         $this->notificationService->notifyCustomerPaymentRejected($payment, $request->rejection_reason);
+
+        // Send email notification
+        if ($event->customer->user) {
+            try {
+                $event->customer->user->notify(new PaymentRejectedNotification($event, $payment, $reason));
+            } catch (\Exception $e) {
+                Log::error('Failed to send payment rejection email', ['payment_id' => $payment->id, 'error' => $e->getMessage()]);
+            }
+        }
+
+        // Send SMS notification
+        try {
+            $this->smsNotifier->notifyPaymentRejected($payment, $reason);
+        } catch (\Exception $e) {
+            Log::error('Failed to send payment rejection SMS', ['payment_id' => $payment->id, 'error' => $e->getMessage()]);
+        }
 
         return redirect()->route('admin.events.show', $event)
             ->with('success', 'Payment rejected successfully.');

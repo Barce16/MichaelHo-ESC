@@ -422,4 +422,58 @@ class SmsNotifier
             return false;
         }
     }
+
+    /**
+     * Notify customer when admin updates their event inclusions
+     */
+    public function notifyInclusionsUpdated(Event $event, $oldTotal, $newTotal): bool
+    {
+        $customer = $event->customer;
+
+        if (empty($customer->phone)) {
+            Log::warning('SMS not sent: Customer has no phone number', [
+                'customer_id' => $customer->id,
+                'event_id' => $event->id
+            ]);
+            return false;
+        }
+
+        $greeting = $this->getGreeting($customer->gender);
+        $difference = $newTotal - $oldTotal;
+        $changeText = $difference >= 0
+            ? '+P' . number_format($difference, 2)
+            : '-P' . number_format(abs($difference), 2);
+
+        $message = "{$greeting} {$customer->customer_name}, your event '{$event->name}' inclusions have been updated. ";
+        $message .= "New total: P" . number_format($newTotal, 2) . " ({$changeText}). ";
+        $message .= "Check your account for details. - Michael Ho Events";
+
+        return $this->sendSms($customer->phone, $message);
+    }
+
+    /**
+     * Notify customer of event progress update
+     */
+    public function notifyEventProgress(Event $event, string $progressStatus, ?string $details = null): bool
+    {
+        $customer = $event->customer;
+
+        if (empty($customer->phone)) {
+            Log::warning('SMS not sent: Customer has no phone number', [
+                'customer_id' => $customer->id,
+                'event_id' => $event->id
+            ]);
+            return false;
+        }
+
+        $greeting = $this->getGreeting($customer->gender);
+
+        $message = "{$greeting} {$customer->customer_name}, progress update for '{$event->name}': {$progressStatus}. ";
+        if ($details) {
+            $message .= "{$details} ";
+        }
+        $message .= "- Michael Ho Events";
+
+        return $this->sendSms($customer->phone, $message);
+    }
 }

@@ -577,4 +577,28 @@ class NotificationService
             'is_read' => false,
         ]);
     }
+
+    /**
+     * Notify customer of event progress update
+     */
+    public function notifyCustomerEventProgress(Event $event, $progress): void
+    {
+        $user = $event->customer->user;
+
+        if (!$user) return;
+
+        $message = "Progress update for '{$event->name}': {$progress->status}";
+        if ($progress->details) {
+            $message .= " - {$progress->details}";
+        }
+
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => 'event_progress',
+            'title' => 'Event Progress Update',
+            'message' => $message,
+            'link' => route('customer.events.show', $event),
+            'is_read' => false,
+        ]);
+    }
 }

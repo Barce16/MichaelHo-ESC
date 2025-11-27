@@ -1070,6 +1070,13 @@ class AdminEventController extends Controller
         // Create in-app notification
         $this->notificationService->notifyCustomerInclusionsUpdated($event, $oldTotal, $newTotal);
 
+        // Send SMS notification
+        try {
+            $this->smsNotifier->notifyInclusionsUpdated($event, $oldTotal, $newTotal);
+        } catch (\Exception $e) {
+            Log::error('Failed to send inclusions updated SMS', ['event_id' => $event->id, 'error' => $e->getMessage()]);
+        }
+
         return redirect()
             ->route('admin.events.show', $event)
             ->with('success', 'Event inclusions updated successfully. Customer has been notified via email with detailed changes.');

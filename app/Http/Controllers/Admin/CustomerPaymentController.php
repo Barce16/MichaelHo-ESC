@@ -8,6 +8,9 @@ use App\Models\Event;
 use App\Models\Billing;
 use App\Services\NotificationService;
 use App\Services\SmsNotifier;
+use App\Notifications\IntroPaymentApprovedNotification;
+use App\Notifications\DownpaymentApprovedNotification;
+use App\Notifications\PaymentRejectedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -204,6 +207,20 @@ class CustomerPaymentController extends Controller
 
             $this->notificationService->notifyCustomerPaymentApproved($payment);
 
+            // Send email notification based on payment type
+            $customer = $event->customer;
+            if ($customer->user) {
+                try {
+                    if ($payment->isIntroductory()) {
+                        $customer->user->notify(new IntroPaymentApprovedNotification($event, $payment));
+                    } elseif ($payment->isDownpayment()) {
+                        $customer->user->notify(new DownpaymentApprovedNotification($event, $payment));
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to send payment approval email', ['payment_id' => $payment->id, 'error' => $e->getMessage()]);
+                }
+            }
+
             $smsSent = false;
             try {
                 $this->smsNotifier->notifyPaymentConfirmed($payment);
@@ -253,6 +270,16 @@ class CustomerPaymentController extends Controller
 
         // Send in-app notification
         $this->notificationService->notifyCustomerPaymentRejected($payment, $reason);
+
+        // Send email notification
+        $event = $payment->billing->event;
+        if ($event->customer->user) {
+            try {
+                $event->customer->user->notify(new PaymentRejectedNotification($event, $payment, $reason));
+            } catch (\Exception $e) {
+                Log::error('Failed to send payment rejection email', ['payment_id' => $payment->id, 'error' => $e->getMessage()]);
+            }
+        }
 
         // Send SMS notification
         $smsSent = false;
