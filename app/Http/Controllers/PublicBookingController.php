@@ -63,6 +63,28 @@ class PublicBookingController extends Controller
             'eventData' => $eventData
         ]);
     }
+
+    /**
+     * GET route: Display booking form (Step 2) if session data exists
+     */
+    public function showBookingFormGet(Package $package)
+    {
+        // Get event data from session
+        $eventData = session('booking_event_data');
+
+        if (!$eventData) {
+            return redirect()
+                ->route('services.show', $package)
+                ->with('error', 'Session expired. Please start over.');
+        }
+
+        // Show booking form with customer details
+        return view('book', [
+            'package' => $package,
+            'eventData' => $eventData
+        ]);
+    }
+
     /**
      * Step 2: Complete booking with customer details
      */
@@ -87,26 +109,19 @@ class PublicBookingController extends Controller
             'guests' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        // Check if email exists in users table but has no linked customer
+        // Check if email exists in users table - block if already registered
         $validator->after(function ($validator) use ($request) {
             $email = $request->input('email');
 
-            // Check if user exists with this email
-            $existingUser = User::where('email', $email)->first();
-
-            if ($existingUser) {
-                // Check if there's a customer with this email
-                $existingCustomer = Customer::where('email', $email)->first();
-
-                if (!$existingCustomer) {
-                    // User exists but no customer record - they should login
-                    $validator->errors()->add('email', 'This email is already registered. Please login to your account to book an event.');
-                }
+            // If email exists in users table, block booking
+            if (User::where('email', $email)->exists()) {
+                $validator->errors()->add('email', 'This email is already registered. Please login to your account to book an event.');
             }
         });
 
         if ($validator->fails()) {
-            return back()
+            return redirect()
+                ->route('booking.form', $package)
                 ->withErrors($validator)
                 ->withInput();
         }

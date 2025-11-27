@@ -83,7 +83,7 @@ Route::get('/booking-success', function () {
     return view('booking.success');
 })->name('booking.success');
 
-
+Route::get('/book/{package}', [PublicBookingController::class, 'showBookingFormGet'])->name('booking.form');
 Route::post('/book/{package}/form', [PublicBookingController::class, 'showBookingForm'])
     ->name('book.form');
 
