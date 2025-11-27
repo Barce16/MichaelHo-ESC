@@ -6,8 +6,10 @@ use App\Models\Package;
 use App\Models\Customer;
 use App\Models\Event;
 use App\Models\Inclusion;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class PublicBookingController extends Controller
 {
@@ -76,7 +78,7 @@ class PublicBookingController extends Controller
         }
 
         // Validate customer details
-        $customerData = $request->validate([
+        $validator = Validator::make($request->all(), [
             'customer_name' => ['required', 'string', 'min:2', 'max:100'],
             'email' => ['required', 'email', 'max:120'],
             'phone' => ['required', 'string', 'min:10', 'max:12'],
@@ -84,6 +86,32 @@ class PublicBookingController extends Controller
             'address' => ['nullable', 'string', 'min:10', 'max:255'],
             'guests' => ['nullable', 'integer', 'min:1'],
         ]);
+
+        // Check if email exists in users table but has no linked customer
+        $validator->after(function ($validator) use ($request) {
+            $email = $request->input('email');
+
+            // Check if user exists with this email
+            $existingUser = User::where('email', $email)->first();
+
+            if ($existingUser) {
+                // Check if there's a customer with this email
+                $existingCustomer = Customer::where('email', $email)->first();
+
+                if (!$existingCustomer) {
+                    // User exists but no customer record - they should login
+                    $validator->errors()->add('email', 'This email is already registered. Please login to your account to book an event.');
+                }
+            }
+        });
+
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $customerData = $validator->validated();
 
         try {
             DB::transaction(function () use ($eventData, $customerData, $package) {

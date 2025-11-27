@@ -10,7 +10,7 @@ class Customer extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['customer_name', 'email', 'phone', 'address', 'user_id'];
+    protected $fillable = ['customer_name', 'email', 'phone', 'address', 'user_id', 'gender'];
 
     public function events()
     {
