@@ -160,7 +160,7 @@
                                 Status
                             </th>
                             <th
-                                class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
@@ -173,14 +173,16 @@
                         @endphp
                         <tr class="hover:bg-gray-50 transition">
                             {{-- Name & Image --}}
-                            <td class="px-6 py-4">
+                            {{-- Name & Image --}}
+                            <td class="px-6 py-4 max-w-[250px]">
                                 <div class="flex items-center gap-4">
-                                    <div class="w-16 h-16 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+                                    <div class="w-14 h-14 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
                                         <img src="{{ $imageUrl }}" alt="{{ $imageAlt }}"
                                             class="w-full h-full object-cover" loading="lazy">
                                     </div>
-                                    <div class="min-w-0">
-                                        <div class="text-sm font-semibold text-gray-900 truncate">{{ $i->name }}</div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-sm font-semibold text-gray-900 break-words">{{ $i->name }}
+                                        </div>
                                     </div>
                                 </div>
                             </td>
@@ -260,7 +262,7 @@
 
                             {{-- Actions --}}
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center justify-end gap-2">
+                                <div class="flex flex-col items-center justify-end gap-2">
                                     <a href="{{ route('admin.management.inclusions.show', $i) }}"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-gray-200 rounded-lg hover:bg-slate-50 transition whitespace-nowrap"
                                         title="View">
