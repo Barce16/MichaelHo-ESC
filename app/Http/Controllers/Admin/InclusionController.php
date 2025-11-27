@@ -19,12 +19,10 @@ class InclusionController extends Controller
             ->when($q, fn($qr) => $qr->where('name', 'like', "%$q%")
                 ->orWhere('category', 'like', "%$q%"))
             ->orderBy('name')
-            ->paginate(15)
+            ->paginate(5)
             ->withQueryString();
-
         return view('admin.inclusions.index', compact('inclusions', 'q'));
     }
-
     public function create()
     {
 

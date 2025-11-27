@@ -134,13 +134,13 @@
             </p>
         </div>
         @else
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="overflow-x-auto rounded-xl">
+                <table class="w-full min-w-[900px]">
                     <thead class="bg-slate-50 border-b border-gray-200">
                         <tr>
                             <th
-                                class="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                 Inclusion
                             </th>
                             <th
@@ -160,7 +160,7 @@
                                 Status
                             </th>
                             <th
-                                class="px-3 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
@@ -259,7 +259,7 @@
                             </td>
 
                             {{-- Actions --}}
-                            <td class="px-3 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{{ route('admin.management.inclusions.show', $i) }}"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-gray-200 rounded-lg hover:bg-slate-50 transition whitespace-nowrap"
