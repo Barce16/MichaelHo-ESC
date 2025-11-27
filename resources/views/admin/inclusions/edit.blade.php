@@ -286,10 +286,10 @@
                         <label class="text-sm font-medium text-gray-700 mb-2 block">
                             {{ $inclusion->image ? 'Replace Image:' : 'Upload Image:' }}
                         </label>
-                        <input type="file" name="image" id="image" accept="image/*"
+                        <input type="file" name="image" id="image" accept=".jpg,.jpeg,.png,.webp,.gif"
                             class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 transition">
-                        <p class="mt-2 text-xs text-gray-500">Upload a new image to replace the current one. JPG, PNG or
-                            GIF. Max 2MB.</p>
+                        <p class="mt-2 text-xs text-gray-500">Upload a new image to replace the current one. JPG, PNG,
+                            WEBP or GIF. Max 2MB.</p>
                     </div>
 
                     <x-input-error :messages="$errors->get('image')" />

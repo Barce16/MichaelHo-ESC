@@ -36,13 +36,18 @@ class InclusionController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'         => ['required', 'string', 'max:255'],
-            'category'     => ['required', new Enum(InclusionCategory::class)],
-            'package_type' => ['nullable', 'string', 'max:255'],
-            'price'        => ['required', 'numeric', 'min:0'],
-            'image'        => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'notes'        => ['nullable', 'string'],
-            'is_active'    => ['nullable', 'boolean'],
+            'name'           => ['required', 'string', 'max:255'],
+            'category'       => ['required', new Enum(InclusionCategory::class)],
+            'package_type'   => ['nullable', 'string', 'max:255'],
+            'price'          => ['required', 'numeric', 'min:0'],
+            'image'          => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
+            'notes'          => ['nullable', 'string'],
+            'is_active'      => ['nullable', 'boolean'],
+
+            // contact fields
+            'contact_person' => ['nullable', 'string', 'max:255'],
+            'contact_email'  => ['nullable', 'email', 'max:255'],
+            'contact_phone'  => ['nullable', 'string', 'max:50'],
         ]);
 
         // Handle image upload
@@ -50,6 +55,7 @@ class InclusionController extends Controller
             $data['image'] = $request->file('image')->store('inclusions', 'public');
         }
 
+        // Ensure checkbox default behavior
         $data['is_active'] = $request->boolean('is_active', true);
 
         Inclusion::create($data);
@@ -58,18 +64,25 @@ class InclusionController extends Controller
             ->with('success', 'Inclusion created.');
     }
 
+
     public function update(Request $request, Inclusion $inclusion)
     {
         $data = $request->validate([
-            'name'         => ['required', 'string', 'max:255'],
-            'category'     => ['required', new Enum(InclusionCategory::class)],
-            'package_type' => ['nullable', 'string', 'max:255'],
-            'price'        => ['required', 'numeric', 'min:0'],
-            'image'        => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'notes'        => ['nullable', 'string'],
-            'is_active'    => ['nullable', 'boolean'],
+            'name'           => ['required', 'string', 'max:255'],
+            'category'       => ['required', new Enum(InclusionCategory::class)],
+            'package_type'   => ['nullable', 'string', 'max:255'],
+            'price'          => ['required', 'numeric', 'min:0'],
+            'image'          => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
+            'notes'          => ['nullable', 'string'],
+            'is_active'      => ['nullable', 'boolean'],
+
+            // contact fields
+            'contact_person' => ['nullable', 'string', 'max:255'],
+            'contact_email'  => ['nullable', 'email', 'max:255'],
+            'contact_phone'  => ['nullable', 'string', 'max:50'],
         ]);
 
+        // Handle image upload + delete old
         if ($request->hasFile('image')) {
             if ($inclusion->image && Storage::disk('public')->exists($inclusion->image)) {
                 Storage::disk('public')->delete($inclusion->image);
@@ -77,14 +90,15 @@ class InclusionController extends Controller
             $data['image'] = $request->file('image')->store('inclusions', 'public');
         }
 
-        $inclusion->update([
-            ...$data,
-            'is_active' => $request->boolean('is_active', $inclusion->is_active),
-        ]);
+        // Ensure checkbox default behavior (keep current value when not present)
+        $data['is_active'] = $request->boolean('is_active', $inclusion->is_active);
+
+        $inclusion->update($data);
 
         return redirect()->route('admin.management.inclusions.index')
             ->with('success', 'Inclusion updated.');
     }
+
 
     public function edit(Inclusion $inclusion)
     {
