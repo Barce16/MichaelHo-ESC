@@ -196,6 +196,7 @@ Route::middleware('auth')->group(function () {
             Route::patch('/users/{user}/block', [AdminController::class, 'block'])->name('users.block');
             Route::patch('/users/{user}/unblock', [AdminController::class, 'unblock'])->name('users.unblock');
 
+
             // Events
             Route::resource('events', AdminEventController::class)->only(['index', 'show', 'update', 'destroy']);
 
@@ -231,6 +232,8 @@ Route::middleware('auth')->group(function () {
 
             // Staff assignment
             Route::resource('staff', StaffController::class);
+
+            Route::get('staff/{staff}/edit-data', [StaffController::class, 'getEditData'])->name('staff.edit-data');
 
             Route::get('events/{event}/assign-staff', [AdminEventController::class, 'assignStaffPage'])
                 ->name('events.assignStaffPage');

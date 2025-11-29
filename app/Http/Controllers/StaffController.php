@@ -114,4 +114,24 @@ class StaffController extends Controller
         $staff->delete();
         return back()->with('success', 'Staff archived.');
     }
+
+    public function getEditData(Staff $staff)
+    {
+        return response()->json([
+            'id' => $staff->id,
+            'user' => [
+                'name' => $staff->user->name ?? '',
+                'email' => $staff->user->email ?? '',
+                'username' => $staff->user->username ?? '',
+                'profile_photo_path' => $staff->user->profile_photo_path ?? null,
+            ],
+            'contact_number' => $staff->contact_number,
+            'gender' => $staff->gender,
+            'address' => $staff->address,
+            'role_type' => $staff->role_type,
+            'rate' => $staff->rate,
+            'remarks' => $staff->remarks,
+            'is_active' => $staff->is_active,
+        ]);
+    }
 }
