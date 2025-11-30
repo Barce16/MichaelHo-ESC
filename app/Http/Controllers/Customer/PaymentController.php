@@ -216,21 +216,16 @@ class PaymentController extends Controller
 
         $data = $request->validate([
             'payment_type' => ['required', 'in:introductory,downpayment,balance'],
-            'payment_receipt' => [
-                $request->payment_method === 'cash' ? 'nullable' : 'required',
-                'file',
-                'mimes:jpg,jpeg,png,pdf',
-                'max:10240'
-            ],
-            'amount' => ['required', 'numeric', 'min:0'],
-            'payment_method' => ['required', 'string', 'max:255'],
-            'reference_number' => ['nullable', 'string', 'max:255'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'payment_method' => ['required', 'in:gcash,bank_transfer,bpi,cash'],
+            'reference_number' => ['nullable', 'string', 'max:100'],
+            'payment_receipt' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'],
             'pay_in_full' => ['nullable', 'boolean'],
         ]);
 
         $payInFull = $request->boolean('pay_in_full');
 
-        // Validate introductory payment
+        // Validate introductory
         if ($data['payment_type'] === 'introductory') {
             if ($event->status !== Event::STATUS_REQUEST_MEETING) {
                 return back()->with('error', 'Cannot submit introductory payment at this stage.');
@@ -238,8 +233,8 @@ class PaymentController extends Controller
 
             if ($payInFull) {
                 // Paying full amount
-                if (!$event->billing || $event->billing->total_amount <= 0) {
-                    return back()->with('error', 'Billing information not available.');
+                if (!$event->billing) {
+                    return back()->with('error', 'Billing not set up yet. Cannot pay full amount.');
                 }
 
                 $expectedAmount = $event->billing->total_amount;
@@ -389,38 +384,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * Request receipt for approved payment
-     */
-    public function requestReceipt(Payment $payment)
-    {
-        $customer = Auth::user()->customer;
-
-        // Authorization check
-        if (!$customer || $payment->billing->event->customer_id !== $customer->id) {
-            abort(403);
-        }
-
-        // Validate payment is approved
-        if (!$payment->isApproved()) {
-            return back()->with('error', 'Receipt can only be requested for approved payments.');
-        }
-
-        // Check if already requested
-        if ($payment->receipt_request) {
-            return back()->with('info', 'Receipt has already been requested for this payment.');
-        }
-
-        // Mark receipt as requested
-        $payment->requestReceipt();
-
-        // Notify admin about the receipt request
-        app(NotificationService::class)->notifyAdminReceiptRequested($payment);
-
-        return back()->with('success', 'Receipt request submitted successfully. You will be notified once it\'s ready.');
-    }
-
-    /**
-     * Download receipt PDF for customer
+     * Download receipt PDF for approved payment
      */
     public function downloadReceipt(Payment $payment)
     {
@@ -431,9 +395,9 @@ class PaymentController extends Controller
             abort(403);
         }
 
-        // Check if receipt is created (receipt_request status must be 2)
-        if (!$payment->hasReceiptCreated()) {
-            return back()->with('error', 'Receipt is not yet available. Please wait for admin to process your request.');
+        // Check if payment is approved
+        if (!$payment->isApproved()) {
+            return back()->with('error', 'Receipt is only available for approved payments.');
         }
 
         $event = $payment->billing->event;

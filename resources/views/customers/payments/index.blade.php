@@ -122,8 +122,9 @@
                                         {{ ucwords(str_replace('_', ' ', $payment->payment_method)) }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{
-                                    $payment->reference_number ?? 'N/A' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                    {{ $payment->reference_number ?? 'N/A' }}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                     {{ \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y') }}
                                 </td>
@@ -157,65 +158,24 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                             </svg>
-                                            View Proof of Payment
+                                            View Proof
                                         </button>
-                                        @else
-                                        <span class="inline-flex items-center gap-1 text-gray-500 text-xs">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            Cash Payment
-                                        </span>
                                         @endif
 
-                                        {{-- Receipt Actions (Show for all approved payments) --}}
+                                        {{-- Download Receipt (Available for all approved payments) --}}
                                         @if($payment->status === 'approved')
-                                        @if($payment->hasReceiptCreated())
-                                        {{-- Status 2: Receipt ready - show download button --}}
                                         <a href="{{ route('customer.payments.download-receipt', $payment) }}"
                                             target="_blank"
                                             class="inline-flex items-center gap-1 text-rose-600 hover:text-rose-800 font-medium transition text-sm">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
                                             Download Receipt
                                         </a>
-                                        @elseif($payment->hasReceiptRequested())
-                                        {{-- Status 1: Receipt requested - show pending status --}}
-                                        <span class="inline-flex items-center gap-1 text-sm text-amber-600 font-medium">
-                                            <svg class="w-3.5 h-3.5 animate-pulse" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            Receipt Requested
-                                        </span>
-                                        @else
-                                        {{-- Status 0: Not requested - show request button --}}
-                                        <form id="receipt-form-{{ $payment->id }}"
-                                            action="{{ route('customer.payments.request-receipt', $payment) }}"
-                                            method="POST" class="inline">
-                                            @csrf
-                                            <button type="button"
-                                                onclick="openReceiptModal({{ $payment->id }}, '{{ $payment->getTypeLabel() }}', {{ number_format($payment->amount, 2, '.', '') }})"
-                                                class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium transition text-sm">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                                Request Receipt
-                                            </button>
-                                        </form>
-                                        @endif
                                         @endif
 
-                                        {{-- Show nothing for non-approved payments without image --}}
+                                        {{-- Show dash for non-approved payments without image --}}
                                         @if($payment->status !== 'approved' && !$payment->payment_image)
                                         <span class="text-gray-400">—</span>
                                         @endif
@@ -238,6 +198,13 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Pagination --}}
+                @if($payments->hasPages())
+                <div class="px-6 py-4 border-t border-gray-200">
+                    {{ $payments->links() }}
+                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -282,51 +249,6 @@
         </div>
     </div>
 
-    {{-- Receipt Request Confirmation Modal --}}
-    <div id="receiptModal" class="fixed inset-0 z-50 hidden overflow-hidden">
-        {{-- Backdrop --}}
-        <div onclick="closeReceiptModal()"
-            class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity"></div>
-
-        {{-- Modal Content --}}
-        <div class="fixed inset-0 flex items-center justify-center p-4">
-            <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
-
-                {{-- Icon --}}
-                <div class="flex items-center justify-center pt-8 pb-4">
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    </div>
-                </div>
-
-                {{-- Content --}}
-                <div class="px-8 pb-6 text-center">
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Request Official Receipt?</h3>
-                    <p class="text-gray-600 mb-1">You are requesting a receipt for:</p>
-                    <p class="text-sm font-semibold text-gray-900 mb-1" id="receiptPaymentType"></p>
-                    <p class="text-2xl font-bold text-blue-600 mb-4" id="receiptAmount"></p>
-                    <p class="text-xs text-gray-500">The admin will be notified and will process your receipt request.
-                    </p>
-                </div>
-
-                {{-- Actions --}}
-                <div class="flex gap-3 px-8 pb-8">
-                    <button onclick="closeReceiptModal()"
-                        class="flex-1 px-4 py-3 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
-                        Cancel
-                    </button>
-                    <button onclick="submitReceiptRequest()"
-                        class="flex-1 px-4 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition">
-                        Confirm Request
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
         function openImageModal(imageUrl) {
             const modal = document.getElementById('imageModal');
@@ -342,39 +264,10 @@
             document.body.style.overflow = 'auto';
         }
 
-        let currentFormId = null;
-
-        function openReceiptModal(paymentId, paymentType, amount) {
-            currentFormId = paymentId;
-            document.getElementById('receiptPaymentType').textContent = paymentType;
-            document.getElementById('receiptAmount').textContent = '₱' + parseFloat(amount).toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-
-            const modal = document.getElementById('receiptModal');
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeReceiptModal() {
-            const modal = document.getElementById('receiptModal');
-            modal.classList.add('hidden');
-            document.body.style.overflow = 'auto';
-            currentFormId = null;
-        }
-
-        function submitReceiptRequest() {
-            if (currentFormId) {
-                document.getElementById('receipt-form-' + currentFormId).submit();
-            }
-        }
-
         // Close modal on ESC key
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 closeImageModal();
-                closeReceiptModal();
             }
         });
     </script>
