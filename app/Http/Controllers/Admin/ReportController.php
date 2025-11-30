@@ -9,6 +9,7 @@ use App\Models\Customer;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\EventsReportExport;
@@ -20,6 +21,7 @@ use App\Exports\PackageUsageExport;
 use App\Exports\PaymentMethodExport;
 use App\Exports\RemainingBalancesExport;
 use App\Exports\CustomerDetailExport;
+use App\Models\EventProgress;
 
 
 class ReportController extends Controller
@@ -548,5 +550,88 @@ class ReportController extends Controller
             ->setPaper('a4', 'portrait');
 
         return $pdf->download('customer-detail-' . str_replace(' ', '-', strtolower($customer->customer_name)) . '-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    // ========== EVENT DETAIL REPORT ==========
+    public function eventDetail(Request $request)
+    {
+        // Get all events with customer and billing for the selection UI
+        $events = Event::with(['customer', 'billing'])
+            ->orderBy('event_date', 'desc')
+            ->get();
+
+        // If no event selected, show selection page
+        if (!$request->has('event_id')) {
+            return view('admin.reports.event-detail', compact('events'));
+        }
+
+        // Get the selected event with all related data
+        $event = Event::with([
+            'customer',
+            'package',
+            'billing.payments',
+            'inclusions',
+            'feedback',
+            'staffs.user',
+            'progress'    // Event progress updates
+        ])->findOrFail($request->event_id);
+
+        // Get payments separately for more control
+        $payments = $event->billing
+            ? $event->billing->payments()->orderBy('created_at', 'desc')->get()
+            : collect();
+
+        // Get progress updates
+        $progressUpdates = $event->progress()->orderBy('created_at', 'desc')->get();
+
+        // Get staff assignments
+        $staffAssignments = $event->staffs ?? collect();
+
+        // Calculate statistics
+        $totalAmount = $event->billing->total_amount ?? 0;
+        $totalPaid = $payments->where('status', 'approved')->sum('amount');
+        $remainingBalance = $totalAmount - $totalPaid;
+        $paymentPercentage = $totalAmount > 0 ? round(($totalPaid / $totalAmount) * 100) : 0;
+
+        $stats = [
+            'total_amount' => $totalAmount,
+            'total_paid' => $totalPaid,
+            'remaining_balance' => $remainingBalance,
+            'payment_percentage' => $paymentPercentage,
+        ];
+
+        // Handle export requests
+        if ($request->has('export')) {
+            if ($request->export === 'pdf') {
+                return $this->exportEventDetailPdf($event, $payments, $progressUpdates, $staffAssignments, $stats);
+            }
+        }
+
+        return view('admin.reports.event-detail', compact(
+            'events',
+            'event',
+            'payments',
+            'progressUpdates',
+            'staffAssignments',
+            'stats'
+        ));
+    }
+
+    private function exportEventDetailPdf($event, $payments, $progressUpdates, $staffAssignments, $stats)
+    {
+        $pdf = Pdf::loadView('admin.reports.event-detail-pdf', [
+            'event' => $event,
+            'payments' => $payments,
+            'progressUpdates' => $progressUpdates,
+            'staffAssignments' => $staffAssignments,
+            'stats' => $stats,
+        ])
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', true)
+            ->setPaper('a4', 'portrait');
+
+        $filename = 'event-detail-' . Str::slug($event->name) . '-' . now()->format('Y-m-d') . '.pdf';
+
+        return $pdf->download($filename);
     }
 }

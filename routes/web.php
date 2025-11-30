@@ -312,6 +312,7 @@ Route::middleware('auth')->group(function () {
                 Route::get('/system-summary', [ReportController::class, 'systemSummary'])->name('system-summary');
                 Route::get('/customer-detail', [ReportController::class, 'customerDetail'])
                     ->name('customer-detail');
+                Route::get('/event-detail', [ReportController::class, 'eventDetail'])->name('event-detail');
             });
 
 

@@ -8,25 +8,42 @@
 
             <div class="grid md:grid-cols-2 gap-6">
 
-                {{-- ⭐ NEW: Customer Detail Report Card --}}
+                {{-- ⭐ Individual Customer Report Card --}}
                 <a href="{{ route('admin.reports.customer-detail') }}"
-                    class="block bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-teal-400 hover:shadow-lg transition-all p-8 md:col-span-2 bg-gradient-to-r from-white to-teal-50">
+                    class="block bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-teal-400 hover:shadow-lg transition-all p-8 bg-gradient-to-r from-white to-teal-50">
                     <div class="flex items-start gap-4">
                         <div class="w-16 h-16 bg-teal-100 rounded-xl flex items-center justify-center flex-shrink-0">
                             <svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                         </div>
                         <div class="flex-1">
                             <div class="flex items-center gap-2 mb-2">
                                 <h3 class="text-xl font-bold text-gray-900">Individual Customer Report</h3>
-                                <span
-                                    class="px-2 py-0.5 bg-teal-100 text-teal-700 text-xs font-semibold rounded-full">NEW</span>
                             </div>
-                            <p class="text-gray-600 text-sm">Complete breakdown of an individual customer: personal
-                                info, all events with inclusions, billing details, payment history, and financial
-                                summary.</p>
+                            <p class="text-gray-600 text-sm">Complete breakdown: personal info, events, inclusions,
+                                billing, and payment history.</p>
+                        </div>
+                    </div>
+                </a>
+
+                {{-- ⭐ Individual Event Report Card --}}
+                <a href="{{ route('admin.reports.event-detail') }}"
+                    class="block bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-violet-400 hover:shadow-lg transition-all p-8 bg-gradient-to-r from-white to-violet-50">
+                    <div class="flex items-start gap-4">
+                        <div class="w-16 h-16 bg-violet-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <svg class="w-8 h-8 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <h3 class="text-xl font-bold text-gray-900">Individual Event Report</h3>
+                            </div>
+                            <p class="text-gray-600 text-sm">Full event details: progress, payments, staff, inclusions,
+                                and customer feedback.</p>
                         </div>
                     </div>
                 </a>
