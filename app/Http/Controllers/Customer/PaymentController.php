@@ -225,27 +225,15 @@ class PaymentController extends Controller
 
         $payInFull = $request->boolean('pay_in_full');
 
-        // Validate introductory
+        // Validate introductory (fixed ₱5,000 amount only)
         if ($data['payment_type'] === 'introductory') {
             if ($event->status !== Event::STATUS_REQUEST_MEETING) {
                 return back()->with('error', 'Cannot submit introductory payment at this stage.');
             }
 
-            if ($payInFull) {
-                // Paying full amount
-                if (!$event->billing) {
-                    return back()->with('error', 'Billing not set up yet. Cannot pay full amount.');
-                }
-
-                $expectedAmount = $event->billing->total_amount;
-                if (abs((float)$data['amount'] - $expectedAmount) > 0.01) {
-                    return back()->with('error', 'Full payment amount must be exactly ₱' . number_format($expectedAmount, 2));
-                }
-            } else {
-                // Paying intro only
-                if ((float)$data['amount'] !== 5000.00) {
-                    return back()->with('error', 'Introductory payment must be exactly ₱5,000.00');
-                }
+            // Introductory must be exactly ₱5,000
+            if (abs((float)$data['amount'] - 5000.00) > 0.01) {
+                return back()->with('error', 'Introductory payment must be exactly ₱5,000.00');
             }
 
             // Check for existing pending
@@ -348,7 +336,7 @@ class PaymentController extends Controller
         ]);
 
         // Set success message
-        if ($payInFull && in_array($data['payment_type'], ['introductory', 'downpayment'])) {
+        if ($payInFull && $data['payment_type'] === 'downpayment') {
             $message = 'Full payment proof submitted (₱' . number_format($data['amount'], 2) . '). Please wait for admin verification.';
         } else {
             $message = match ($data['payment_type']) {

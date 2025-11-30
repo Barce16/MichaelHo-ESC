@@ -170,13 +170,42 @@
                         $defaultOption = $hasApprovedDown ? '2' : '0';
                         $minCustomAmount = $hasApprovedDown ? 100 : $amount;
                         @endphp
+
+                        {{-- INTRODUCTORY: Fixed Amount Only (No Pay in Full option) --}}
+                        @if($paymentType === 'introductory')
+                        <div>
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 36 36">
+                                    <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z">
+                                    </path>
+                                    <path d="M14.18,19.7h5.19a4.28,4.28,0,0,0,3.5-1.9H14.18Z"></path>
+                                    <path d="M19.37,10.51H14.18V12h8.37A4.21,4.21,0,0,0,19.37,10.51Z"></path>
+                                    <path
+                                        d="M17.67,2a16,16,0,1,0,16,16A16,16,0,0,0,17.67,2Zm10.5,15.8H25.7a6.87,6.87,0,0,1-6.33,4.4H14.18v6.54a1.25,1.25,0,1,1-2.5,0V17.8H8.76a.9.9,0,1,1,0-1.8h2.92V13.8H8.76a.9.9,0,1,1,0-1.8h2.92V9.26A1.25,1.25,0,0,1,12.93,8h6.44a6.84,6.84,0,0,1,6.15,4h2.65a.9.9,0,0,1,0,1.8H26.09a6.91,6.91,0,0,1,.12,1.3,6.8,6.8,0,0,1-.06.9h2a.9.9,0,0,1,0,1.8Z">
+                                    </path>
+                                </svg>
+                                Payment Amount <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
+                                <input name="amount" type="number" step="0.01" value="5000" readonly
+                                    class="block w-full pl-10 pr-4 py-3 rounded-lg border-gray-300 bg-gray-50 cursor-not-allowed text-lg font-semibold transition"
+                                    required />
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Fixed introductory payment amount</p>
+                        </div>
+
+                        {{-- DOWNPAYMENT: Options Available --}}
+                        @elseif($paymentType === 'downpayment' && $event->billing && $event->billing->remaining_balance
+                        > 0)
                         <div x-data="{ 
                                 payInFull: '{{ $defaultOption }}',
                                 customAmount: {{ $minCustomAmount }},
                                 downpaymentAmount: {{ $amount ?? 0 }},
                                 remainingBalance: {{ $event->billing ? $event->billing->remaining_balance : 0 }}
                             }">
-                            <label for="amount" class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                 <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 36 36">
                                     <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z">
                                     </path>
@@ -189,51 +218,6 @@
                                 Payment Amount <span class="text-rose-500">*</span>
                             </label>
 
-                            @if($paymentType === 'introductory' && $event->billing && $event->billing->total_amount > 0)
-                            {{-- Payment Options for Intro --}}
-                            <div class="space-y-3 mb-4">
-                                {{-- Intro Payment Option --}}
-                                <label
-                                    class="flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all"
-                                    :class="payInFull === '0' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'">
-                                    <input type="radio" name="payment_option" value="0" x-model="payInFull"
-                                        class="mt-1 text-orange-600 focus:ring-orange-500">
-                                    <div class="flex-1">
-                                        <div class="font-semibold text-gray-900">Introductory Payment</div>
-                                        <div class="text-2xl font-bold text-orange-600 my-1">₱5,000.00</div>
-                                        <p class="text-sm text-gray-600">Pay the introductory fee to schedule a meeting
-                                        </p>
-                                    </div>
-                                </label>
-
-                                {{-- Pay in Full Option --}}
-                                <label
-                                    class="flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all"
-                                    :class="payInFull === '1' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'">
-                                    <input type="radio" name="payment_option" value="1" x-model="payInFull"
-                                        class="mt-1 text-green-600 focus:ring-green-500">
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-2">
-                                            <div class="font-semibold text-gray-900">Pay in Full</div>
-                                            <span
-                                                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                Recommended
-                                            </span>
-                                        </div>
-                                        <div class="text-2xl font-bold text-green-600 my-1">
-                                            ₱{{ number_format($event->billing->total_amount, 2) }}
-                                        </div>
-                                        <p class="text-sm text-gray-600">Complete your payment in one go</p>
-                                    </div>
-                                </label>
-                            </div>
-
-                            <input type="hidden" name="pay_in_full" :value="payInFull === '1' ? 1 : 0">
-                            <input type="hidden" name="amount" :value="payInFull === '1' ? remainingBalance : 5000">
-
-                            @elseif($paymentType === 'downpayment' && $event->billing &&
-                            $event->billing->remaining_balance > 0)
-                            {{-- Payment Options for Downpayment --}}
                             <div class="space-y-3 mb-4">
                                 {{-- Downpayment Option - Only show if not yet approved --}}
                                 @if(!$hasApprovedDown)
@@ -292,9 +276,25 @@
                             <input type="hidden" name="pay_in_full" :value="payInFull === '1' ? 1 : 0">
                             <input type="hidden" name="amount"
                                 :value="payInFull === '1' ? remainingBalance : (payInFull === '2' ? customAmount : downpaymentAmount)">
+                        </div>
 
-                            @elseif($paymentType === 'balance')
-                            {{-- Pay in Full Option for Balance --}}
+                        {{-- BALANCE: Flexible Amount --}}
+                        @elseif($paymentType === 'balance')
+                        <div>
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 36 36">
+                                    <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z">
+                                    </path>
+                                    <path d="M14.18,19.7h5.19a4.28,4.28,0,0,0,3.5-1.9H14.18Z"></path>
+                                    <path d="M19.37,10.51H14.18V12h8.37A4.21,4.21,0,0,0,19.37,10.51Z"></path>
+                                    <path
+                                        d="M17.67,2a16,16,0,1,0,16,16A16,16,0,0,0,17.67,2Zm10.5,15.8H25.7a6.87,6.87,0,0,1-6.33,4.4H14.18v6.54a1.25,1.25,0,1,1-2.5,0V17.8H8.76a.9.9,0,1,1,0-1.8h2.92V13.8H8.76a.9.9,0,1,1,0-1.8h2.92V9.26A1.25,1.25,0,0,1,12.93,8h6.44a6.84,6.84,0,0,1,6.15,4h2.65a.9.9,0,0,1,0,1.8H26.09a6.91,6.91,0,0,1,.12,1.3,6.8,6.8,0,0,1-.06.9h2a.9.9,0,0,1,0,1.8Z">
+                                    </path>
+                                </svg>
+                                Payment Amount <span class="text-rose-500">*</span>
+                            </label>
+
+                            {{-- Pay Full Balance Checkbox --}}
                             <div
                                 class="mb-3 flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                                 <input type="checkbox" id="pay_full"
@@ -308,17 +308,30 @@
                             <div class="relative">
                                 <span
                                     class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
-                                <input id="amount" name="amount" type="number" step="0.01"
-                                    min="{{ $paymentType === 'balance' ? '100' : '0' }}"
-                                    max="{{ $paymentType === 'balance' ? $amount : '' }}" value="{{ $amount }}"
+                                <input id="amount" name="amount" type="number" step="0.01" min="100" max="{{ $amount }}"
+                                    value="{{ $amount }}"
                                     class="block w-full pl-10 pr-4 py-3 rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-lg font-semibold transition"
                                     required />
                             </div>
                             <p class="mt-1 text-xs text-gray-500">Enter amount between ₱100 and ₱{{
                                 number_format($amount, 2) }} or check "Pay Full Balance" above</p>
+                        </div>
 
-                            @else
-                            {{-- Fixed Amount (No options available) --}}
+                        @else
+                        {{-- Fixed Amount (Fallback) --}}
+                        <div>
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 36 36">
+                                    <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z">
+                                    </path>
+                                    <path d="M14.18,19.7h5.19a4.28,4.28,0,0,0,3.5-1.9H14.18Z"></path>
+                                    <path d="M19.37,10.51H14.18V12h8.37A4.21,4.21,0,0,0,19.37,10.51Z"></path>
+                                    <path
+                                        d="M17.67,2a16,16,0,1,0,16,16A16,16,0,0,0,17.67,2Zm10.5,15.8H25.7a6.87,6.87,0,0,1-6.33,4.4H14.18v6.54a1.25,1.25,0,1,1-2.5,0V17.8H8.76a.9.9,0,1,1,0-1.8h2.92V13.8H8.76a.9.9,0,1,1,0-1.8h2.92V9.26A1.25,1.25,0,0,1,12.93,8h6.44a6.84,6.84,0,0,1,6.15,4h2.65a.9.9,0,0,1,0,1.8H26.09a6.91,6.91,0,0,1,.12,1.3,6.8,6.8,0,0,1-.06.9h2a.9.9,0,0,1,0,1.8Z">
+                                    </path>
+                                </svg>
+                                Payment Amount <span class="text-rose-500">*</span>
+                            </label>
                             <div class="relative">
                                 <span
                                     class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
@@ -328,19 +341,19 @@
                                     required />
                             </div>
                             <p class="mt-1 text-xs text-gray-500">Amount is fixed for this payment type</p>
-                            @endif
-
-                            @error('amount')
-                            <p class="mt-2 text-sm text-rose-600 flex items-center gap-1">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                                {{ $message }}
-                            </p>
-                            @enderror
                         </div>
+                        @endif
+
+                        @error('amount')
+                        <p class="mt-2 text-sm text-rose-600 flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            {{ $message }}
+                        </p>
+                        @enderror
 
                         {{-- Payment Method --}}
                         <div>
@@ -526,57 +539,57 @@
 
     <script>
         function previewImage(event) {
-        const uploadArea = document.getElementById('upload-area');
-        const previewArea = document.getElementById('preview-area');
-        const imagePreview = document.getElementById('image-preview');
-        
-        const file = event.target.files[0];
-        if (!file) {
+            const uploadArea = document.getElementById('upload-area');
+            const previewArea = document.getElementById('preview-area');
+            const imagePreview = document.getElementById('image-preview');
+            
+            const file = event.target.files[0];
+            if (!file) {
+                uploadArea.classList.remove('hidden');
+                previewArea.classList.add('hidden');
+                return;
+            }
+
+            // Validate file type
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+            if (!validTypes.includes(file.type)) {
+                alert('Please upload a valid image file (PNG, JPG, or JPEG)');
+                event.target.value = '';
+                return;
+            }
+
+            // Validate file size (10MB)
+            const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+            if (file.size > maxSize) {
+                alert('File size must be less than 10MB');
+                event.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                uploadArea.classList.add('hidden');
+                previewArea.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            const fileInput = document.getElementById('payment_receipt');
+            const uploadArea = document.getElementById('upload-area');
+            const previewArea = document.getElementById('preview-area');
+            const imagePreview = document.getElementById('image-preview');
+            
+            // Clear the file input
+            fileInput.value = '';
+            
+            // Clear the preview image source
+            imagePreview.src = '';
+            
+            // Toggle visibility
             uploadArea.classList.remove('hidden');
             previewArea.classList.add('hidden');
-            return;
         }
-
-        // Validate file type
-        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-        if (!validTypes.includes(file.type)) {
-            alert('Please upload a valid image file (PNG, JPG, or JPEG)');
-            event.target.value = '';
-            return;
-        }
-
-        // Validate file size (10MB)
-        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-        if (file.size > maxSize) {
-            alert('File size must be less than 10MB');
-            event.target.value = '';
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            imagePreview.src = e.target.result;
-            uploadArea.classList.add('hidden');
-            previewArea.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-    }
-
-    function removeImage() {
-        const fileInput = document.getElementById('payment_receipt');
-        const uploadArea = document.getElementById('upload-area');
-        const previewArea = document.getElementById('preview-area');
-        const imagePreview = document.getElementById('image-preview');
-        
-        // Clear the file input
-        fileInput.value = '';
-        
-        // Clear the preview image source
-        imagePreview.src = '';
-        
-        // Toggle visibility
-        uploadArea.classList.remove('hidden');
-        previewArea.classList.add('hidden');
-    }
     </script>
 </x-app-layout>
