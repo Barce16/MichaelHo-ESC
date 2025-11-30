@@ -40,9 +40,9 @@ class InclusionController extends Controller
 
         return view('admin.inclusions.index', compact('inclusions', 'q', 'category', 'packageType'));
     }
+
     public function create()
     {
-
         $packageTypes = Package::getDistinctTypes();
 
         return view('admin.inclusions.create', compact('packageTypes'));
@@ -70,7 +70,7 @@ class InclusionController extends Controller
             $data['image'] = $request->file('image')->store('inclusions', 'public');
         }
 
-        // Ensure checkbox default behavior
+        // Default to active for new inclusions
         $data['is_active'] = $request->boolean('is_active', true);
 
         Inclusion::create($data);
@@ -105,8 +105,8 @@ class InclusionController extends Controller
             $data['image'] = $request->file('image')->store('inclusions', 'public');
         }
 
-        // Ensure checkbox default behavior (keep current value when not present)
-        $data['is_active'] = $request->boolean('is_active', $inclusion->is_active);
+        // Handle checkbox - when unchecked, it's not sent, so boolean() returns false
+        $data['is_active'] = $request->boolean('is_active');
 
         $inclusion->update($data);
 
