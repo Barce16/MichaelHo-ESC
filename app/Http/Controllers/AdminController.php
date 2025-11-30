@@ -121,7 +121,7 @@ class AdminController extends Controller
         }
 
         // Get users with pagination
-        $users = $query->select('id', 'name', 'email', 'user_type', 'created_at', 'status')
+        $users = $query->select('id', 'username', 'name', 'email', 'user_type', 'created_at', 'status')
             ->latest()
             ->paginate(5)
             ->withQueryString(); // Preserve query parameters in pagination links
