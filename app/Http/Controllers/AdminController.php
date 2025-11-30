@@ -31,7 +31,7 @@ class AdminController extends Controller
                 'string',
                 'min:2',
                 'max:255',
-                'regex:/^[a-zA-Z\s\-\.]+$/', // Only letters, spaces, hyphens, and periods
+                'regex:/^[a-zA-Z\s\-\.]+$/',
             ],
             'username'  => [
                 'required',
@@ -39,35 +39,62 @@ class AdminController extends Controller
                 'min:3',
                 'max:50',
                 'unique:users,username',
-                'regex:/^[a-zA-Z0-9_\-]+$/', // Only alphanumeric, underscores, and hyphens
-                'not_regex:/^[0-9_\-]+$/', // Cannot be only numbers and special chars
+                'regex:/^[a-zA-Z0-9_\-]+$/',
+                'not_regex:/^[0-9_\-]+$/',
             ],
             'email'     => ['required', 'email', 'max:255', 'unique:users,email'],
             'user_type' => ['required', Rule::in(['admin'])],
-            'password'  => ['required', 'string', 'min:8', 'confirmed'],
+            'password'  => ['required', 'string', 'min:8'],
+            'status'    => ['nullable', 'in:active,inactive'],
             'avatar'    => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ], [
-            // Custom error messages
+            // Name validation messages
+            'name.required' => 'Full name is required.',
             'name.regex' => 'Name must contain only letters, spaces, hyphens, and periods.',
             'name.min' => 'Name must be at least 2 characters.',
+
+            // Username validation messages
+            'username.required' => 'Username is required.',
+            'username.unique' => 'This username is already taken. Please choose another.',
             'username.regex' => 'Username can only contain letters, numbers, underscores, and hyphens.',
             'username.not_regex' => 'Username must contain at least one letter.',
             'username.min' => 'Username must be at least 3 characters.',
+
+            // Email validation messages
+            'email.required' => 'Email address is required.',
+            'email.email' => 'Please provide a valid email address.',
+            'email.unique' => 'This email is already registered. Please use another.',
+
+            // Password validation messages
+            'password.required' => 'Password is required.',
+            'password.min' => 'Password must be at least 8 characters.',
         ]);
 
-        $photoPath = $this->storeProfilePhoto($request->file('avatar'));
+        $photoPath = null;
+        if ($request->hasFile('avatar')) {
+            $photoPath = $this->storeProfilePhoto($request->file('avatar'));
+        }
 
-        $user = User::create([
-            'name'      => $data['name'],
-            'username'  => $data['username'],
-            'email'     => $data['email'],
-            'user_type' => $data['user_type'],
-            'password'  => bcrypt($data['password']),
-            'profile_photo_path' => $photoPath,
-        ]);
+        try {
+            $user = User::create([
+                'name'               => $data['name'],
+                'username'           => $data['username'],
+                'email'              => $data['email'],
+                'user_type'          => $data['user_type'],
+                'password'           => bcrypt($data['password']),
+                'status'             => $request->has('status') ? 'active' : 'inactive',
+                'profile_photo_path' => $photoPath,
+            ]);
 
-        return redirect()->route('admin.users.list')
-            ->with('success', 'User created successfully.');
+            return redirect()->route('admin.users.list')
+                ->with('success', 'Administrator created successfully.');
+        } catch (\Exception $e) {
+            \Log::error('User creation failed: ' . $e->getMessage());
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Failed to create user. Please try again.');
+        }
     }
 
     public function listUsers(Request $request)
