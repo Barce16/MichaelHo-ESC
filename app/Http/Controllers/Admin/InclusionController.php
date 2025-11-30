@@ -15,13 +15,30 @@ class InclusionController extends Controller
     public function index(Request $request)
     {
         $q = $request->input('q');
+        $category = $request->input('category');
+        $packageType = $request->input('package_type');
+
         $inclusions = Inclusion::query()
-            ->when($q, fn($qr) => $qr->where('name', 'like', "%$q%")
-                ->orWhere('category', 'like', "%$q%"))
+            // Search filter
+            ->when($q, function ($query) use ($q) {
+                $query->where(function ($qr) use ($q) {
+                    $qr->where('name', 'like', "%$q%")
+                        ->orWhere('contact_person', 'like', "%$q%");
+                });
+            })
+            // Category filter
+            ->when($category, function ($query) use ($category) {
+                $query->where('category', $category);
+            })
+            // Package type filter
+            ->when($packageType, function ($query) use ($packageType) {
+                $query->where('package_type', $packageType);
+            })
             ->orderBy('name')
             ->paginate(5)
             ->withQueryString();
-        return view('admin.inclusions.index', compact('inclusions', 'q'));
+
+        return view('admin.inclusions.index', compact('inclusions', 'q', 'category', 'packageType'));
     }
     public function create()
     {

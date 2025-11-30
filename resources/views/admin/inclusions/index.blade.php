@@ -85,26 +85,54 @@
             </div>
         </div>
 
-        {{-- Search --}}
+        {{-- Search & Filters --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <form method="GET" class="flex gap-3">
+            <form method="GET" class="flex flex-col lg:flex-row gap-3">
+                {{-- Search Input --}}
                 <div class="flex-1 relative">
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    <input type="text" name="q" value="{{ $q }}"
-                        placeholder="Search by name, category, or contact person..."
+                    <input type="text" name="q" value="{{ $q ?? '' }}" placeholder="Search by name or contact person..."
                         class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-200 focus:border-slate-400">
                 </div>
+
+                {{-- Category Filter --}}
+                <div class="lg:w-44">
+                    <select name="category"
+                        class="w-full py-3 px-4 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-200 focus:border-slate-400 bg-white">
+                        <option value="">All Categories</option>
+                        @foreach(\App\Enums\InclusionCategory::cases() as $cat)
+                        <option value="{{ $cat->value }}" {{ ($category ?? '' )==$cat->value ? 'selected' : '' }}>
+                            {{ $cat->label() }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Package Type Filter --}}
+                <div class="lg:w-44">
+                    <select name="package_type"
+                        class="w-full py-3 px-4 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-200 focus:border-slate-400 bg-white">
+                        <option value="">All Packages</option>
+                        @foreach(\App\Enums\PackageType::cases() as $pkg)
+                        <option value="{{ $pkg->value }}" {{ ($packageType ?? '' )==$pkg->value ? 'selected' : '' }}>
+                            {{ $pkg->label() }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Buttons --}}
                 <button type="submit"
                     class="px-6 py-3 bg-slate-700 text-white font-medium rounded-lg hover:bg-slate-800 transition">
                     Search
                 </button>
-                @if($q)
+                @if(($q ?? '') || ($category ?? '') || ($packageType ?? ''))
                 <a href="{{ route('admin.management.inclusions.index') }}"
-                    class="px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
+                    class="px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition text-center">
                     Clear
                 </a>
                 @endif
@@ -119,15 +147,15 @@
                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
             </svg>
             <p class="text-gray-500 font-medium mb-1">
-                @if($q)
-                No inclusions found matching "{{ $q }}"
+                @if(($q ?? '') || ($category ?? '') || ($packageType ?? ''))
+                No inclusions found matching your filters
                 @else
                 No inclusions yet
                 @endif
             </p>
             <p class="text-gray-400 text-sm">
-                @if($q)
-                Try a different search term
+                @if(($q ?? '') || ($category ?? '') || ($packageType ?? ''))
+                Try adjusting your search or filter criteria
                 @else
                 Create your first inclusion to get started
                 @endif

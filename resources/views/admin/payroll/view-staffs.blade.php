@@ -68,6 +68,10 @@
 
                 <div class="divide-y divide-gray-200">
                     @forelse($event->staffs as $staff)
+                    @php
+                    $isWorkFinished = $staff->pivot->work_status === 'finished';
+                    $isPaid = $staff->pivot->pay_status === 'paid';
+                    @endphp
                     <div class="p-6 hover:bg-gray-50 transition">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-4 flex-1">
@@ -79,6 +83,31 @@
                                     <div class="font-semibold text-slate-700 text-lg">{{ $staff->name }}</div>
                                     <div class="text-sm text-gray-600 mt-1">{{ $staff->pivot->assignment_role }}</div>
                                     <div class="text-xs text-gray-500 mt-1">{{ $staff->position ?? 'Staff' }}</div>
+
+                                    {{-- Work Status Badge --}}
+                                    <div class="mt-2">
+                                        @if($isWorkFinished)
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Work Finished
+                                        </span>
+                                        @else
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            {{ ucfirst($staff->pivot->work_status ?? 'Assigned') }}
+                                        </span>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
 
@@ -89,8 +118,9 @@
                                         number_format($staff->pivot->pay_rate, 2) }}</div>
                                 </div>
 
-                                <div class="flex flex-col gap-2">
-                                    @if($staff->pivot->pay_status === 'paid')
+                                <div class="flex flex-col gap-2 min-w-[140px]">
+                                    @if($isPaid)
+                                    {{-- Already Paid --}}
                                     <div class="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -107,10 +137,14 @@
                                         </button>
                                     </form>
                                     @else
+                                    {{-- Not Paid Yet --}}
                                     <div
                                         class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-center font-semibold">
                                         Pending
                                     </div>
+
+                                    @if($isWorkFinished)
+                                    {{-- Work is finished - can mark as paid --}}
                                     <form method="POST"
                                         action="{{ route('admin.payroll.markAsPaid', [$event, $staff]) }}">
                                         @csrf
@@ -119,6 +153,22 @@
                                             Mark as Paid
                                         </button>
                                     </form>
+                                    @else
+                                    {{-- Work not finished - show disabled state with tooltip --}}
+                                    <div class="relative group">
+                                        <button type="button" disabled
+                                            class="w-full px-4 py-2 bg-gray-200 text-gray-400 font-medium rounded-lg cursor-not-allowed">
+                                            Mark as Paid
+                                        </button>
+                                        <div
+                                            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                            Work must be finished first
+                                            <div
+                                                class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endif
                                     @endif
                                 </div>
                             </div>
