@@ -6,13 +6,13 @@
                 <h3 class="text-2xl font-bold text-gray-900">Inclusions</h3>
                 <p class="text-gray-500 mt-1">Manage event package inclusions and services</p>
             </div>
-            <a href="{{ route('admin.management.inclusions.create') }}"
+            <button type="button" onclick="openInclusionModal()"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 text-white font-medium rounded-lg hover:bg-slate-800 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
                 New Inclusion
-            </a>
+            </button>
         </div>
 
         {{-- Statistics --}}
@@ -168,11 +168,10 @@
                     <tbody class="divide-y divide-gray-200">
                         @foreach($inclusions as $i)
                         @php
-                        $imageUrl = $i->image_url; // Uses the accessor
+                        $imageUrl = $i->image_url;
                         $imageAlt = $i->name;
                         @endphp
                         <tr class="hover:bg-gray-50 transition">
-                            {{-- Name & Image --}}
                             {{-- Name & Image --}}
                             <td class="px-6 py-4 max-w-[250px]">
                                 <div class="flex items-center gap-4">
@@ -275,7 +274,20 @@
                                         View
                                     </a>
 
-                                    <a href="{{ route('admin.management.inclusions.edit', $i) }}"
+                                    <button type="button" onclick="openEditInclusionModal({{ json_encode([
+                                            'id' => $i->id,
+                                            'name' => $i->name,
+                                            'category' => $i->category instanceof \App\Enums\InclusionCategory ? $i->category->value : $i->category,
+                                            'package_type' => $i->package_type,
+                                            'price' => $i->price,
+                                            'contact_person' => $i->contact_person,
+                                            'contact_email' => $i->contact_email,
+                                            'contact_phone' => $i->contact_phone,
+                                            'notes' => $i->notes,
+                                            'is_active' => $i->is_active,
+                                            'image_url' => $i->image_url,
+                                            'update_url' => route('admin.management.inclusions.update', $i)
+                                        ]) }})"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-violet-700 bg-violet-100 rounded-lg hover:bg-violet-200 transition whitespace-nowrap"
                                         title="Edit">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,7 +295,7 @@
                                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
                                         Edit
-                                    </a>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -301,4 +313,281 @@
         @endif
         @endif
     </div>
+
+    {{-- Include Modals --}}
+    @include('admin.inclusions.modals.create')
+    @include('admin.inclusions.modals.edit')
+
+    {{-- JavaScript for Modal Handling --}}
+    <script>
+        // ============================================
+        // CREATE MODAL FUNCTIONS
+        // ============================================
+        let createCurrentStep = 1;
+        const createTotalSteps = 3;
+
+        function openInclusionModal() {
+            document.getElementById('createInclusionModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            resetCreateModal();
+        }
+
+        function closeInclusionModal() {
+            document.getElementById('createInclusionModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            resetCreateModal();
+        }
+
+        function resetCreateModal() {
+            createCurrentStep = 1;
+            updateCreateStepDisplay();
+            document.getElementById('createInclusionForm').reset();
+            
+            // Reset image preview
+            document.getElementById('createImagePreview').classList.add('hidden');
+            document.getElementById('createImagePreview').src = '';
+            document.getElementById('createImagePlaceholder').classList.remove('hidden');
+            document.getElementById('createRemoveImageBtn').classList.add('hidden');
+            
+            // Reset checkbox to checked
+            document.getElementById('createIsActive').checked = true;
+        }
+
+        function createNextStep() {
+            if (createCurrentStep < createTotalSteps) {
+                // Validate current step before proceeding
+                if (createCurrentStep === 2) {
+                    const name = document.getElementById('createName').value.trim();
+                    const category = document.getElementById('createCategory').value;
+                    
+                    if (!name) {
+                        alert('Please enter a service name.');
+                        document.getElementById('createName').focus();
+                        return;
+                    }
+                    if (!category) {
+                        alert('Please select a category.');
+                        document.getElementById('createCategory').focus();
+                        return;
+                    }
+                }
+                
+                createCurrentStep++;
+                updateCreateStepDisplay();
+            }
+        }
+
+        function createPrevStep() {
+            if (createCurrentStep > 1) {
+                createCurrentStep--;
+                updateCreateStepDisplay();
+            }
+        }
+
+        function updateCreateStepDisplay() {
+            // Hide all steps
+            for (let i = 1; i <= createTotalSteps; i++) {
+                document.getElementById(`createStep${i}`).classList.add('hidden');
+                document.getElementById(`createStep${i}Indicator`).classList.remove('bg-white', 'text-sky-600');
+                document.getElementById(`createStep${i}Indicator`).classList.add('bg-white/30', 'text-white');
+            }
+            
+            // Show current step
+            document.getElementById(`createStep${createCurrentStep}`).classList.remove('hidden');
+            
+            // Update indicators for completed and current steps
+            for (let i = 1; i <= createCurrentStep; i++) {
+                document.getElementById(`createStep${i}Indicator`).classList.remove('bg-white/30', 'text-white');
+                document.getElementById(`createStep${i}Indicator`).classList.add('bg-white', 'text-sky-600');
+            }
+            
+            // Update buttons
+            document.getElementById('createPrevBtn').classList.toggle('hidden', createCurrentStep === 1);
+            document.getElementById('createCancelBtn').classList.toggle('hidden', createCurrentStep !== 1);
+            document.getElementById('createNextBtn').classList.toggle('hidden', createCurrentStep === createTotalSteps);
+            document.getElementById('createSubmitBtn').classList.toggle('hidden', createCurrentStep !== createTotalSteps);
+        }
+
+        function previewCreateImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('createImagePreview').src = e.target.result;
+                    document.getElementById('createImagePreview').classList.remove('hidden');
+                    document.getElementById('createImagePlaceholder').classList.add('hidden');
+                    document.getElementById('createRemoveImageBtn').classList.remove('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function removeCreateImage(event) {
+            event.stopPropagation();
+            document.getElementById('createInclusionImage').value = '';
+            document.getElementById('createImagePreview').src = '';
+            document.getElementById('createImagePreview').classList.add('hidden');
+            document.getElementById('createImagePlaceholder').classList.remove('hidden');
+            document.getElementById('createRemoveImageBtn').classList.add('hidden');
+        }
+
+        // ============================================
+        // EDIT MODAL FUNCTIONS
+        // ============================================
+        let editCurrentStep = 1;
+        const editTotalSteps = 3;
+        let editOriginalImageUrl = '';
+
+        function openEditInclusionModal(data) {
+            document.getElementById('editInclusionModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // Reset to step 1
+            editCurrentStep = 1;
+            updateEditStepDisplay();
+            
+            // Set form action URL
+            document.getElementById('editInclusionForm').action = data.update_url;
+            
+            // Populate form fields
+            document.getElementById('editName').value = data.name || '';
+            document.getElementById('editCategory').value = data.category || '';
+            document.getElementById('editPackageType').value = data.package_type || '';
+            document.getElementById('editPrice').value = data.price || 0;
+            document.getElementById('editContactPerson').value = data.contact_person || '';
+            document.getElementById('editContactEmail').value = data.contact_email || '';
+            document.getElementById('editContactPhone').value = data.contact_phone || '';
+            document.getElementById('editNotes').value = data.notes || '';
+            document.getElementById('editIsActive').checked = data.is_active == 1;
+            
+            // Handle image preview
+            editOriginalImageUrl = data.image_url || '';
+            if (editOriginalImageUrl && !editOriginalImageUrl.includes('ui-avatars.com')) {
+                document.getElementById('editImagePreview').src = editOriginalImageUrl;
+                document.getElementById('editImagePreview').classList.remove('hidden');
+                document.getElementById('editImagePlaceholder').classList.add('hidden');
+                document.getElementById('editRemoveImageBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('editImagePreview').classList.add('hidden');
+                document.getElementById('editImagePlaceholder').classList.remove('hidden');
+                document.getElementById('editRemoveImageBtn').classList.add('hidden');
+            }
+            
+            // Clear file input
+            document.getElementById('editInclusionImage').value = '';
+        }
+
+        function closeEditInclusionModal() {
+            document.getElementById('editInclusionModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            resetEditModal();
+        }
+
+        function resetEditModal() {
+            editCurrentStep = 1;
+            updateEditStepDisplay();
+            document.getElementById('editInclusionForm').reset();
+            
+            // Reset image preview
+            document.getElementById('editImagePreview').classList.add('hidden');
+            document.getElementById('editImagePreview').src = '';
+            document.getElementById('editImagePlaceholder').classList.remove('hidden');
+            document.getElementById('editRemoveImageBtn').classList.add('hidden');
+            editOriginalImageUrl = '';
+        }
+
+        function editNextStep() {
+            if (editCurrentStep < editTotalSteps) {
+                // Validate current step before proceeding
+                if (editCurrentStep === 2) {
+                    const name = document.getElementById('editName').value.trim();
+                    const category = document.getElementById('editCategory').value;
+                    
+                    if (!name) {
+                        alert('Please enter a service name.');
+                        document.getElementById('editName').focus();
+                        return;
+                    }
+                    if (!category) {
+                        alert('Please select a category.');
+                        document.getElementById('editCategory').focus();
+                        return;
+                    }
+                }
+                
+                editCurrentStep++;
+                updateEditStepDisplay();
+            }
+        }
+
+        function editPrevStep() {
+            if (editCurrentStep > 1) {
+                editCurrentStep--;
+                updateEditStepDisplay();
+            }
+        }
+
+        function updateEditStepDisplay() {
+            // Hide all steps
+            for (let i = 1; i <= editTotalSteps; i++) {
+                document.getElementById(`editStep${i}`).classList.add('hidden');
+                document.getElementById(`editStep${i}Indicator`).classList.remove('bg-white', 'text-blue-600');
+                document.getElementById(`editStep${i}Indicator`).classList.add('bg-white/30', 'text-white');
+            }
+            
+            // Show current step
+            document.getElementById(`editStep${editCurrentStep}`).classList.remove('hidden');
+            
+            // Update indicators for completed and current steps
+            for (let i = 1; i <= editCurrentStep; i++) {
+                document.getElementById(`editStep${i}Indicator`).classList.remove('bg-white/30', 'text-white');
+                document.getElementById(`editStep${i}Indicator`).classList.add('bg-white', 'text-blue-600');
+            }
+            
+            // Update buttons
+            document.getElementById('editPrevBtn').classList.toggle('hidden', editCurrentStep === 1);
+            document.getElementById('editCancelBtn').classList.toggle('hidden', editCurrentStep !== 1);
+            document.getElementById('editNextBtn').classList.toggle('hidden', editCurrentStep === editTotalSteps);
+            document.getElementById('editSubmitBtn').classList.toggle('hidden', editCurrentStep !== editTotalSteps);
+        }
+
+        function previewEditImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('editImagePreview').src = e.target.result;
+                    document.getElementById('editImagePreview').classList.remove('hidden');
+                    document.getElementById('editImagePlaceholder').classList.add('hidden');
+                    document.getElementById('editRemoveImageBtn').classList.remove('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function removeEditImage(event) {
+            event.stopPropagation();
+            document.getElementById('editInclusionImage').value = '';
+            
+            // If there was an original image, show it back
+            if (editOriginalImageUrl && !editOriginalImageUrl.includes('ui-avatars.com')) {
+                document.getElementById('editImagePreview').src = editOriginalImageUrl;
+            } else {
+                document.getElementById('editImagePreview').src = '';
+                document.getElementById('editImagePreview').classList.add('hidden');
+                document.getElementById('editImagePlaceholder').classList.remove('hidden');
+                document.getElementById('editRemoveImageBtn').classList.add('hidden');
+            }
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (!document.getElementById('createInclusionModal').classList.contains('hidden')) {
+                    closeInclusionModal();
+                }
+                if (!document.getElementById('editInclusionModal').classList.contains('hidden')) {
+                    closeEditInclusionModal();
+                }
+            }
+        });
+    </script>
 </x-admin.layouts.management>
