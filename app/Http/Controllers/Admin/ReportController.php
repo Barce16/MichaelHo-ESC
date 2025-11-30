@@ -19,6 +19,7 @@ use App\Exports\EventStatusExport;
 use App\Exports\PackageUsageExport;
 use App\Exports\PaymentMethodExport;
 use App\Exports\RemainingBalancesExport;
+use App\Exports\CustomerDetailExport;
 
 
 class ReportController extends Controller
@@ -469,5 +470,83 @@ class ReportController extends Controller
         ");
 
         return view('admin.reports.system-summary', compact('summary'));
+    }
+
+    // ========== CUSTOMER DETAIL REPORT ==========
+    public function customerDetail(Request $request)
+    {
+        // Get all customers with event count and total spent for the selection UI
+        $customers = Customer::withCount('events')
+            ->withSum(['events as total_spent' => function ($query) {
+                $query->join('billings', 'events.id', '=', 'billings.event_id');
+            }], 'billings.total_amount')
+            ->orderBy('customer_name')
+            ->get();
+
+        // If no customer selected, show selection page
+        if (!$request->has('customer_id')) {
+            return view('admin.reports.customer-detail', compact('customers'));
+        }
+
+        // Get the selected customer with all related data
+        $customer = Customer::with(['user'])
+            ->findOrFail($request->customer_id);
+
+        // Get all events for this customer with full details
+        $events = Event::with([
+            'package',
+            'billing.payments',
+            'inclusions'
+        ])
+            ->where('customer_id', $customer->id)
+            ->orderBy('event_date', 'desc')
+            ->get();
+
+        // Get all payments for this customer (across all events)
+        $allPayments = Payment::whereHas('billing.event', function ($q) use ($customer) {
+            $q->where('customer_id', $customer->id);
+        })
+            ->with('billing.event')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Calculate statistics
+        $stats = [
+            'total_events' => $events->count(),
+            'total_billed' => $events->sum(fn($e) => $e->billing?->total_amount ?? 0),
+            'total_paid' => $allPayments->where('status', 'approved')->sum('amount'),
+            'total_balance' => 0,
+        ];
+        $stats['total_balance'] = $stats['total_billed'] - $stats['total_paid'];
+
+        // Handle export requests
+        if ($request->has('export')) {
+            if ($request->export === 'pdf') {
+                return $this->exportCustomerDetailPdf($customer, $events, $allPayments, $stats);
+            }
+            if ($request->export === 'csv') {
+                return Excel::download(
+                    new CustomerDetailExport($customer, $events, $allPayments, $stats),
+                    'customer-detail-' . str_replace(' ', '-', strtolower($customer->customer_name)) . '-' . now()->format('Y-m-d') . '.csv'
+                );
+            }
+        }
+
+        return view('admin.reports.customer-detail', compact('customers', 'customer', 'events', 'allPayments', 'stats'));
+    }
+
+    private function exportCustomerDetailPdf($customer, $events, $allPayments, $stats)
+    {
+        $pdf = Pdf::loadView('admin.reports.customer-detail-pdf', [
+            'customer' => $customer,
+            'events' => $events,
+            'allPayments' => $allPayments,
+            'stats' => $stats,
+        ])
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', true)
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download('customer-detail-' . str_replace(' ', '-', strtolower($customer->customer_name)) . '-' . now()->format('Y-m-d') . '.pdf');
     }
 }

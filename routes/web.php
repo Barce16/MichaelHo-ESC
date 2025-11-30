@@ -310,6 +310,8 @@ Route::middleware('auth')->group(function () {
                 Route::get('/event-status', [ReportController::class, 'eventStatus'])->name('event-status');
                 Route::get('/remaining-balances', [ReportController::class, 'remainingBalances'])->name('remaining-balances');
                 Route::get('/system-summary', [ReportController::class, 'systemSummary'])->name('system-summary');
+                Route::get('/customer-detail', [ReportController::class, 'customerDetail'])
+                    ->name('customer-detail');
             });
 
 
