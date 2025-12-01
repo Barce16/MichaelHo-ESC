@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\FeedbackController;
 use App\Http\Controllers\Admin\InclusionChangeRequestController;
 use App\Http\Controllers\Admin\PayrollController;
+use App\Http\Controllers\Admin\EventScheduleController;
 use App\Http\Controllers\Staff\ScheduleController as StaffScheduleController;
 use App\Http\Middleware\CheckAdmin;
 use App\Http\Middleware\EnsureCustomer;
@@ -314,6 +315,8 @@ Route::middleware('auth')->group(function () {
                     ->name('customer-detail');
                 Route::get('/event-detail', [ReportController::class, 'eventDetail'])->name('event-detail');
             });
+
+            Route::post('events/{event}/save-schedules', [EventScheduleController::class, 'saveAll']);
 
 
             Route::post('/events/{event}/progress', [EventProgressController::class, 'store'])

@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\EventSchedule;
+
 
 class Event extends Model
 {
@@ -320,5 +322,28 @@ class Event extends Model
         return $this->changeRequests()
             ->where('status', InclusionChangeRequest::STATUS_PENDING)
             ->exists();
+    }
+
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(EventSchedule::class)->orderBy('scheduled_date');
+    }
+
+    public function allInclusionsScheduled(): bool
+    {
+        return $this->schedules()->count() >= $this->inclusions()->count();
+    }
+
+    public function getScheduleProgressAttribute(): int
+    {
+        $total = $this->schedules()->count();
+
+        if ($total === 0) {
+            return 0;
+        }
+
+        $completed = $this->schedules()->whereNotNull('completed_at')->count();
+
+        return (int) round(($completed / $total) * 100);
     }
 }

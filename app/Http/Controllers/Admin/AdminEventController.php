@@ -84,6 +84,8 @@ class AdminEventController extends Controller
             'package.inclusions',
             'inclusions' => fn($q) => $q->withPivot('price_snapshot', 'notes'),
             'billing.payments',
+            'schedules',
+            'schedules.inclusion',
         ]);
 
         $inclusionsSubtotal = $event->inclusions->sum(fn($i) => (float) ($i->pivot->price_snapshot ?? 0));

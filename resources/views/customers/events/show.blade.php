@@ -206,19 +206,6 @@
                                     <span class="text-3xl font-bold text-orange-600">₱{{ number_format($introAmount, 2)
                                         }}</span>
                                 </div>
-                                @if($event->billing && $event->billing->total_amount > 0)
-                                <div class="mt-3 pt-3 border-t border-gray-200">
-                                    <div class="flex items-center gap-2 text-sm text-green-700">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                        </svg>
-                                        <span class="font-semibold">Option to pay in full available!</span>
-                                    </div>
-                                    <p class="text-xs text-gray-600 mt-1">You can choose to pay the full amount (₱{{
-                                        number_format($event->billing->total_amount, 2) }}) in the payment form.</p>
-                                </div>
-                                @endif
                             </div>
 
                             <a href="{{ route('customer.payments.createIntro', $event) }}"

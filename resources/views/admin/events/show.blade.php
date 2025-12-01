@@ -44,7 +44,7 @@
         showRejectIntro: false,
         showRejectDown: false,
         showRequestDownpayment: false,
-        showProgress: false,
+        showSchedules: false,
         downpaymentAmount: 0,
 
         fmt(n) {
@@ -70,6 +70,31 @@
         },
     }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+
+            {{-- Flash Messages --}}
+            @if(session('success'))
+            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-emerald-800 font-medium">{{ session('success') }}</p>
+                </div>
+            </div>
+            @endif
+
+            @if(session('error'))
+            <div class="bg-rose-50 border border-rose-200 rounded-xl p-4">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-rose-800 font-medium">{{ session('error') }}</p>
+                </div>
+            </div>
+            @endif
 
             {{-- Intro Payment Pending Alert --}}
             @if($event->status === 'request_meeting' && $pendingIntroPayment)
@@ -873,13 +898,13 @@
                                 Assign Staff
                             </a>
 
-                            <button @click="showProgress = true"
-                                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition">
+                            <button @click="showSchedules = true"
+                                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 transition">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
-                                Update Progress
+                                Manage Schedules
                             </button>
                         </div>
                         @endif
@@ -1359,14 +1384,14 @@
             </div>
         </div>
 
-        <!-- Progress Modal -->
-        <div x-show="showProgress" x-cloak @click.self="showProgress = false"
+        {{-- Schedules Modal --}}
+        <div x-show="showSchedules" x-cloak @keydown.escape.window="showSchedules = false"
             class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-            <div @click.stop class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-auto max-h-[90vh]"
+            <div @click.stop class="bg-white rounded-xl shadow-2xl max-w-5xl w-full mx-auto max-h-[90vh] flex flex-col"
                 x-transition:enter="transition ease-out duration-300"
                 x-transition:enter-start="opacity-0 transform scale-90"
                 x-transition:enter-end="opacity-100 transform scale-100"
@@ -1374,13 +1399,15 @@
                 x-transition:leave-start="opacity-100 transform scale-100"
                 x-transition:leave-end="opacity-0 transform scale-90">
 
-                <!-- Modal Header -->
-                <div class="bg-black text-white px-6 py-5 flex items-center justify-between">
+                {{-- Modal Header --}}
+                <div
+                    class="bg-amber-600 text-white px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
                     <div>
-                        <h3 class="text-xl font-bold">Event Progress Tracking</h3>
-                        <p class="text-sm text-white/80 mt-1">{{ $event->name }}</p>
+                        <h3 class="text-lg font-bold">Inclusion Schedules</h3>
+                        <p class="text-sm text-amber-100">{{ $event->event_date->format('M d, Y') }} • {{
+                            $event->inclusions->count() }} inclusions</p>
                     </div>
-                    <button @click="showProgress = false" class="text-white/80 hover:text-white transition">
+                    <button @click="showSchedules = false" class="text-white/80 hover:text-white transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12" />
@@ -1388,108 +1415,135 @@
                     </button>
                 </div>
 
-                <!-- Event Info -->
-                <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span class="text-gray-500">Order ID:</span>
-                            <span class="font-semibold ml-2">#{{ str_pad($event->id, 6, '0', STR_PAD_LEFT) }}</span>
-                        </div>
-                        <div>
-                            <span class="text-gray-500">Event Date:</span>
-                            <span class="font-semibold ml-2">{{ $event->event_date->format('M d, Y') }}</span>
+                {{-- Form --}}
+                <form action="/admin/events/{{ $event->id }}/save-schedules" method="POST"
+                    class="flex flex-col flex-1 overflow-hidden">
+                    @csrf
+
+                    {{-- Table Header --}}
+                    <div class="bg-gray-50 border-b border-gray-200 px-6 py-3 flex-shrink-0">
+                        <div
+                            class="grid grid-cols-12 gap-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            <div class="col-span-4">Inclusion</div>
+                            <div class="col-span-3">Date</div>
+                            <div class="col-span-2">Time</div>
+                            <div class="col-span-3">Remarks</div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Progress Timeline - Compact -->
-                <div class="p-6 overflow-y-auto max-h-[50vh]">
-                    @if($event->progress && $event->progress->count() > 0)
-                    <div class="space-y-1">
-                        @foreach($event->progress as $progress)
-                        <div class="flex items-start gap-3 py-2 hover:bg-gray-50 rounded-lg px-2 -mx-2 transition">
-                            <!-- Checkbox -->
-                            <div class="flex-shrink-0 mt-1">
-                                <div
-                                    class="w-5 h-5 rounded border-2 {{ $loop->first ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-gray-300' }} flex items-center justify-center">
-                                    <svg class="w-3 h-3 {{ $loop->first ? 'text-white' : 'text-gray-400' }}" fill="none"
-                                        stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
-                                            d="M5 13l4 4L19 7" />
-                                    </svg>
+                    {{-- Table Body --}}
+                    <div class="flex-1 overflow-y-auto">
+                        @forelse($event->inclusions as $index => $inclusion)
+                        @php
+                        $schedule = $event->schedules?->where('inclusion_id', $inclusion->id)->first();
+                        $hasSchedule = $schedule && $schedule->scheduled_date;
+                        $rowBg = $hasSchedule ? 'bg-emerald-50 border-l-4 border-l-emerald-500' : 'bg-white border-l-4
+                        border-l-gray-200';
+                        @endphp
+                        <div class="px-6 py-3 border-b border-gray-100 {{ $rowBg }} hover:bg-gray-50 transition">
+                            <input type="hidden" name="schedules[{{ $index }}][inclusion_id]"
+                                value="{{ $inclusion->id }}">
+
+                            <div class="grid grid-cols-12 gap-3 items-center">
+                                {{-- Inclusion Info --}}
+                                <div class="col-span-4 flex items-center gap-3">
+                                    {{-- Image --}}
+                                    <div class="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                                        @if($inclusion->image)
+                                        <img src="{{ Storage::url($inclusion->image) }}" alt="{{ $inclusion->name }}"
+                                            class="w-full h-full object-cover">
+                                        @else
+                                        <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        @endif
+                                    </div>
+                                    {{-- Name & Status --}}
+                                    <div class="min-w-0">
+                                        <div class="font-medium text-gray-900 text-sm truncate">{{ $inclusion->name }}
+                                        </div>
+                                        <div class="flex items-center gap-2 mt-0.5">
+                                            @if($inclusion->category)
+                                            <span class="text-xs text-violet-600">{{ $inclusion->category }}</span>
+                                            @endif
+                                            @if($hasSchedule)
+                                            <span class="inline-flex items-center gap-1 text-xs text-emerald-600">
+                                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd"
+                                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                                Scheduled
+                                            </span>
+                                            @else
+                                            <span class="text-xs text-gray-400">Not set</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Date --}}
+                                <div class="col-span-3">
+                                    <input type="date" name="schedules[{{ $index }}][scheduled_date]"
+                                        value="{{ $schedule?->scheduled_date?->format('Y-m-d') }}"
+                                        class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                                </div>
+
+                                {{-- Time --}}
+                                <div class="col-span-2">
+                                    <input type="time" name="schedules[{{ $index }}][scheduled_time]"
+                                        value="{{ $schedule?->scheduled_time ? \Carbon\Carbon::parse($schedule->scheduled_time)->format('H:i') : '' }}"
+                                        class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                                </div>
+
+                                {{-- Remarks --}}
+                                <div class="col-span-3">
+                                    <input type="text" name="schedules[{{ $index }}][remarks]"
+                                        value="{{ $schedule?->remarks }}" placeholder="Optional"
+                                        class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent">
                                 </div>
                             </div>
-
-                            <!-- Progress Content -->
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-start justify-between gap-2">
-                                    <h4 class="font-semibold text-sm text-gray-900 leading-tight">
-                                        {{ ucfirst(str_replace('_', ' ', $progress->status)) }}
-                                    </h4>
-                                    <span class="text-xs text-gray-500 whitespace-nowrap mt-0.5">
-                                        {{ $progress->progress_date->format('M d, g:i A') }}
-                                    </span>
-                                </div>
-                                @if($progress->details)
-                                <p class="text-xs text-gray-600 mt-1 leading-relaxed">{{ $progress->details }}</p>
-                                @endif
-                            </div>
                         </div>
-                        @endforeach
-                    </div>
-                    @else
-                    <div class="text-center py-12">
-                        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <p class="text-gray-500">No progress updates yet</p>
-                    </div>
-                    @endif
-                </div>
-
-                <!-- Add New Progress Form -->
-                <div class="px-6 py-6 bg-gray-50 border-t border-gray-200">
-                    <h4 class="font-bold text-lg mb-4 text-gray-900">Add New Update</h4>
-                    <form action="{{ route('admin.events.progress.store', $event) }}" method="POST" class="space-y-4">
-                        @csrf
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Status Update</label>
-                            <input type="text" name="status" required
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="e.g., Preparing decorations">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Details (Optional)</label>
-                            <textarea name="details" rows="3"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="Add any additional information about this update..."></textarea>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Progress Date & Time</label>
-                            <input type="datetime-local" name="progress_date" required
-                                value="{{ now()->format('Y-m-d\TH:i') }}"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                        <button type="submit"
-                            class="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        @empty
+                        <div class="text-center py-12 text-gray-500">
+                            <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                             </svg>
-                            Send Update & Notify Customer
-                        </button>
-                    </form>
-                </div>
+                            <p>No inclusions in this event</p>
+                        </div>
+                        @endforelse
+                    </div>
 
-                <!-- Modal Footer -->
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-                    <button @click="showProgress = false"
-                        class="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition">
-                        Close
-                    </button>
-                </div>
+                    {{-- Modal Footer --}}
+                    <div
+                        class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between flex-shrink-0 rounded-b-xl">
+                        @php
+                        $scheduledCount = $event->schedules?->count() ?? 0;
+                        $totalCount = $event->inclusions->count();
+                        @endphp
+                        <div class="text-sm text-gray-500">
+                            <span class="inline-flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                {{ $scheduledCount }}/{{ $totalCount }} scheduled
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button type="button" @click="showSchedules = false"
+                                class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                class="px-6 py-2 bg-amber-600 text-white font-medium rounded-lg hover:bg-amber-700 transition">
+                                Save Schedules
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
