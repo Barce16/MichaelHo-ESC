@@ -98,12 +98,25 @@ null,
                 </div>
             </div>
 
-            <button type="button" @click="nextMonth()"
-                class="p-1.5 rounded-lg hover:bg-white/20 transition text-white/80 hover:text-white">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
+            <div class="flex items-center gap-1">
+                {{-- Track Schedules Button --}}
+                <button type="button" @click="showSchedulesList = true"
+                    class="p-1.5 rounded-lg hover:bg-white/20 transition text-white/80 hover:text-white flex items-center gap-2 pe-2"
+                    title="Track Schedules">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    <div class="text-sm">View Schedules</div>
+                </button>
+                {{-- Next Month Button --}}
+                <button type="button" @click="nextMonth()"
+                    class="p-1.5 rounded-lg hover:bg-white/20 transition text-white/80 hover:text-white">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -112,7 +125,7 @@ null,
         {{-- Weekday Headers --}}
         <div class="grid grid-cols-7 gap-0.5 mb-1">
             <template x-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']">
-                <div class="text-center text-[10px] font-semibold text-gray-500 py-2" x-text="day"></div>
+                <div class="text-center text-[10px] font-semibold text-gray-500 py-1" x-text="day"></div>
             </template>
         </div>
 
@@ -346,6 +359,152 @@ null,
             </div>
         </div>
     </div>
+
+    {{-- All Schedules List Modal --}}
+    <div x-show="showSchedulesList" x-cloak @click.self="showSchedulesList = false"
+        @keydown.escape.window="showSchedulesList = false"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+        <div @click.stop class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden"
+            x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100">
+
+            {{-- Modal Header --}}
+            <div class="bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    <div>
+                        <h4 class="font-bold text-white text-sm">Track Schedules</h4>
+                        <p class="text-[10px] text-white/70">
+                            <span x-text="sortedSchedules.length"></span> schedule<span
+                                x-show="sortedSchedules.length !== 1">s</span>
+                        </p>
+                    </div>
+                </div>
+                <button @click="showSchedulesList = false" class="text-white/80 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto max-h-[70vh]">
+                {{-- Schedules List --}}
+                <div x-show="sortedSchedules.length > 0" class="p-3 space-y-2">
+                    <template x-for="sched in sortedSchedules" :key="sched.id">
+                        <a :href="'{{ $userType === 'admin' ? '/admin/events/' : '/customer/events/' }}' + sched.event_id"
+                            class="block rounded-lg border transition overflow-hidden" :class="isOverdue(sched.scheduled_date) ? 'bg-rose-50 border-rose-200 hover:bg-rose-100' : 
+                                    isToday(sched.scheduled_date) ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' : 
+                                    'bg-amber-50 border-amber-200 hover:bg-amber-100'">
+                            <div class="flex gap-3">
+                                {{-- Image --}}
+                                <div class="w-20 h-20 flex-shrink-0" :class="isOverdue(sched.scheduled_date) ? 'bg-rose-100' : 
+                                            isToday(sched.scheduled_date) ? 'bg-blue-100' : 'bg-amber-100'">
+                                    <template x-if="sched.image">
+                                        <img :src="sched.image" :alt="sched.name" class="w-full h-full object-cover">
+                                    </template>
+                                    <template x-if="!sched.image">
+                                        <div class="w-full h-full flex items-center justify-center">
+                                            <svg class="w-8 h-8"
+                                                :class="isOverdue(sched.scheduled_date) ? 'text-rose-400' : 
+                                                        isToday(sched.scheduled_date) ? 'text-blue-400' : 'text-amber-400'" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                    </template>
+                                </div>
+                                {{-- Content --}}
+                                <div class="flex-1 py-2 pr-3 min-w-0">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div class="min-w-0">
+                                            <h6 class="font-semibold text-sm truncate"
+                                                :class="isOverdue(sched.scheduled_date) ? 'text-rose-900' : 
+                                                        isToday(sched.scheduled_date) ? 'text-blue-900' : 'text-amber-900'" x-text="sched.name"></h6>
+                                            <p class="text-xs truncate mt-0.5"
+                                                :class="isOverdue(sched.scheduled_date) ? 'text-rose-600' : 
+                                                        isToday(sched.scheduled_date) ? 'text-blue-600' : 'text-amber-600'" x-text="sched.event_name">
+                                            </p>
+                                        </div>
+                                        {{-- Status Badge --}}
+                                        <span
+                                            class="px-2 py-0.5 rounded-full text-[9px] font-bold whitespace-nowrap flex-shrink-0"
+                                            :class="isOverdue(sched.scheduled_date) ? 'bg-rose-200 text-rose-800' : 
+                                                    isToday(sched.scheduled_date) ? 'bg-blue-200 text-blue-800' : 
+                                                    'bg-amber-200 text-amber-800'" x-text="isOverdue(sched.scheduled_date) ? 'Overdue' : 
+                                                    isToday(sched.scheduled_date) ? 'Today' : 'Upcoming'"></span>
+                                    </div>
+                                    {{-- Date & Time --}}
+                                    <div class="flex items-center gap-2 mt-1.5">
+                                        <span class="inline-flex items-center gap-1 text-[10px]"
+                                            :class="isOverdue(sched.scheduled_date) ? 'text-rose-700' : 
+                                                    isToday(sched.scheduled_date) ? 'text-blue-700' : 'text-amber-700'">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <span x-text="formatScheduleDate(sched.scheduled_date)"></span>
+                                        </span>
+                                        <span x-show="sched.scheduled_time"
+                                            class="inline-flex items-center gap-1 text-[10px]"
+                                            :class="isOverdue(sched.scheduled_date) ? 'text-rose-700' : 
+                                                    isToday(sched.scheduled_date) ? 'text-blue-700' : 'text-amber-700'">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <span x-text="sched.scheduled_time"></span>
+                                        </span>
+                                    </div>
+                                    {{-- Remarks --}}
+                                    <p x-show="sched.remarks" class="text-[10px] mt-1 line-clamp-1" :class="isOverdue(sched.scheduled_date) ? 'text-rose-600' : 
+                                                isToday(sched.scheduled_date) ? 'text-blue-600' : 'text-amber-600'"
+                                        x-text="sched.remarks"></p>
+                                </div>
+                            </div>
+                        </a>
+                    </template>
+                </div>
+
+                {{-- Empty State --}}
+                <div x-show="sortedSchedules.length === 0" class="p-8 text-center text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <p class="text-sm font-medium">No schedules yet</p>
+                    <p class="text-xs text-gray-400 mt-1">Schedules will appear here once set</p>
+                </div>
+            </div>
+
+            {{-- Legend --}}
+            <div class="border-t border-gray-200 px-4 py-2 bg-gray-50">
+                <div class="flex items-center justify-center gap-4 text-[10px]">
+                    <div class="flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        <span class="text-gray-600">Overdue</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span class="text-gray-600">Today</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        <span class="text-gray-600">Upcoming</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -357,17 +516,48 @@ null,
         events: [],
         schedules: [],
         showModal: false,
+        showSchedulesList: false,
         selectedDayEvents: [],
         selectedDaySchedules: [],
         modalDate: '',
         eventsInMonth: 0,
         schedulesInMonth: 0,
 
+        get sortedSchedules() {
+            return [...this.schedules].sort((a, b) => {
+                const dateA = new Date(a.scheduled_date);
+                const dateB = new Date(b.scheduled_date);
+                return dateA - dateB;
+            });
+        },
+
         initCalendar(eventsData, schedulesData) {
             this.events = Array.isArray(eventsData) ? eventsData : [];
             this.schedules = Array.isArray(schedulesData) ? schedulesData : [];
             this.calculateStats();
             this.renderCalendar();
+        },
+
+        isToday(dateStr) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const date = new Date(dateStr);
+            date.setHours(0, 0, 0, 0);
+            return date.getTime() === today.getTime();
+        },
+
+        isOverdue(dateStr) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const date = new Date(dateStr);
+            date.setHours(0, 0, 0, 0);
+            return date < today;
+        },
+
+        formatScheduleDate(dateStr) {
+            const date = new Date(dateStr);
+            const options = { weekday: 'short', month: 'short', day: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
         },
 
         calculateStats() {
