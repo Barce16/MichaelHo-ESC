@@ -199,19 +199,17 @@ null,
         <div class="mt-4 pt-3 border-t border-gray-200">
             <div class="flex flex-wrap items-center justify-center gap-4 text-xs">
                 <div class="flex items-center gap-1.5">
-                    <div
-                        class="w-4 h-4 rounded bg-violet-100 border-2 border-violet-400 flex items-center justify-center text-[8px] font-bold text-violet-600">
-                        1</div>
-                    <span class="text-gray-600">Events</span>
+                    <div class="w-5 h-5 rounded bg-violet-100 border-2 border-violet-400 flex items-center justify-center text-[9px] font-bold text-violet-600"
+                        x-text="eventsInMonth"></div>
+                    <span class="text-gray-600">Event<span x-show="eventsInMonth !== 1">s</span> this month</span>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <div
-                        class="w-4 h-4 rounded bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-[8px] font-bold text-amber-600">
-                        2</div>
-                    <span class="text-gray-600">Schedules</span>
+                    <div class="w-5 h-5 rounded bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-[9px] font-bold text-amber-600"
+                        x-text="schedulesInMonth"></div>
+                    <span class="text-gray-600">Schedule<span x-show="schedulesInMonth !== 1">s</span> this month</span>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <div class="w-4 h-4 rounded border-2 border-violet-500"></div>
+                    <div class="w-5 h-5 rounded border-2 border-violet-500 ring-2 ring-violet-500 ring-offset-1"></div>
                     <span class="text-gray-600">Today</span>
                 </div>
             </div>

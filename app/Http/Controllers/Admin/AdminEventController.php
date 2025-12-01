@@ -70,9 +70,14 @@ class AdminEventController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        // All schedules for admin calendar
+        $schedules = \App\Models\EventSchedule::with(['inclusion', 'event'])
+            ->whereNotNull('scheduled_date')
+            ->get();
+
         return view(
             'admin.events.index',
-            compact('events', 'packages', 'q', 'status', 'packageId', 'dateFrom', 'dateTo')
+            compact('events', 'packages', 'q', 'status', 'packageId', 'dateFrom', 'dateTo', 'schedules')
         );
     }
 

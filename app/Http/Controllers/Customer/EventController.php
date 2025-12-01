@@ -8,6 +8,7 @@ use App\Models\Package;
 use App\Models\Inclusion;
 use App\Models\Payment;
 use App\Models\Customer;
+use App\Models\EventSchedule;
 use App\Models\InclusionChangeRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,8 +34,8 @@ class EventController extends Controller
             ->orderByDesc('event_date')
             ->paginate(12);
 
-        // Get schedules for this customer's events
-        $schedules = \App\Models\EventSchedule::with(['inclusion', 'event'])
+        // Only this customer's schedules
+        $schedules = EventSchedule::with(['inclusion', 'event'])
             ->whereHas('event', fn($q) => $q->where('customer_id', $customer->id))
             ->whereNotNull('scheduled_date')
             ->get();
@@ -43,6 +44,7 @@ class EventController extends Controller
 
         return view('customers.events.index', compact('events', 'schedules', 'hasPendingBillings'));
     }
+
     public function create(Request $request)
     {
         // Get authenticated customer
