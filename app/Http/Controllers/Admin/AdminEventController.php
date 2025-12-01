@@ -984,6 +984,16 @@ class AdminEventController extends Controller
             'inclusions.*' => 'exists:inclusions,id',
             'inclusion_notes' => 'nullable|array',
             'inclusion_notes.*' => 'nullable|string|max:500',
+            'locked_inclusions' => 'nullable|array',
+            'locked_inclusions.*' => 'exists:inclusions,id',
+        ]);
+
+        // Determine if removal is allowed based on status
+        $canRemoveInclusions = in_array($event->status, [
+            Event::STATUS_REQUESTED,
+            Event::STATUS_APPROVED,
+            Event::STATUS_REQUEST_MEETING,
+            Event::STATUS_MEETING,
         ]);
 
         // Store old total before updating
@@ -993,7 +1003,15 @@ class AdminEventController extends Controller
         $oldInclusionIds = $event->inclusions->pluck('id')->toArray();
         $oldInclusions = $event->inclusions; // Keep the collection
 
+        // Get submitted inclusions
         $selectedInclusionIds = $request->input('inclusions', []);
+
+        // If removal is not allowed, merge locked inclusions to ensure they're always included
+        if (!$canRemoveInclusions) {
+            $lockedInclusionIds = $request->input('locked_inclusions', []);
+            // Merge and remove duplicates
+            $selectedInclusionIds = array_unique(array_merge($selectedInclusionIds, $lockedInclusionIds));
+        }
 
         // Get the inclusions with their prices
         $inclusions = Inclusion::whereIn('id', $selectedInclusionIds)->get();
@@ -1004,9 +1022,12 @@ class AdminEventController extends Controller
         // Prepare sync data with price snapshots and notes
         $syncData = [];
         foreach ($inclusions as $inclusion) {
+            // For existing inclusions, preserve their original price_snapshot
+            $existingPivot = $oldInclusions->find($inclusion->id)?->pivot;
+
             $syncData[$inclusion->id] = [
-                'price_snapshot' => $inclusion->price,
-                'notes' => $inclusionNotes[$inclusion->id] ?? null,
+                'price_snapshot' => $existingPivot?->price_snapshot ?? $inclusion->price,
+                'notes' => $inclusionNotes[$inclusion->id] ?? $existingPivot?->notes ?? null,
             ];
         }
 
@@ -1043,9 +1064,14 @@ class AdminEventController extends Controller
             $changes[] = "Removed: " . implode(', ', $removed);
         }
 
-        $changeDetails = !empty($changes)
-            ? implode(". ", $changes) . "."
-            : "Inclusions modified.";
+        // If no changes, just show success
+        if (empty($changes)) {
+            return redirect()
+                ->route('admin.events.show', $event)
+                ->with('info', 'No changes were made to the inclusions.');
+        }
+
+        $changeDetails = implode(". ", $changes) . ".";
 
         // Create event progress record
         EventProgress::create([
@@ -1081,7 +1107,6 @@ class AdminEventController extends Controller
             ->route('admin.events.show', $event)
             ->with('success', 'Event inclusions updated successfully. Customer has been notified via email with detailed changes.');
     }
-
     /**
      * Recalculate billing based on package and inclusions
      */
