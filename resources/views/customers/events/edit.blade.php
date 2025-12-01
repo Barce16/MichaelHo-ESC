@@ -51,10 +51,40 @@
     $eventInclusionsByCategory = $event->inclusions->groupBy('category')->map(function($incs) {
     return $incs->first()->id;
     })->toArray();
+
+    // Determine if removal is allowed based on status
+    $canRemoveInclusions = in_array($event->status, [
+    \App\Models\Event::STATUS_REQUESTED,
+    \App\Models\Event::STATUS_APPROVED,
+    \App\Models\Event::STATUS_REQUEST_MEETING,
+    \App\Models\Event::STATUS_MEETING,
+    ]);
+
+    // Get original inclusion IDs (these cannot be removed if canRemoveInclusions is false)
+    $originalInclusionIds = $event->inclusions->pluck('id')->toArray();
     @endphp
 
     <div class="py-6" x-data="editEventForm()" x-init="init()">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
+
+            {{-- Notice if removal is restricted --}}
+            @if(!$canRemoveInclusions)
+            <div class="bg-amber-50 border-l-4 border-amber-500 rounded-lg p-4">
+                <div class="flex gap-3">
+                    <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div class="text-sm text-amber-900">
+                        <p class="font-semibold mb-1">Limited Editing Mode</p>
+                        <p>Since your event is already <strong>{{ $event->status_label }}</strong>, you can only
+                            <strong>add new inclusions</strong>. Existing inclusions cannot be removed at this stage.
+                            Contact the admin if you need to make changes.</p>
+                    </div>
+                </div>
+            </div>
+            @endif
 
             <!-- IMPORTANT: Remove @submit handler from form, handle it programmatically -->
             <form method="POST" action="{{ route('customer.events.update', $event) }}" class="space-y-6"
@@ -282,9 +312,25 @@
                                         <template x-for="inc in category.items" :key="inc.id">
                                             <div class="relative border rounded-xl overflow-hidden transition-all duration-300 cursor-pointer hover:shadow-lg"
                                                 :class="{
-                                    'ring-2 ring-emerald-500 border-emerald-500 shadow-md': selectedIncs.has(inc.id),
-                                    'border-gray-300 hover:border-emerald-300': !selectedIncs.has(inc.id)
+                                    'ring-2 ring-emerald-500 border-emerald-500 shadow-md': selectedIncs.has(inc.id) && !isLocked(inc.id),
+                                    'ring-2 ring-slate-400 border-slate-400 shadow-md bg-slate-50': selectedIncs.has(inc.id) && isLocked(inc.id),
+                                    'border-gray-300 hover:border-emerald-300': !selectedIncs.has(inc.id),
+                                    'cursor-not-allowed': isLocked(inc.id)
                                 }" @click="toggleInclusion(inc.id)">
+
+                                                {{-- Lock Badge for locked inclusions --}}
+                                                <div x-show="isLocked(inc.id)" class="absolute top-2 right-2 z-10">
+                                                    <span
+                                                        class="inline-flex items-center gap-1 px-2 py-1 bg-slate-600 text-white text-xs font-medium rounded-full shadow-sm">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                        </svg>
+                                                        Locked
+                                                    </span>
+                                                </div>
 
                                                 {{-- Image --}}
                                                 <div class="aspect-video bg-gray-100 overflow-hidden">
@@ -309,7 +355,8 @@
                                                     <div class="flex items-center gap-2">
                                                         <div class="flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition"
                                                             :class="{
-                                                'bg-emerald-500 border-emerald-500': selectedIncs.has(inc.id),
+                                                'bg-emerald-500 border-emerald-500': selectedIncs.has(inc.id) && !isLocked(inc.id),
+                                                'bg-slate-400 border-slate-400': selectedIncs.has(inc.id) && isLocked(inc.id),
                                                 'border-gray-300': !selectedIncs.has(inc.id)
                                             }">
                                                             <svg x-show="selectedIncs.has(inc.id)"
@@ -320,9 +367,10 @@
                                                             </svg>
                                                         </div>
                                                         <span class="text-xs font-medium" :class="{
-                                                'text-emerald-600': selectedIncs.has(inc.id),
+                                                'text-emerald-600': selectedIncs.has(inc.id) && !isLocked(inc.id),
+                                                'text-slate-500': selectedIncs.has(inc.id) && isLocked(inc.id),
                                                 'text-gray-500': !selectedIncs.has(inc.id)
-                                            }" x-text="selectedIncs.has(inc.id) ? 'Selected' : 'Select'">
+                                            }" x-text="isLocked(inc.id) ? 'Locked' : (selectedIncs.has(inc.id) ? 'Selected' : 'Select')">
                                                         </span>
 
                                                         {{-- Package Badge --}}
@@ -397,8 +445,28 @@
                         @error('inclusions')
                         <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                         @enderror
+
+                        {{-- Notice about locked inclusions --}}
+                        @if(!$canRemoveInclusions && count($originalInclusionIds) > 0)
+                        <div
+                            class="mt-4 flex items-center gap-2 text-sm text-slate-600 bg-slate-50 rounded-lg px-4 py-3">
+                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            <span>{{ count($originalInclusionIds) }} inclusion(s) are locked and cannot be
+                                removed</span>
+                        </div>
+                        @endif
                     </div>
                 </div>
+
+                {{-- Hidden inputs for locked inclusions (so they're always submitted) --}}
+                @if(!$canRemoveInclusions)
+                @foreach($originalInclusionIds as $lockedId)
+                <input type="hidden" name="locked_inclusions[]" value="{{ $lockedId }}">
+                @endforeach
+                @endif
 
                 {{-- Submit Buttons --}}
                 <div class="flex justify-between items-center">
@@ -552,6 +620,8 @@
     const oldSelections = @json(old('inclusions', []));
     const existingNotes = @json($existingNotes ?? []);
     const originalInclusions = new Set(eventSelections.map(id => Number(id)));
+    const originalInclusionIds = @json($originalInclusionIds);
+    const canRemove = @json($canRemoveInclusions);
     const originalTotal = Number(@json($event->inclusions->sum(fn($i) => $i->pivot->price_snapshot ?? 0))) + 
                          Number(@json($event->package?->coordination_price ?? 25000)) + 
                          Number(@json($event->package?->event_styling_price ?? 55000));
@@ -566,6 +636,8 @@
         inclusionNotes: {},
         showConfirmModal: false,
         formSubmitted: false,
+        canRemoveInclusions: canRemove,
+        lockedInclusions: new Set(originalInclusionIds.map(id => Number(id))),
         changesSummary: {
             added: [],
             removed: [],
@@ -645,11 +717,21 @@
 
         toggleInclusion(id){
             id = Number(id);
+            
+            // If trying to remove a locked inclusion, do nothing
+            if (!this.canRemoveInclusions && this.lockedInclusions.has(id) && this.selectedIncs.has(id)) {
+                return;
+            }
+            
             if (this.selectedIncs.has(id)) {
                 this.selectedIncs.delete(id);
             } else {
                 this.selectedIncs.add(id);
             }
+        },
+        
+        isLocked(id) {
+            return !this.canRemoveInclusions && this.lockedInclusions.has(Number(id));
         },
 
         inclusionsSubtotal(){

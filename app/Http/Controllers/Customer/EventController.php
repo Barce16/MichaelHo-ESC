@@ -176,105 +176,12 @@ class EventController extends Controller
             ->with('success', 'Event request submitted. Please wait for admin approval.');
     }
 
-    public function show(Event $event)
-    {
-        // auth
-        $customer = Auth::user()->customer;
-        if (!$customer || $event->customer_id !== $customer->id) abort(403);
-
-        // load relations
-        $event->load(['package', 'inclusions', 'customer', 'billing.payments']);
-
-        // pricing
-        $incSubtotal = $event->inclusions->sum(fn($i) => (float) ($i->pivot->price_snapshot ?? 0));
-        $coord = (float) ($event->package?->coordination_price ?? 25000);
-        $styl  = (float) ($event->package?->event_styling_price ?? 55000);
-        $grandTotal = $incSubtotal + $coord + $styl;
-
-        // payments collection
-        $payments = $event->billing ? $event->billing->payments : collect();
-
-        // pending checks
-        $pendingIntroPayment = $payments->where('payment_type', Payment::TYPE_INTRODUCTORY)
-            ->where('status', Payment::STATUS_PENDING)
-            ->sortByDesc('created_at')
-            ->first();
-
-        $pendingDownpayment = $payments->where('payment_type', Payment::TYPE_DOWNPAYMENT)
-            ->where('status', Payment::STATUS_PENDING)
-            ->sortByDesc('created_at')
-            ->first();
-
-        // approved sums
-        $approvedIntroPayments = $payments->where('payment_type', Payment::TYPE_INTRODUCTORY)
-            ->where('status', Payment::STATUS_APPROVED)
-            ->sum('amount');
-
-        $approvedDownpayments = $payments->where('payment_type', Payment::TYPE_DOWNPAYMENT)
-            ->where('status', Payment::STATUS_APPROVED)
-            ->sum('amount');
-
-        $approvedBalancePayments = $payments->where('payment_type', Payment::TYPE_BALANCE)
-            ->where('status', Payment::STATUS_APPROVED)
-            ->sum('amount');
-
-        $totalPaid = $approvedIntroPayments + $approvedDownpayments + $approvedBalancePayments;
-
-        $introAmount = 5000.00;
-        // balance calculation
-        $remainingBalance = $grandTotal - $totalPaid;
-
-        // Required downpayment calculation
-        if ($event->billing && $event->billing->downpayment_amount > 0) {
-            if ($approvedIntroPayments > 0) {
-                $requiredDownpayment = max(0, $event->billing->downpayment_amount - $introAmount);
-            } else {
-                $requiredDownpayment = $event->billing->downpayment_amount;
-            }
-        } else {
-            $requiredDownpayment = 0;
-        }
-
-        // payment checks
-        $canPayIntro = $event->isReadyForIntroPayment();
-        $isIntroPaid = ($approvedIntroPayments > 0);
-        $canPayDownpayment = $event->isReadyForDownpayment() && $isIntroPaid;
-        $isDownpaymentPaid = ($approvedDownpayments > 0);
-        $canPayBalance = $isIntroPaid && $isDownpaymentPaid && $remainingBalance > 0;
-
-        // progress
-        $progress = $event->progress()->orderBy('progress_date', 'desc')->get();
-
-        return view('customers.events.show', compact(
-            'event',
-            'payments',
-            'pendingIntroPayment',
-            'pendingDownpayment',
-            'approvedIntroPayments',
-            'approvedDownpayments',
-            'approvedBalancePayments',
-            'canPayIntro',
-            'isIntroPaid',
-            'canPayDownpayment',
-            'isDownpaymentPaid',
-            'canPayBalance',
-            'incSubtotal',
-            'coord',
-            'styl',
-            'grandTotal',
-            'totalPaid',
-            'remainingBalance',
-            'introAmount',
-            'requiredDownpayment',
-        ));
-    }
-
     public function edit(Request $request, Event $event)
     {
         $customer = $request->user()->customer;
         abort_if(!$customer || $event->customer_id !== $customer->id, 403);
 
-        // Can only edit if status is requested, request_meeting, or meeting
+        // Can only edit if status is not rejected or completed
         if (in_array($event->status, [Event::STATUS_REJECTED, Event::STATUS_COMPLETED])) {
             return redirect()
                 ->route('customer.events.show', $event)
@@ -296,7 +203,26 @@ class EventController extends Controller
         // Get existing inclusion notes from pivot table
         $existingNotes = $event->inclusions->pluck('pivot.notes', 'id')->toArray();
 
-        return view('customers.events.edit', compact('event', 'packages', 'allInclusions', 'existingNotes', 'customer'));
+        // Determine if removal is allowed based on status
+        $canRemoveInclusions = in_array($event->status, [
+            Event::STATUS_REQUESTED,
+            Event::STATUS_APPROVED,
+            Event::STATUS_REQUEST_MEETING,
+            Event::STATUS_MEETING,
+        ]);
+
+        // Get original inclusion IDs (these cannot be removed if canRemoveInclusions is false)
+        $originalInclusionIds = $event->inclusions->pluck('id')->toArray();
+
+        return view('customers.events.edit', compact(
+            'event',
+            'packages',
+            'allInclusions',
+            'existingNotes',
+            'customer',
+            'canRemoveInclusions',
+            'originalInclusionIds'
+        ));
     }
 
     public function update(Request $request, Event $event)
@@ -317,23 +243,45 @@ class EventController extends Controller
             'inclusions.*' => ['integer', 'exists:inclusions,id'],
             'inclusion_notes' => ['nullable', 'array'],
             'inclusion_notes.*' => ['nullable', 'string', 'max:500'],
+            'locked_inclusions' => ['nullable', 'array'],
+            'locked_inclusions.*' => ['integer', 'exists:inclusions,id'],
         ]);
 
         $package = Package::findOrFail($data['package_id']);
 
+        // Determine if removal is allowed based on status
+        $canRemoveInclusions = in_array($event->status, [
+            Event::STATUS_REQUESTED,
+            Event::STATUS_APPROVED,
+            Event::STATUS_REQUEST_MEETING,
+            Event::STATUS_MEETING,
+        ]);
+
         // Get current inclusions
         $currentInclusionIds = $event->inclusions->pluck('id')->sort()->values();
 
-        // Get new inclusions
-        $newInclusionIds = collect($request->input('inclusions', []))
+        // Get submitted inclusions
+        $submittedInclusionIds = collect($request->input('inclusions', []))
             ->map(fn($id) => (int) $id)
             ->filter()
-            ->unique()
-            ->sort()
-            ->values();
+            ->unique();
+
+        // If removal is not allowed, merge locked inclusions to ensure they're always included
+        if (!$canRemoveInclusions) {
+            $lockedInclusionIds = collect($request->input('locked_inclusions', []))
+                ->map(fn($id) => (int) $id)
+                ->filter();
+
+            // Merge and remove duplicates
+            $newInclusionIds = $submittedInclusionIds->merge($lockedInclusionIds)
+                ->unique()
+                ->sort()
+                ->values();
+        } else {
+            $newInclusionIds = $submittedInclusionIds->sort()->values();
+        }
 
         // Check if inclusions changed - Using Laravel-compatible comparison
-        // Convert collections to arrays and compare
         $currentArray = $currentInclusionIds->toArray();
         $newArray = $newInclusionIds->toArray();
 
@@ -344,7 +292,16 @@ class EventController extends Controller
 
         if ($inclusionsChanged) {
             // Create change request instead of updating directly
-            return $this->createChangeRequest($event, $customer, $package, $currentInclusionIds, $newInclusionIds, $request->input('inclusion_notes', []), $data);
+            return $this->createChangeRequest(
+                $event,
+                $customer,
+                $package,
+                $currentInclusionIds,
+                $newInclusionIds,
+                $request->input('inclusion_notes', []),
+                $data,
+                $canRemoveInclusions
+            );
         }
 
         // No inclusion changes - update event normally
@@ -363,7 +320,7 @@ class EventController extends Controller
             ->with('success', 'Event updated successfully.');
     }
 
-    protected function createChangeRequest($event, $customer, $package, $currentInclusionIds, $newInclusionIds, $inclusionNotes, $eventData)
+    protected function createChangeRequest($event, $customer, $package, $currentInclusionIds, $newInclusionIds, $inclusionNotes, $eventData, $canRemoveInclusions = true)
     {
         // Get current inclusions with details
         $currentInclusions = Inclusion::whereIn('id', $currentInclusionIds)
@@ -398,6 +355,20 @@ class EventController extends Controller
         $newTotal = $newInclusionsTotal + $coordination + $styling;
 
         $difference = $newTotal - $oldTotal;
+
+        // If removal is not allowed, validate that no locked inclusions were removed
+        if (!$canRemoveInclusions) {
+            $removedIds = array_diff(
+                collect($currentInclusions)->pluck('id')->toArray(),
+                collect($newInclusions)->pluck('id')->toArray()
+            );
+
+            if (!empty($removedIds)) {
+                return redirect()
+                    ->back()
+                    ->with('error', 'Cannot remove existing inclusions at this stage. Only new inclusions can be added.');
+            }
+        }
 
         // Check if there's already a pending change request
         $existingRequest = InclusionChangeRequest::where('event_id', $event->id)
