@@ -16,6 +16,12 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <style>
+        html {
+            overflow-y: scroll;
+        }
+    </style>
 </head>
 
 <body class="font-sans antialiased">
