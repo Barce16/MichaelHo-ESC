@@ -1,29 +1,21 @@
-@props(['events' => [], 'userType' => 'customer'])
+@props(['events' => [], 'schedules' => [], 'userType' => 'customer'])
 
 @php
-// convert to array format
+// Convert events to array format
 if (is_object($events) && method_exists($events, 'items')) {
-// paginator
 $eventsCollection = collect($events->items());
 } else {
-// collection or arr
 $eventsCollection = collect($events);
 }
 
 $eventsArray = $eventsCollection->map(function($event) use ($userType) {
-// check obj
-if (!is_object($event)) {
-return null;
-}
+if (!is_object($event)) return null;
 
-// strip time from date
 $eventDate = $event->event_date;
 if ($eventDate) {
-// handle datetime
 if ($eventDate instanceof \DateTime || $eventDate instanceof \Carbon\Carbon) {
 $eventDate = $eventDate->format('Y-m-d');
 } else {
-// just date part
 $eventDate = substr($eventDate, 0, 10);
 }
 }
@@ -34,218 +26,323 @@ $data = [
 'event_date' => $eventDate ?? now()->format('Y-m-d'),
 'status' => $event->status ?? 'requested',
 'venue' => $event->venue ?? '',
+'type' => 'event',
 ];
 
-// admin needs customer name
 if ($userType === 'admin') {
 $data['customer_name'] = isset($event->customer->user) ? $event->customer->user->name : 'N/A';
 }
 
 return $data;
-})->filter()->values()->toArray(); // remove nulls
+})->filter()->values()->toArray();
+
+// Convert schedules to array format with image
+$schedulesCollection = collect($schedules);
+$schedulesArray = $schedulesCollection->map(function($schedule) {
+if (!is_object($schedule)) return null;
+
+$scheduledDate = $schedule->scheduled_date;
+if ($scheduledDate) {
+if ($scheduledDate instanceof \DateTime || $scheduledDate instanceof \Carbon\Carbon) {
+$scheduledDate = $scheduledDate->format('Y-m-d');
+} else {
+$scheduledDate = substr($scheduledDate, 0, 10);
+}
+}
+
+// Get inclusion image URL
+$imageUrl = null;
+if ($schedule->inclusion && $schedule->inclusion->image) {
+$imageUrl = Storage::url($schedule->inclusion->image);
+}
+
+return [
+'id' => $schedule->id ?? 0,
+'name' => $schedule->inclusion->name ?? 'Unknown',
+'event_name' => $schedule->event->name ?? 'Unknown Event',
+'event_id' => $schedule->event_id,
+'scheduled_date' => $scheduledDate,
+'scheduled_time' => $schedule->scheduled_time ? \Carbon\Carbon::parse($schedule->scheduled_time)->format('g:i A') :
+null,
+'remarks' => $schedule->remarks ?? null,
+'image' => $imageUrl,
+'category' => $schedule->inclusion->category ?? null,
+'type' => 'schedule',
+];
+})->filter()->values()->toArray();
 @endphp
 
-<div x-data="eventsCalendar()" x-init="initCalendar(@js($eventsArray))"
-    class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden max-w-3xl mx-auto">
+<div x-data="eventsCalendar()" x-init="initCalendar(@js($eventsArray), @js($schedulesArray))"
+    class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
 
-    {{-- header --}}
-    <div class="bg-gradient-to-r from-slate-500 to-gray-600 p-3">
+    {{-- Header --}}
+    <div class="bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-4">
         <div class="flex items-center justify-between">
-            <button type="button" @click="previousMonth()" class="p-1.5 rounded-lg hover:bg-white/20 transition">
-                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button type="button" @click="previousMonth()"
+                class="p-2 rounded-lg hover:bg-white/20 transition text-white/80 hover:text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
             </button>
 
             <div class="text-center">
-                <h3 class="text-lg font-bold text-white" x-text="currentMonthDisplay"></h3>
-                <p class="text-[10px] text-white/70">
-                    <span x-text="eventsInMonth"></span> event<span x-show="eventsInMonth !== 1">s</span> this month
-                </p>
+                <h3 class="text-xl font-bold text-white" x-text="currentMonthDisplay"></h3>
+                <div class="flex items-center justify-center gap-3 mt-1">
+                    <span class="text-xs text-white/70">
+                        <span x-text="eventsInMonth"></span> event<span x-show="eventsInMonth !== 1">s</span>
+                    </span>
+                    <span class="text-white/40">•</span>
+                    <span class="text-xs text-white/70">
+                        <span x-text="schedulesInMonth"></span> schedule<span x-show="schedulesInMonth !== 1">s</span>
+                    </span>
+                </div>
             </div>
 
-            <button type="button" @click="nextMonth()" class="p-1.5 rounded-lg hover:bg-white/20 transition">
-                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button type="button" @click="nextMonth()"
+                class="p-2 rounded-lg hover:bg-white/20 transition text-white/80 hover:text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
             </button>
         </div>
     </div>
 
-    {{-- calendar --}}
-    <div class="p-3">
-        {{-- weekdays --}}
-        <div class="grid grid-cols-7 gap-1 mb-1">
-            <div class="text-center text-[10px] font-semibold text-gray-600 py-1">Sun</div>
-            <div class="text-center text-[10px] font-semibold text-gray-600 py-1">Mon</div>
-            <div class="text-center text-[10px] font-semibold text-gray-600 py-1">Tue</div>
-            <div class="text-center text-[10px] font-semibold text-gray-600 py-1">Wed</div>
-            <div class="text-center text-[10px] font-semibold text-gray-600 py-1">Thu</div>
-            <div class="text-center text-[10px] font-semibold text-gray-600 py-1">Fri</div>
-            <div class="text-center text-[10px] font-semibold text-gray-600 py-1">Sat</div>
+    {{-- Calendar Grid --}}
+    <div class="p-4">
+        {{-- Weekday Headers --}}
+        <div class="grid grid-cols-7 gap-1 mb-2">
+            <template x-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']">
+                <div class="text-center text-xs font-semibold text-gray-500 py-2" x-text="day"></div>
+            </template>
         </div>
 
-        {{-- grid --}}
+        {{-- Days Grid --}}
         <div class="grid grid-cols-7 gap-1">
             <template x-for="(day, index) in calendarDays" :key="index">
                 <div>
-                    {{-- has events --}}
-                    <button type="button" x-show="day.inCurrentMonth && day.events.length > 0"
-                        @click="showDayEvents(day)" :class="{
-                            'ring-1 ring-violet-400 ring-offset-1': day.isToday,
-                            'bg-amber-50 hover:bg-amber-100 border-amber-200': day.events[0]?.status === 'requested',
-                            'bg-blue-50 hover:bg-blue-100 border-blue-200': day.events[0]?.status === 'meeting' || day.events[0]?.status === 'request_meeting',
-                            'bg-sky-50 hover:bg-sky-100 border-sky-200': day.events[0]?.status === 'approved',
-                            'bg-violet-50 hover:bg-violet-100 border-violet-200': day.events[0]?.status === 'scheduled',
-                            'bg-emerald-50 hover:bg-emerald-100 border-emerald-200': day.events[0]?.status === 'completed',
-                            'bg-gray-50 hover:bg-gray-100 border-gray-200': day.events[0]?.status === 'cancelled' || day.events[0]?.status === 'rejected'
-                        }"
-                        class="w-full h-14 flex flex-col items-start justify-start p-1.5 rounded-md border transition-all cursor-pointer">
+                    {{-- Day Cell --}}
+                    <div x-show="day.inCurrentMonth"
+                        @click="(day.events.length > 0 || day.schedules.length > 0) && showDayModal(day)" :class="{
+                            'ring-2 ring-violet-500 ring-offset-1': day.isToday,
+                            'cursor-pointer hover:shadow-md': day.events.length > 0 || day.schedules.length > 0,
+                            'bg-violet-50 border-violet-300': day.events.length > 0,
+                            'bg-amber-50 border-amber-300': day.events.length === 0 && day.schedules.length > 0,
+                            'border-gray-200': day.events.length === 0 && day.schedules.length === 0
+                        }" class="min-h-[90px] p-1.5 rounded-lg border transition-all relative">
 
-                        {{-- day num --}}
-                        <span class="text-[10px] font-bold" :class="{
-                                'text-amber-700': day.events[0]?.status === 'requested',
-                                'text-blue-700': day.events[0]?.status === 'meeting' || day.events[0]?.status === 'request_meeting',
-                                'text-sky-700': day.events[0]?.status === 'approved',
-                                'text-violet-700': day.events[0]?.status === 'scheduled',
-                                'text-emerald-700': day.events[0]?.status === 'completed',
-                                'text-gray-600': day.events[0]?.status === 'cancelled' || day.events[0]?.status === 'rejected'
-                            }" x-text="day.day"></span>
+                        {{-- Day Number Row --}}
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold" :class="day.isToday ? 'text-violet-600' : 'text-gray-700'"
+                                x-text="day.day"></span>
 
-                        {{-- event title --}}
-                        <p class="text-[9px] font-medium leading-tight line-clamp-1 w-full" :class="{
-                                'text-amber-700': day.events[0]?.status === 'requested',
-                                'text-blue-700': day.events[0]?.status === 'meeting' || day.events[0]?.status === 'request_meeting',
-                                'text-sky-700': day.events[0]?.status === 'approved',
-                                'text-violet-700': day.events[0]?.status === 'scheduled',
-                                'text-emerald-700': day.events[0]?.status === 'completed',
-                                'text-gray-600': day.events[0]?.status === 'cancelled' || day.events[0]?.status === 'rejected'
-                            }" x-text="day.events[0]?.name"></p>
+                            {{-- Badges --}}
+                            <div class="flex items-center gap-0.5">
+                                <span x-show="day.events.length > 0"
+                                    class="w-4 h-4 flex items-center justify-center text-[8px] font-bold text-white bg-violet-500 rounded-full"
+                                    x-text="day.events.length"></span>
+                                <span x-show="day.schedules.length > 0"
+                                    class="w-4 h-4 flex items-center justify-center text-[8px] font-bold text-white bg-amber-500 rounded-full"
+                                    x-text="day.schedules.length"></span>
+                            </div>
+                        </div>
 
-                        {{-- more badge --}}
-                        <span x-show="day.events.length > 1" class="text-[8px] font-semibold mt-auto" :class="{
-                                'text-amber-600': day.events[0]?.status === 'requested',
-                                'text-blue-600': day.events[0]?.status === 'meeting' || day.events[0]?.status === 'request_meeting',
-                                'text-sky-600': day.events[0]?.status === 'approved',
-                                'text-violet-600': day.events[0]?.status === 'scheduled',
-                                'text-emerald-600': day.events[0]?.status === 'completed',
-                                'text-gray-500': day.events[0]?.status === 'cancelled' || day.events[0]?.status === 'rejected'
-                            }" x-text="'+' + (day.events.length - 1)"></span>
-                    </button>
+                        {{-- Event Name (if any) --}}
+                        <template x-if="day.events.length > 0">
+                            <div class="text-[9px] font-semibold text-violet-700 truncate mb-1"
+                                x-text="day.events[0]?.name"></div>
+                        </template>
 
-                    {{-- empty day --}}
-                    <div x-show="day.inCurrentMonth && day.events.length === 0"
-                        :class="{'ring-1 ring-violet-400 ring-offset-1': day.isToday}"
-                        class="w-full h-14 flex items-start justify-start p-1.5 rounded-md border border-gray-100 bg-white">
-                        <span class="text-[10px] font-medium"
-                            :class="day.isToday ? 'text-violet-700 font-bold' : 'text-gray-500'"
-                            x-text="day.day"></span>
+                        {{-- Schedule Thumbnails with Names --}}
+                        <template x-if="day.schedules.length > 0">
+                            <div class="space-y-0.5">
+                                <template x-for="(sched, i) in day.schedules.slice(0, 2)" :key="i">
+                                    <div class="flex items-center gap-1">
+                                        {{-- Thumbnail --}}
+                                        <div
+                                            class="w-5 h-5 rounded overflow-hidden border border-amber-300 bg-amber-100 flex-shrink-0">
+                                            <template x-if="sched.image">
+                                                <img :src="sched.image" :alt="sched.name"
+                                                    class="w-full h-full object-cover">
+                                            </template>
+                                            <template x-if="!sched.image">
+                                                <div class="w-full h-full flex items-center justify-center">
+                                                    <svg class="w-2.5 h-2.5 text-amber-600" fill="none"
+                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        {{-- Name --}}
+                                        <span class="text-[8px] text-amber-700 font-medium truncate"
+                                            x-text="sched.name"></span>
+                                    </div>
+                                </template>
+                                {{-- More indicator --}}
+                                <div x-show="day.schedules.length > 2"
+                                    class="text-[8px] text-amber-600 font-semibold pl-6">
+                                    +<span x-text="day.schedules.length - 2"></span> more
+                                </div>
+                            </div>
+                        </template>
                     </div>
 
-                    {{-- outside month --}}
-                    <div x-show="!day.inCurrentMonth" class="w-full h-14"></div>
+                    {{-- Outside month (empty) --}}
+                    <div x-show="!day.inCurrentMonth" class="min-h-[90px]"></div>
                 </div>
             </template>
         </div>
 
-        {{-- legend --}}
-        <div class="mt-3 pt-2 border-t border-gray-200">
-            <div class="flex flex-wrap items-center gap-2 text-[10px]">
-                <div class="flex items-center gap-1">
-                    <div class="w-2 h-2 rounded bg-amber-200 border border-amber-300"></div>
-                    <span class="text-gray-600">Requested</span>
+        {{-- Legend --}}
+        <div class="mt-4 pt-3 border-t border-gray-200">
+            <div class="flex flex-wrap items-center justify-center gap-4 text-xs">
+                <div class="flex items-center gap-1.5">
+                    <div
+                        class="w-4 h-4 rounded bg-violet-100 border-2 border-violet-400 flex items-center justify-center text-[8px] font-bold text-violet-600">
+                        1</div>
+                    <span class="text-gray-600">Events</span>
                 </div>
-                <div class="flex items-center gap-1">
-                    <div class="w-2 h-2 rounded bg-blue-200 border border-blue-300"></div>
-                    <span class="text-gray-600">Meeting</span>
+                <div class="flex items-center gap-1.5">
+                    <div
+                        class="w-4 h-4 rounded bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-[8px] font-bold text-amber-600">
+                        2</div>
+                    <span class="text-gray-600">Schedules</span>
                 </div>
-                <div class="flex items-center gap-1">
-                    <div class="w-2 h-2 rounded bg-sky-200 border border-sky-300"></div>
-                    <span class="text-gray-600">Approved</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <div class="w-2 h-2 rounded bg-violet-200 border border-violet-300"></div>
-                    <span class="text-gray-600">Scheduled</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <div class="w-2 h-2 rounded bg-emerald-200 border border-emerald-300"></div>
-                    <span class="text-gray-600">Completed</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <div class="w-2 h-2 rounded bg-gray-200 border border-gray-300"></div>
-                    <span class="text-gray-600">Cancelled</span>
+                <div class="flex items-center gap-1.5">
+                    <div class="w-4 h-4 rounded border-2 border-violet-500"></div>
+                    <span class="text-gray-600">Today</span>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- modal popup --}}
-    <div x-show="showModal" x-cloak @click.away="showModal = false" x-transition:enter="ease-out duration-300"
-        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-        x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
-        x-transition:leave-end="opacity-0"
-        class="fixed inset-0 flex items-center justify-center px-4 py-6 bg-black bg-opacity-50 z-50">
-        <div @click.stop x-transition:enter="ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[70vh] overflow-hidden">
+    {{-- Day Detail Modal --}}
+    <div x-show="showModal" x-cloak @click.self="showModal = false" @keydown.escape.window="showModal = false"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-            <div class="bg-gradient-to-r from-slate-500 to-gray-600 px-4 py-3 flex items-center justify-between">
+        <div @click.stop class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden"
+            x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100">
+
+            {{-- Modal Header --}}
+            <div class="bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-4 flex items-center justify-between">
                 <div>
-                    <h3 class="text-base font-bold text-white">Events</h3>
-                    <p class="text-xs text-white/80 mt-0.5" x-text="modalDate"></p>
+                    <h4 class="font-bold text-white" x-text="modalDate"></h4>
+                    <p class="text-xs text-white/70 mt-0.5">
+                        <span x-text="selectedDayEvents.length"></span> event(s),
+                        <span x-text="selectedDaySchedules.length"></span> schedule(s)
+                    </p>
                 </div>
-                <button type="button" @click="showModal = false" class="p-1.5 rounded-lg hover:bg-white/20 transition">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button @click="showModal = false" class="text-white/80 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
 
-            <div class="px-4 py-3 max-h-[50vh] overflow-y-auto space-y-2.5">
-                <template x-for="event in selectedDayEvents" :key="event.id">
-                    <a :href="`/{{ $userType === 'admin' ? 'admin' : 'customer' }}/events/` + event.id"
-                        class="block p-3 rounded-lg hover:bg-gray-50 transition">
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="flex-1 min-w-0">
-                                <h4 class="font-semibold text-gray-900 text-sm mb-1.5" x-text="event.name"></h4>
-                                <div class="space-y-1 text-xs text-gray-600">
-                                    @if($userType === 'admin')
-                                    <div class="flex items-center gap-2">
-                                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                        <span x-text="event.customer_name"></span>
+            <div class="overflow-y-auto max-h-[65vh]">
+                {{-- Events Section --}}
+                <div x-show="selectedDayEvents.length > 0" class="p-4 border-b border-gray-100">
+                    <h5
+                        class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded bg-violet-500"></span>
+                        Events
+                    </h5>
+                    <div class="space-y-2">
+                        <template x-for="event in selectedDayEvents" :key="event.id">
+                            <a :href="'{{ $userType === 'admin' ? '/admin/events/' : '/customer/events/' }}' + event.id"
+                                class="block p-3 rounded-lg bg-violet-50 hover:bg-violet-100 border border-violet-200 transition">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <h6 class="font-semibold text-violet-900 text-sm truncate" x-text="event.name">
+                                        </h6>
+                                        @if($userType === 'admin')
+                                        <p class="text-xs text-violet-600 mt-0.5" x-text="event.customer_name"></p>
+                                        @endif
+                                        <p class="text-xs text-violet-500 mt-0.5" x-text="event.venue || 'Venue TBD'">
+                                        </p>
                                     </div>
-                                    @endif
-                                    <div class="flex items-center gap-2">
-                                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                        </svg>
-                                        <span x-text="event.venue || 'Venue TBD'"></span>
+                                    <span
+                                        class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-200 text-violet-800 capitalize"
+                                        x-text="event.status.replace('_', ' ')"></span>
+                                </div>
+                            </a>
+                        </template>
+                    </div>
+                </div>
+
+                {{-- Schedules Section --}}
+                <div x-show="selectedDaySchedules.length > 0" class="p-4">
+                    <h5
+                        class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        Inclusion Schedules
+                    </h5>
+                    <div class="space-y-3">
+                        <template x-for="sched in selectedDaySchedules" :key="sched.id">
+                            <a :href="'{{ $userType === 'admin' ? '/admin/events/' : '/customer/events/' }}' + sched.event_id"
+                                class="block rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 transition overflow-hidden">
+                                <div class="flex gap-3">
+                                    {{-- Image --}}
+                                    <div class="w-16 h-16 flex-shrink-0 bg-amber-100">
+                                        <template x-if="sched.image">
+                                            <img :src="sched.image" :alt="sched.name"
+                                                class="w-full h-full object-cover">
+                                        </template>
+                                        <template x-if="!sched.image">
+                                            <div class="w-full h-full flex items-center justify-center">
+                                                <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    {{-- Content --}}
+                                    <div class="flex-1 py-2 pr-3 min-w-0">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div class="min-w-0">
+                                                <h6 class="font-semibold text-amber-900 text-sm truncate"
+                                                    x-text="sched.name"></h6>
+                                                <p class="text-xs text-amber-600 truncate" x-text="sched.event_name">
+                                                </p>
+                                            </div>
+                                            <span x-show="sched.scheduled_time"
+                                                class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-200 text-amber-800 whitespace-nowrap flex-shrink-0"
+                                                x-text="sched.scheduled_time"></span>
+                                        </div>
+                                        {{-- Remarks --}}
+                                        <p x-show="sched.remarks" class="text-xs text-amber-700 mt-1 line-clamp-2"
+                                            x-text="sched.remarks"></p>
+                                        {{-- Category badge --}}
+                                        <span x-show="sched.category"
+                                            class="inline-block mt-1 px-1.5 py-0.5 text-[9px] font-medium bg-amber-200/50 text-amber-700 rounded"
+                                            x-text="sched.category"></span>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
+                        </template>
+                    </div>
+                </div>
 
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap" :class="{
-                                    'bg-amber-100 text-amber-700': event.status === 'requested',
-                                    'bg-blue-100 text-blue-700': event.status === 'meeting' || event.status === 'request_meeting',
-                                    'bg-sky-100 text-sky-700': event.status === 'approved',
-                                    'bg-violet-100 text-violet-700': event.status === 'scheduled',
-                                    'bg-emerald-100 text-emerald-700': event.status === 'completed',
-                                    'bg-gray-100 text-gray-700': event.status === 'cancelled' || event.status === 'rejected'
-                                }"
-                                x-text="event.status.replace('_', ' ').charAt(0).toUpperCase() + event.status.replace('_', ' ').slice(1)"></span>
-                        </div>
-                    </a>
-                </template>
+                {{-- Empty State --}}
+                <div x-show="selectedDayEvents.length === 0 && selectedDaySchedules.length === 0"
+                    class="p-8 text-center text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p>Nothing scheduled for this day</p>
+                </div>
             </div>
         </div>
     </div>
@@ -253,127 +350,116 @@ return $data;
 
 <script>
     function eventsCalendar() {
-        return {
-            currentDate: new Date(),
-            currentMonthDisplay: '',
-            calendarDays: [],
-            events: [],
-            showModal: false,
-            selectedDayEvents: [],
-            modalDate: '',
-            eventsInMonth: 0,
-            stats: {
-                upcoming: 0,
-                thisMonth: 0,
-                pending: 0
-            },
+    return {
+        currentDate: new Date(),
+        currentMonthDisplay: '',
+        calendarDays: [],
+        events: [],
+        schedules: [],
+        showModal: false,
+        selectedDayEvents: [],
+        selectedDaySchedules: [],
+        modalDate: '',
+        eventsInMonth: 0,
+        schedulesInMonth: 0,
 
-            initCalendar(eventsData) {
-                this.events = Array.isArray(eventsData) ? eventsData : [];
-                this.calculateStats();
-                this.renderCalendar();
-            },
+        initCalendar(eventsData, schedulesData) {
+            this.events = Array.isArray(eventsData) ? eventsData : [];
+            this.schedules = Array.isArray(schedulesData) ? schedulesData : [];
+            this.calculateStats();
+            this.renderCalendar();
+        },
 
-            calculateStats() {
-                const now = new Date();
-                now.setHours(0, 0, 0, 0);
-                const currentYear = this.currentDate.getFullYear();
-                const currentMonth = this.currentDate.getMonth();
+        calculateStats() {
+            const currentYear = this.currentDate.getFullYear();
+            const currentMonth = this.currentDate.getMonth();
 
-                this.stats.upcoming = this.events.filter(e => {
-                    const eventDate = new Date(e.event_date);
-                    return eventDate >= now && ['approved', 'meeting', 'scheduled'].includes(e.status);
-                }).length;
+            this.eventsInMonth = this.events.filter(e => {
+                const eventDate = new Date(e.event_date);
+                return eventDate.getFullYear() === currentYear && eventDate.getMonth() === currentMonth;
+            }).length;
 
-                this.stats.thisMonth = this.events.filter(e => {
-                    const eventDate = new Date(e.event_date);
-                    return eventDate.getFullYear() === currentYear &&
-                        eventDate.getMonth() === currentMonth;
-                }).length;
+            this.schedulesInMonth = this.schedules.filter(s => {
+                const schedDate = new Date(s.scheduled_date);
+                return schedDate.getFullYear() === currentYear && schedDate.getMonth() === currentMonth;
+            }).length;
+        },
 
-                this.stats.pending = this.events.filter(e => e.status === 'requested').length;
+        previousMonth() {
+            this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+            this.calculateStats();
+            this.renderCalendar();
+        },
 
-                this.eventsInMonth = this.stats.thisMonth;
-            },
+        nextMonth() {
+            this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+            this.calculateStats();
+            this.renderCalendar();
+        },
 
-            previousMonth() {
-                this.currentDate.setMonth(this.currentDate.getMonth() - 1);
-                this.calculateStats();
-                this.renderCalendar();
-            },
+        renderCalendar() {
+            const year = this.currentDate.getFullYear();
+            const month = this.currentDate.getMonth();
 
-            nextMonth() {
-                this.currentDate.setMonth(this.currentDate.getMonth() + 1);
-                this.calculateStats();
-                this.renderCalendar();
-            },
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            this.currentMonthDisplay = `${monthNames[month]} ${year}`;
 
-            renderCalendar() {
-                const year = this.currentDate.getFullYear();
-                const month = this.currentDate.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
-                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                    'July', 'August', 'September', 'October', 'November', 'December'
-                ];
-                this.currentMonthDisplay = `${monthNames[month]} ${year}`;
+            this.calendarDays = [];
 
-                const firstDay = new Date(year, month, 1).getDay();
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                this.calendarDays = [];
-
-                // fill empty
-                for (let i = 0; i < firstDay; i++) {
-                    this.calendarDays.push({
-                        day: '',
-                        date: '',
-                        inCurrentMonth: false,
-                        isToday: false,
-                        events: []
-                    });
-                }
-
-                // month days
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const date = new Date(year, month, day);
-                    const dateString = this.formatDate(date);
-
-                    // get events
-                    const dayEvents = this.events.filter(e => e.event_date === dateString);
-
-                    this.calendarDays.push({
-                        day: day,
-                        date: dateString,
-                        inCurrentMonth: true,
-                        isToday: date.toDateString() === today.toDateString(),
-                        events: dayEvents
-                    });
-                }
-            },
-
-            showDayEvents(day) {
-                this.selectedDayEvents = day.events;
-                const date = new Date(day.date);
-                const options = {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                };
-                this.modalDate = date.toLocaleDateString('en-US', options);
-                this.showModal = true;
-            },
-
-            formatDate(date) {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
+            // Fill empty days
+            for (let i = 0; i < firstDay; i++) {
+                this.calendarDays.push({
+                    day: '',
+                    date: '',
+                    inCurrentMonth: false,
+                    isToday: false,
+                    events: [],
+                    schedules: []
+                });
             }
+
+            // Month days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dateString = this.formatDate(date);
+
+                const dayEvents = this.events.filter(e => e.event_date === dateString);
+                const daySchedules = this.schedules.filter(s => s.scheduled_date === dateString);
+
+                this.calendarDays.push({
+                    day: day,
+                    date: dateString,
+                    inCurrentMonth: true,
+                    isToday: date.toDateString() === today.toDateString(),
+                    events: dayEvents,
+                    schedules: daySchedules
+                });
+            }
+        },
+
+        showDayModal(day) {
+            this.selectedDayEvents = day.events;
+            this.selectedDaySchedules = day.schedules;
+            const date = new Date(day.date);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            this.modalDate = date.toLocaleDateString('en-US', options);
+            this.showModal = true;
+        },
+
+        formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
     }
+}
 </script>
 
 <style>

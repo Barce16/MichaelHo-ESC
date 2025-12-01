@@ -16,7 +16,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             {{-- Events Calendar Component --}}
-            <x-events-calendar :events="$events" userType="customer" />
+            <x-events-calendar :events="$events" :schedules="$schedules" userType="customer" />
 
             {{-- Stats Cards --}}
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -141,7 +141,7 @@
                             'dot' => 'bg-gray-500'],
                             };
                             @endphp
-                            <tr class="hover:bg-slate-50 transition" x-data="{ showProgress: false }">
+                            <tr class="hover:bg-slate-50 transition">
                                 <td class="px-6 py-4">
                                     <div class="font-medium text-gray-900">{{ $e->name }}</div>
                                     <div class="text-xs text-gray-500 mt-1">{{ $e->venue ?: '—' }}</div>
@@ -173,18 +173,6 @@
                                             View
                                         </a>
 
-                                        {{-- Progress Button --}}
-                                        @if($e->progress && $e->progress->count() > 0)
-                                        <button @click="showProgress = true"
-                                            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                                            </svg>
-                                            Progress
-                                        </button>
-                                        @endif
-
                                         @if($e->status === 'requested')
                                         <a href="{{ route('customer.events.edit', $e) }}"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg bg-violet-500 text-white hover:bg-violet-600 transition">
@@ -197,112 +185,6 @@
                                         @endif
                                     </div>
                                 </td>
-
-                                {{-- Progress Modal --}}
-                                @if($e->progress && $e->progress->count() > 0)
-                                <td class="relative">
-                                    <div x-show="showProgress" x-cloak @click.self="showProgress = false"
-                                        class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-                                        x-transition:enter="transition ease-out duration-300"
-                                        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-                                        x-transition:leave="transition ease-in duration-200"
-                                        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-
-                                        <div @click.stop
-                                            class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden"
-                                            x-transition:enter="transition ease-out duration-300"
-                                            x-transition:enter-start="opacity-0 transform scale-90"
-                                            x-transition:enter-end="opacity-100 transform scale-100"
-                                            x-transition:leave="transition ease-in duration-200"
-                                            x-transition:leave-start="opacity-100 transform scale-100"
-                                            x-transition:leave-end="opacity-0 transform scale-90">
-
-                                            {{-- Modal Header --}}
-                                            <div
-                                                class="bg-black text-white px-6 py-5 flex items-center justify-between">
-                                                <div>
-                                                    <h3 class="text-xl font-bold">Event Progress Tracking</h3>
-                                                    <p class="text-sm text-white/80 mt-1">{{ $e->name }}</p>
-                                                </div>
-                                                <button @click="showProgress = false"
-                                                    class="text-white/80 hover:text-white transition">
-                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-
-                                            {{-- Event Info --}}
-                                            <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                                                <div class="grid grid-cols-2 gap-4 text-sm">
-                                                    <div>
-                                                        <span class="text-gray-500">Order ID:</span>
-                                                        <span class="font-semibold ml-2">#{{ str_pad($e->id, 6, '0',
-                                                            STR_PAD_LEFT) }}</span>
-                                                    </div>
-                                                    <div>
-                                                        <span class="text-gray-500">Event Date:</span>
-                                                        <span class="font-semibold ml-2">{{ $e->event_date->format('M d,
-                                                            Y') }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {{-- Progress Timeline --}}
-                                            <div class="p-6 overflow-y-auto max-h-[50vh]">
-                                                <div class="space-y-1">
-                                                    @foreach($e->progress as $progress)
-                                                    <div
-                                                        class="flex items-start gap-3 py-2 hover:bg-gray-50 rounded-lg px-2 -mx-2 transition">
-                                                        {{-- Checkbox --}}
-                                                        <div class="flex-shrink-0 mt-1">
-                                                            <div
-                                                                class="w-5 h-5 rounded border-2 {{ $loop->first ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-gray-300' }} flex items-center justify-center">
-                                                                <svg class="w-3 h-3 {{ $loop->first ? 'text-white' : 'text-gray-400' }}"
-                                                                    fill="none" stroke="currentColor"
-                                                                    viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                                        stroke-width="3" d="M5 13l4 4L19 7" />
-                                                                </svg>
-                                                            </div>
-                                                        </div>
-
-                                                        {{-- Progress Content --}}
-                                                        <div class="flex-1 min-w-0">
-                                                            <div class="flex items-start justify-between gap-2">
-                                                                <h4
-                                                                    class="font-semibold text-sm text-gray-900 leading-tight">
-                                                                    {{ ucfirst(str_replace('_', ' ', $progress->status))
-                                                                    }}
-                                                                </h4>
-                                                                <span
-                                                                    class="text-xs text-gray-500 whitespace-nowrap mt-0.5">
-                                                                    {{ $progress->progress_date->format('M d, g:i A') }}
-                                                                </span>
-                                                            </div>
-                                                            @if($progress->details)
-                                                            <p class="text-xs text-gray-600 mt-1 leading-relaxed">{{
-                                                                $progress->details }}</p>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-
-                                            {{-- Modal Footer --}}
-                                            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-                                                <button @click="showProgress = false"
-                                                    class="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition">
-                                                    Close
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                @endif
                             </tr>
                             @empty
                             <tr>
@@ -341,7 +223,7 @@
                     => 'bg-gray-500'],
                     };
                     @endphp
-                    <div class="p-4 hover:bg-slate-50 transition" x-data="{ showProgress: false }">
+                    <div class="p-4 hover:bg-slate-50 transition">
                         <div class="flex items-start justify-between mb-3">
                             <div>
                                 <div class="font-semibold text-gray-900">{{ $e->name }}</div>
@@ -375,18 +257,6 @@
                                 View
                             </a>
 
-                            {{-- Progress Button (Mobile) --}}
-                            @if($e->progress && $e->progress->count() > 0)
-                            <button @click="showProgress = true"
-                                class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                                </svg>
-                                Progress
-                            </button>
-                            @endif
-
                             @if($e->status === 'requested')
                             <a href="{{ route('customer.events.edit', $e) }}"
                                 class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-lg bg-violet-500 text-white hover:bg-violet-600 transition">
@@ -398,103 +268,6 @@
                             </a>
                             @endif
                         </div>
-
-                        {{-- Progress Modal (Mobile) --}}
-                        @if($e->progress && $e->progress->count() > 0)
-                        <div x-show="showProgress" x-cloak @click.self="showProgress = false"
-                            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-                            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
-                            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
-                            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-
-                            <div @click.stop
-                                class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden"
-                                x-transition:enter="transition ease-out duration-300"
-                                x-transition:enter-start="opacity-0 transform scale-90"
-                                x-transition:enter-end="opacity-100 transform scale-100"
-                                x-transition:leave="transition ease-in duration-200"
-                                x-transition:leave-start="opacity-100 transform scale-100"
-                                x-transition:leave-end="opacity-0 transform scale-90">
-
-                                {{-- Modal Header --}}
-                                <div class="bg-black text-white px-6 py-5 flex items-center justify-between">
-                                    <div>
-                                        <h3 class="text-xl font-bold">Event Progress Tracking</h3>
-                                        <p class="text-sm text-white/80 mt-1">{{ $e->name }}</p>
-                                    </div>
-                                    <button @click="showProgress = false"
-                                        class="text-white/80 hover:text-white transition">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                </div>
-
-                                {{-- Event Info --}}
-                                <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                                    <div class="grid grid-cols-2 gap-4 text-sm">
-                                        <div>
-                                            <span class="text-gray-500">Order ID:</span>
-                                            <span class="font-semibold ml-2">#{{ str_pad($e->id, 6, '0', STR_PAD_LEFT)
-                                                }}</span>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-500">Event Date:</span>
-                                            <span class="font-semibold ml-2">{{ $e->event_date->format('M d, Y')
-                                                }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Progress Timeline --}}
-                                <div class="p-6 overflow-y-auto max-h-[50vh]">
-                                    <div class="space-y-1">
-                                        @foreach($e->progress as $progress)
-                                        <div
-                                            class="flex items-start gap-3 py-2 hover:bg-gray-50 rounded-lg px-2 -mx-2 transition">
-                                            {{-- Checkbox --}}
-                                            <div class="flex-shrink-0 mt-1">
-                                                <div
-                                                    class="w-5 h-5 rounded border-2 {{ $loop->first ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-gray-300' }} flex items-center justify-center">
-                                                    <svg class="w-3 h-3 {{ $loop->first ? 'text-white' : 'text-gray-400' }}"
-                                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="3" d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                </div>
-                                            </div>
-
-                                            {{-- Progress Content --}}
-                                            <div class="flex-1 min-w-0">
-                                                <div class="flex items-start justify-between gap-2">
-                                                    <h4 class="font-semibold text-sm text-gray-900 leading-tight">
-                                                        {{ ucfirst(str_replace('_', ' ', $progress->status)) }}
-                                                    </h4>
-                                                    <span class="text-xs text-gray-500 whitespace-nowrap mt-0.5">
-                                                        {{ $progress->progress_date->format('M d, g:i A') }}
-                                                    </span>
-                                                </div>
-                                                @if($progress->details)
-                                                <p class="text-xs text-gray-600 mt-1 leading-relaxed">{{
-                                                    $progress->details }}</p>
-                                                @endif
-                                            </div>
-                                        </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-
-                                {{-- Modal Footer --}}
-                                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-                                    <button @click="showProgress = false"
-                                        class="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition">
-                                        Close
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        @endif
                     </div>
                     @empty
                     <div class="p-12 text-center">

@@ -28,19 +28,20 @@ class EventController extends Controller
         $customer = $request->user()->customer;
         abort_if(!$customer, 403);
 
-        $events = Event::with([
-            'package',
-            'progress' => function ($query) {
-                $query->orderBy('progress_date', 'desc');
-            }
-        ])
+        $events = Event::with(['package'])
             ->where('customer_id', $customer->id)
             ->orderByDesc('event_date')
             ->paginate(12);
 
+        // Get schedules for this customer's events
+        $schedules = \App\Models\EventSchedule::with(['inclusion', 'event'])
+            ->whereHas('event', fn($q) => $q->where('customer_id', $customer->id))
+            ->whereNotNull('scheduled_date')
+            ->get();
+
         $hasPendingBillings = $customer->hasPendingPayments();
 
-        return view('customers.events.index', compact('events', 'hasPendingBillings'));
+        return view('customers.events.index', compact('events', 'schedules', 'hasPendingBillings'));
     }
     public function create(Request $request)
     {
