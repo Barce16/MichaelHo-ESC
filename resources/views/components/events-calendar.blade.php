@@ -112,7 +112,7 @@ null,
         {{-- Weekday Headers --}}
         <div class="grid grid-cols-7 gap-0.5 mb-1">
             <template x-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']">
-                <div class="text-center text-[10px] font-semibold text-gray-500 py-1" x-text="day"></div>
+                <div class="text-center text-[10px] font-semibold text-gray-500 py-2" x-text="day"></div>
             </template>
         </div>
 
