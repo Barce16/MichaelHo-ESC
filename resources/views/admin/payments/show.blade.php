@@ -343,69 +343,34 @@
             </div>
             @endif
 
-            {{-- Receipt Creation Button for Approved Payments --}}
-            @if($payment->status === 'approved' && $payment->hasReceiptRequested())
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <div>
-                        <h4 class="text-lg font-semibold text-gray-900">Receipt Request</h4>
-                        <p class="text-sm text-gray-600 mt-1">Customer has requested an official receipt for this
-                            payment</p>
-                    </div>
-                    <div class="flex items-center gap-2 text-blue-600">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span class="text-sm font-medium">Requested {{ $payment->receipt_requested_at->diffForHumans()
-                            }}</span>
-                    </div>
-                </div>
-
-                <form method="POST" action="{{ route('admin.payments.create-receipt', $payment) }}">
-                    @csrf
-                    <button type="submit"
-                        class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Generate Official Receipt (PDF)
-                    </button>
-                </form>
-            </div>
-            @endif
-
-            {{-- Receipt Ready - View Button --}}
-            @if($payment->status === 'approved' && $payment->hasReceiptCreated())
+            {{-- Receipt Download - Available for Approved Payments --}}
+            @if($payment->status === 'approved')
             <div class="bg-emerald-50 border border-emerald-200 rounded-xl shadow-sm p-6">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
                             <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 13l4 4L19 7" />
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                         </div>
                         <div>
-                            <h4 class="text-lg font-semibold text-emerald-900">Receipt Generated</h4>
-                            <p class="text-sm text-emerald-700">Created {{ $payment->receipt_created_at->diffForHumans()
-                                }}</p>
+                            <h4 class="text-lg font-semibold text-emerald-900">Official Receipt</h4>
+                            <p class="text-sm text-emerald-700">Download or view the payment receipt</p>
                         </div>
                     </div>
                     <a href="{{ route('admin.payments.download-receipt', $payment) }}" target="_blank"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-emerald-300 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-50 transition">
+                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         View Receipt
                     </a>
                 </div>
             </div>
             @endif
+
         </div>
     </div>
 </x-app-layout>

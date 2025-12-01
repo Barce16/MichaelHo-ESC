@@ -315,39 +315,13 @@ class CustomerPaymentController extends Controller
     }
 
     /**
-     * Generate receipt PDF for approved payment
-     */
-    public function createReceipt(Payment $payment)
-    {
-        // Authorization check
-        if ($payment->status !== Payment::STATUS_APPROVED) {
-            return back()->with('error', 'Receipt can only be generated for approved payments.');
-        }
-
-        if (!$payment->hasReceiptRequested()) {
-            return back()->with('error', 'No receipt request found for this payment.');
-        }
-
-        if ($payment->hasReceiptCreated()) {
-            return back()->with('info', 'Receipt has already been generated for this payment.');
-        }
-
-        // Mark receipt as created
-        $payment->markReceiptCreated();
-
-        // Notify customer that receipt is ready
-        $this->notificationService->notifyCustomerReceiptReady($payment);
-
-        return back()->with('success', 'Receipt generated successfully! Customer has been notified and can now download it.');
-    }
-
-    /**
-     * Download receipt PDF
+     * Download receipt PDF - available immediately for approved payments
      */
     public function downloadReceipt(Payment $payment)
     {
-        if (!$payment->hasReceiptCreated()) {
-            abort(404, 'Receipt not found.');
+        // Receipt available for approved payments only
+        if ($payment->status !== Payment::STATUS_APPROVED) {
+            abort(404, 'Receipt is only available for approved payments.');
         }
 
         $event = $payment->billing->event;

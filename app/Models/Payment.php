@@ -171,4 +171,20 @@ class Payment extends Model
     {
         return $query->where('payment_method', $method);
     }
+
+    /**
+     * Check if receipt is available (simplified - always true for approved payments)
+     */
+    public function hasReceiptRequested(): bool
+    {
+        return $this->status === self::STATUS_APPROVED;
+    }
+
+    /**
+     * Check if receipt has been created (simplified - always true for approved payments)
+     */
+    public function hasReceiptCreated(): bool
+    {
+        return $this->status === self::STATUS_APPROVED;
+    }
 }
