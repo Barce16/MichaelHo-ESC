@@ -42,6 +42,7 @@ class EventController extends Controller
 
         return view('customers.events.index', compact('events', 'hasPendingBillings'));
     }
+
     public function create(Request $request)
     {
         // Get authenticated customer
@@ -175,6 +176,26 @@ class EventController extends Controller
             ->route('customer.events.index')
             ->with('success', 'Event request submitted. Please wait for admin approval.');
     }
+
+    public function show(Request $request, Event $event)
+    {
+        $customer = $request->user()->customer;
+        abort_if(!$customer || $event->customer_id !== $customer->id, 403);
+
+        $event->load([
+            'package',
+            'inclusions',
+            'billing.payments',
+            'staffs.user',
+            'meetings',
+            'progress',
+            'feedback',
+            'pendingChangeRequest',
+        ]);
+
+        return view('customers.events.show', compact('event', 'customer'));
+    }
+
 
     public function edit(Request $request, Event $event)
     {
