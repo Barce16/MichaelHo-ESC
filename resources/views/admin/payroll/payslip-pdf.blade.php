@@ -200,14 +200,19 @@
         .signature-name {
             font-weight: bold;
             font-size: 10px;
-            margin-bottom: 30px;
+            margin-bottom: 2px;
         }
 
         .signature-line {
             border-top: 1px solid #333;
             padding-top: 5px;
             font-size: 9px;
-            margin-top: 30px;
+            margin-top: 0;
+        }
+
+        .signature-label {
+            font-size: 8px;
+            color: #666;
         }
 
         .status-badge {
@@ -262,7 +267,8 @@
             <div class="company-name">Michael Ho Events Styling & Coordination</div>
             <div class="company-details">
                 14 extention st, Cagayan De Oro City, 9000 Misamis Oriental | Phone: 0917-306-2531 | Email:
-                michaelhoevents@gmail.com
+                <a href="/cdn-cgi/l/email-protection" class="__cf_email__"
+                    data-cfemail="f79a9e949f96929b9f98928192998384b7909a969e9bd994989a">[email&#160;protected]</a>
             </div>
         </div>
 
@@ -359,7 +365,7 @@
             <div class="total-row">
                 <div class="payment-row" style="border: none;">
                     <div class="payment-label total-label">TOTAL AMOUNT PAID:</div>
-                    <div class="payment-value total-value">₱{{ number_format($pivot->pay_rate, 2) }}</div>
+                    <div class="payment-value total-value">Php {{ number_format($pivot->pay_rate, 2) }}</div>
                 </div>
             </div>
         </div>
@@ -447,17 +453,20 @@
                 @if(isset($admin) && $admin->signature_path)
                 <img src="{{ public_path('storage/' . $admin->signature_path) }}"
                     style="max-height: 40px; margin: 0 auto 5px; display: block;" alt="Signature">
+                @else
+                <div style="height: 40px;"></div>
                 @endif
-                <div class="signature-name">{{ $admin->name ?? 'Authorized Personnel' }}</div>
                 <div class="signature-line">
-                    Employer's Signature
+                    <div class="signature-name">{{ $admin->name ?? 'Authorized Personnel' }}</div>
+                    <div class="signature-label">Employer's Signature</div>
                 </div>
             </div>
             <div style="display: table-cell; width: 10%;"></div>
             <div class="signature-box">
-                <div class="signature-name">{{ $staff->name }}</div>
+                <div style="height: 40px;"></div>
                 <div class="signature-line">
-                    Staff Signature / Date Received
+                    <div class="signature-name">{{ $staff->name }}</div>
+                    <div class="signature-label">Staff Signature / Date Received</div>
                 </div>
             </div>
         </div>
