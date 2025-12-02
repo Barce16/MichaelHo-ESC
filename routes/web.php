@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\FeedbackController;
 use App\Http\Controllers\Admin\InclusionChangeRequestController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\EventScheduleController;
+use App\Http\Controllers\Admin\AdminBillingController;
 use App\Http\Controllers\Staff\ScheduleController as StaffScheduleController;
 use App\Http\Middleware\CheckAdmin;
 use App\Http\Middleware\EnsureCustomer;
@@ -190,6 +191,12 @@ Route::middleware('auth')->group(function () {
         ->name('admin.')
         ->group(function () {
 
+            Route::get('billings', [AdminBillingController::class, 'index'])->name('billings.index');
+            Route::get('billings/{event}', [AdminBillingController::class, 'show'])->name('billings.show');
+            Route::get('billings/{event}/pay', [AdminBillingController::class, 'createPayment'])->name('billings.create-payment');
+            Route::post('billings/{event}/pay', [AdminBillingController::class, 'storePayment'])->name('billings.store-payment');
+
+
             // Users (admin/staff management)
             Route::get('/create-user', [AdminController::class, 'createUserForm'])->name('create-user');
             Route::post('/create-user', [AdminController::class, 'createUser'])->name('create-user.store');
@@ -200,7 +207,7 @@ Route::middleware('auth')->group(function () {
 
             // Events
             Route::resource('events', AdminEventController::class)->only(['index', 'show', 'update', 'destroy']);
-
+            Route::patch('events/{event}/update-info', [AdminEventController::class, 'updateInfo'])->name('events.update-info');
             Route::get('events/{event}/inclusions/edit', [AdminEventController::class, 'editInclusions'])->name('events.editInclusions');
             Route::put('events/{event}/inclusions', [AdminEventController::class, 'updateInclusions'])->name('events.updateInclusions');
 
@@ -297,7 +304,12 @@ Route::middleware('auth')->group(function () {
                 Route::get('/event/{event}', [PayrollController::class, 'viewStaffs'])->name('viewStaffs');
                 Route::post('/event/{event}/staff/{staff}/mark-paid', [PayrollController::class, 'markAsPaid'])->name('markAsPaid');
                 Route::post('/event/{event}/staff/{staff}/mark-pending', [PayrollController::class, 'markAsPending'])->name('markAsPending');
+                Route::get('/{event}/staff/{staff}/payslip', [PayrollController::class, 'downloadPayslip'])
+                    ->name('downloadPayslip');
             });
+
+
+
 
             // ---- Report ----
             Route::prefix('reports')->name('reports.')->group(function () {

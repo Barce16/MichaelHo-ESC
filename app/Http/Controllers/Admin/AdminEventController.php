@@ -995,14 +995,6 @@ class AdminEventController extends Controller
             'locked_inclusions.*' => 'exists:inclusions,id',
         ]);
 
-        // Determine if removal is allowed based on status
-        $canRemoveInclusions = in_array($event->status, [
-            Event::STATUS_REQUESTED,
-            Event::STATUS_APPROVED,
-            Event::STATUS_REQUEST_MEETING,
-            Event::STATUS_MEETING,
-        ]);
-
         // Store old total before updating
         $oldTotal = $event->billing ? $event->billing->total_amount : 0;
 
@@ -1013,11 +1005,16 @@ class AdminEventController extends Controller
         // Get submitted inclusions
         $selectedInclusionIds = $request->input('inclusions', []);
 
-        // If removal is not allowed, merge locked inclusions to ensure they're always included
-        if (!$canRemoveInclusions) {
-            $lockedInclusionIds = $request->input('locked_inclusions', []);
-            // Merge and remove duplicates
-            $selectedInclusionIds = array_unique(array_merge($selectedInclusionIds, $lockedInclusionIds));
+        // ALWAYS merge locked inclusions - they can never be removed
+        $lockedInclusionIds = $request->input('locked_inclusions', []);
+        $selectedInclusionIds = array_unique(array_merge($selectedInclusionIds, $lockedInclusionIds));
+
+        // Validate: ensure NO original inclusions were removed
+        $removedInclusionIds = array_diff($oldInclusionIds, $selectedInclusionIds);
+        if (!empty($removedInclusionIds)) {
+            return redirect()
+                ->back()
+                ->with('error', 'Existing inclusions cannot be removed. Only new inclusions can be added.');
         }
 
         // Get the inclusions with their prices
@@ -1048,27 +1045,20 @@ class AdminEventController extends Controller
         $event->refresh();
         $newTotal = $event->billing->total_amount;
 
-        // Track what changed - GET FULL INCLUSION OBJECTS
+        // Track what changed - GET FULL INCLUSION OBJECTS (only additions now)
         $addedInclusionIds = array_diff($selectedInclusionIds, $oldInclusionIds);
-        $removedInclusionIds = array_diff($oldInclusionIds, $selectedInclusionIds);
 
         // Get full inclusion objects for added items
         $addedInclusions = Inclusion::whereIn('id', $addedInclusionIds)->get();
 
-        // Get full inclusion objects for removed items (from old collection)
-        $removedInclusions = $oldInclusions->filter(function ($inclusion) use ($removedInclusionIds) {
-            return in_array($inclusion->id, $removedInclusionIds);
-        });
+        // No removals allowed, so empty collection
+        $removedInclusions = collect([]);
 
         // Build change details for progress log
         $changes = [];
         if ($addedInclusions->count() > 0) {
             $added = $addedInclusions->pluck('name')->toArray();
             $changes[] = "Added: " . implode(', ', $added);
-        }
-        if ($removedInclusions->count() > 0) {
-            $removed = $removedInclusions->pluck('name')->toArray();
-            $changes[] = "Removed: " . implode(', ', $removed);
         }
 
         // If no changes, just show success
@@ -1140,5 +1130,68 @@ class AdminEventController extends Controller
         $billing->total_amount = $newTotal;
 
         $billing->save();
+    }
+
+    /**
+     * Update event basic information (date, venue, theme, guests, notes)
+     */
+    public function updateInfo(Request $request, Event $event)
+    {
+        $validated = $request->validate([
+            'event_date' => ['required', 'date'],
+            'venue' => ['nullable', 'string', 'max:500'],
+            'theme' => ['nullable', 'string', 'max:255'],
+            'guests' => ['nullable', 'string', 'max:1000'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        // Track what changed for notification
+        $changes = [];
+
+        if ($event->event_date->format('Y-m-d') !== $validated['event_date']) {
+            $changes[] = 'Event date changed from ' . $event->event_date->format('M d, Y') . ' to ' . \Carbon\Carbon::parse($validated['event_date'])->format('M d, Y');
+        }
+
+        if ($event->venue !== $validated['venue']) {
+            $changes[] = 'Venue updated';
+        }
+
+        if ($event->theme !== $validated['theme']) {
+            $changes[] = 'Theme updated';
+        }
+
+        if ($event->guests !== $validated['guests']) {
+            $changes[] = 'Guest details updated';
+        }
+
+        if ($event->notes !== $validated['notes']) {
+            $changes[] = 'Notes updated';
+        }
+
+        // Update the event
+        $event->update([
+            'event_date' => $validated['event_date'],
+            'venue' => $validated['venue'],
+            'theme' => $validated['theme'],
+            'guests' => $validated['guests'],
+            'notes' => $validated['notes'],
+        ]);
+
+        // Create event progress record if changes were made
+        if (!empty($changes)) {
+            EventProgress::create([
+                'event_id' => $event->id,
+                'status' => 'Information Updated',
+                'details' => 'Event information updated by admin. ' . implode('. ', $changes) . '.',
+                'progress_date' => now(),
+            ]);
+
+            // Optionally notify the customer
+            // $this->notificationService->notifyCustomerEventInfoUpdated($event, $changes);
+        }
+
+        return redirect()
+            ->route('admin.events.show', $event)
+            ->with('success', 'Event information updated successfully.');
     }
 }

@@ -377,19 +377,46 @@
             {{-- Left Column: Event Details --}}
             <div class="lg:col-span-2 space-y-6">
 
-                {{-- Event Key Information --}}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                {{-- Event Key Information with Inline Editing --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200" x-data="{ 
+                    isEditing: false,
+                    saving: false,
+                }">
                     <div class="bg-slate-50 border-b border-gray-200 px-6 py-4">
-                        <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Event Information
-                        </h3>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Event Information
+                            </h3>
+
+                            {{-- Edit Toggle Button --}}
+                            <button type="button" @click="isEditing = !isEditing" x-show="!isEditing"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                                Edit
+                            </button>
+
+                            {{-- Cancel Button (when editing) --}}
+                            <button type="button" @click="isEditing = false" x-show="isEditing" x-cloak
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Cancel
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="p-6 space-y-6">
+                    {{-- Display Mode --}}
+                    <div x-show="!isEditing" class="p-6 space-y-6">
                         {{-- Event Date --}}
                         <div class="flex items-start gap-4">
                             <div class="w-12 h-12 bg-sky-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -399,16 +426,15 @@
                                 </svg>
                             </div>
                             <div class="flex-1">
-                                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Event
-                                    Date</div>
+                                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Event Date
+                                </div>
                                 <div class="text-xl font-semibold text-gray-900">
-                                    {{ \Illuminate\Support\Carbon::parse($event->event_date)->format('F d, Y') }}
+                                    {{ $event->event_date->format('F d, Y') }}
                                 </div>
                             </div>
                         </div>
 
                         {{-- Venue --}}
-                        @if($event->venue)
                         <div class="flex items-start gap-4">
                             <div
                                 class="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -421,15 +447,16 @@
                                 </svg>
                             </div>
                             <div class="flex-1">
-                                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Venue
-                                </div>
+                                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Venue</div>
+                                @if($event->venue)
                                 <div class="text-base font-medium text-gray-900">{{ $event->venue }}</div>
+                                @else
+                                <div class="text-sm text-gray-400 italic">Not specified</div>
+                                @endif
                             </div>
                         </div>
-                        @endif
 
                         {{-- Theme --}}
-                        @if($event->theme)
                         <div class="flex items-start gap-4">
                             <div
                                 class="w-12 h-12 bg-violet-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -440,15 +467,16 @@
                                 </svg>
                             </div>
                             <div class="flex-1">
-                                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Theme
-                                </div>
+                                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Theme</div>
+                                @if($event->theme)
                                 <div class="text-base font-medium text-gray-900">{{ $event->theme }}</div>
+                                @else
+                                <div class="text-sm text-gray-400 italic">Not specified</div>
+                                @endif
                             </div>
                         </div>
-                        @endif
 
                         {{-- Guests --}}
-                        @if($event->guests)
                         <div class="flex items-start gap-4">
                             <div
                                 class="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -461,13 +489,15 @@
                             <div class="flex-1">
                                 <div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Guest
                                     Details</div>
+                                @if($event->guests)
                                 <div class="text-sm text-gray-700 leading-relaxed">{{ $event->guests }}</div>
+                                @else
+                                <div class="text-sm text-gray-400 italic">Not specified</div>
+                                @endif
                             </div>
                         </div>
-                        @endif
 
                         {{-- Notes --}}
-                        @if($event->notes)
                         <div class="pt-4 border-t border-gray-200">
                             <div class="flex items-start gap-4">
                                 <div
@@ -479,15 +509,164 @@
                                     </svg>
                                 </div>
                                 <div class="flex-1">
-                                    <div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
-                                        Notes</div>
+                                    <div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Notes
+                                    </div>
+                                    @if($event->notes)
                                     <div class="text-sm text-gray-700 leading-relaxed bg-slate-50 rounded-lg p-4">{{
                                         $event->notes }}</div>
+                                    @else
+                                    <div class="text-sm text-gray-400 italic">No notes</div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
-                        @endif
                     </div>
+
+                    {{-- Edit Mode Form --}}
+                    <form x-show="isEditing" x-cloak action="{{ route('admin.events.update-info', $event) }}"
+                        method="POST" @submit="saving = true" class="p-6 space-y-6">
+                        @csrf
+                        @method('PATCH')
+
+                        {{-- Event Date with Calendar Picker --}}
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 bg-sky-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <svg class="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <label
+                                    class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2 block">Event
+                                    Date *</label>
+                                <x-calendar-picker name="event_date" :value="old('event_date')" required />
+                                @error('event_date')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+
+                        {{-- Venue --}}
+                        <div class="flex items-start gap-4">
+                            <div
+                                class="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <label for="venue"
+                                    class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2 block">Venue</label>
+                                <input type="text" id="venue" name="venue" value="{{ old('venue', $event->venue) }}"
+                                    placeholder="Enter venue"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500">
+                                @error('venue')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+
+                        {{-- Theme --}}
+                        <div class="flex items-start gap-4">
+                            <div
+                                class="w-12 h-12 bg-violet-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <svg class="w-6 h-6 text-violet-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <label for="theme"
+                                    class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2 block">Theme</label>
+                                <input type="text" id="theme" name="theme" value="{{ old('theme', $event->theme) }}"
+                                    placeholder="Enter theme"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500">
+                                @error('theme')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+
+                        {{-- Guests --}}
+                        <div class="flex items-start gap-4">
+                            <div
+                                class="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <label for="guests"
+                                    class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2 block">Guest
+                                    Details</label>
+                                <textarea id="guests" name="guests" rows="2"
+                                    placeholder="Enter guest details (e.g., 100 pax, VIP guests, etc.)"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500">{{ old('guests', $event->guests) }}</textarea>
+                                @error('guests')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+
+                        {{-- Notes --}}
+                        <div class="pt-4 border-t border-gray-200">
+                            <div class="flex items-start gap-4">
+                                <div
+                                    class="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <label for="notes"
+                                        class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2 block">Notes</label>
+                                    <textarea id="notes" name="notes" rows="4"
+                                        placeholder="Enter any additional notes..."
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500">{{ old('notes', $event->notes) }}</textarea>
+                                    @error('notes')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Save Button --}}
+                        <div class="pt-4 border-t border-gray-200">
+                            <div class="flex items-center justify-end gap-3">
+                                <button type="button" @click="isEditing = false"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                                    Cancel
+                                </button>
+                                <button type="submit" :disabled="saving"
+                                    class="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <svg x-show="!saving" class="w-4 h-4" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <svg x-show="saving" x-cloak class="w-4 h-4 animate-spin" fill="none"
+                                        viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                    <span x-text="saving ? 'Saving...' : 'Save Changes'"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
 
                 {{-- Package Details (keeping your existing section) --}}
@@ -578,7 +757,8 @@
                                 <span class="ml-auto text-xs text-gray-500">{{ $event->inclusions->count() }}
                                     items</span>
 
-                                {{-- Edit Button --}}
+                                {{-- Edit Button - Only show if event is approved (not requested or rejected) --}}
+                                @if(!in_array($event->status, ['requested', 'rejected']))
                                 <a href="{{ route('admin.events.editInclusions', $event) }}"
                                     class="ml-2 inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -587,6 +767,7 @@
                                     </svg>
                                     Edit
                                 </a>
+                                @endif
                             </div>
 
                             @if($event->inclusions->isEmpty())
@@ -872,6 +1053,7 @@
                             @endif
 
                             {{-- Complete Meeting Button - Always show in meeting status --}}
+                            @if($hasDownpaymentPaid)
                             <form method="POST" action="{{ route('admin.events.completeMeeting', $event) }}">
                                 @csrf
                                 <button type="submit"
@@ -883,6 +1065,7 @@
                                     Mark Meeting Complete
                                 </button>
                             </form>
+                            @endif
                         </div>
                         @endif
 

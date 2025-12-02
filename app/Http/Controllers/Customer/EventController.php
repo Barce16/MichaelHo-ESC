@@ -284,6 +284,13 @@ class EventController extends Controller
                 ->with('error', 'Cannot edit event in current status.');
         }
 
+        // Block updating if event is not yet approved or was rejected
+        if (in_array($event->status, [Event::STATUS_REQUESTED, Event::STATUS_REJECTED])) {
+            return redirect()
+                ->route('customer.events.show', $event)
+                ->with('error', 'You cannot update this event at this time.');
+        }
+
         $packages = Package::with(['inclusions'])
             ->where('is_active', true)
             ->orderBy('name')

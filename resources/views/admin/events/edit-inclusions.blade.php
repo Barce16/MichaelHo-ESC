@@ -31,32 +31,27 @@
                 </div>
             </div>
 
-            {{-- Determine if removal is allowed based on status --}}
+            {{-- Inclusions can NEVER be removed - only new ones can be added --}}
             @php
-            $canRemoveInclusions = in_array($event->status, [
-            \App\Models\Event::STATUS_REQUESTED,
-            \App\Models\Event::STATUS_APPROVED,
-            \App\Models\Event::STATUS_REQUEST_MEETING,
-            \App\Models\Event::STATUS_MEETING,
-            ]);
+            $canRemoveInclusions = false;
 
-            // Get originally selected inclusion IDs (these cannot be removed if canRemoveInclusions is false)
+            // All existing inclusions are locked
             $originalInclusionIds = $selectedInclusionIds->toArray();
             @endphp
 
-            {{-- Notice if removal is restricted --}}
-            @if(!$canRemoveInclusions)
-            <div class="bg-amber-50 border-l-4 border-amber-500 rounded-lg p-4">
+            {{-- Notice about locked inclusions (always shown if there are existing inclusions) --}}
+            @if(count($originalInclusionIds) > 0)
+            <div class="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4">
                 <div class="flex gap-3">
-                    <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                    <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <div class="text-sm text-amber-900">
-                        <p class="font-semibold mb-1">Limited Editing Mode</p>
-                        <p>Since this event is already <strong>{{ $event->status_label }}</strong>, you can only
-                            <strong>add new inclusions</strong>. Existing inclusions cannot be removed at this stage.
+                    <div class="text-sm text-blue-900">
+                        <p class="font-semibold mb-1">Add-Only Mode</p>
+                        <p>Existing inclusions are <strong>locked</strong> and cannot be removed. You can only
+                            <strong>add new inclusions</strong> to this event.
                         </p>
                     </div>
                 </div>
@@ -71,7 +66,7 @@
             return [$inc->id => $inc->pivot->notes ?? ''];
             })->toArray(),
             'originalInclusions' => $originalInclusionIds,
-            'canRemove' => $canRemoveInclusions,
+            'canRemove' => false, // Always false - inclusions can never be removed
             ];
             $grouped = $availableInclusions->groupBy('category');
             @endphp
@@ -80,12 +75,12 @@
                     selectedInclusions: @json($alpineData["selectedInclusions"]),
                     inclusionNotes: @json($alpineData["inclusionNotes"]),
                     originalInclusions: @json($alpineData["originalInclusions"]),
-                    canRemove: @json($alpineData["canRemove"]),
+                    canRemove: false,
                     activeCategory: "{{ $grouped->keys()->first() }}",
                     
                     toggleInclusion(id) {
-                        // If cannot remove and this is an original inclusion, do nothing
-                        if (!this.canRemove && this.originalInclusions.includes(id)) {
+                        // Original inclusions can never be removed
+                        if (this.originalInclusions.includes(id)) {
                             return;
                         }
                         
@@ -106,7 +101,7 @@
                     },
                     
                     isLocked(id) {
-                        return !this.canRemove && this.originalInclusions.includes(id);
+                        return this.originalInclusions.includes(id);
                     }
                 }'>
                 @csrf
@@ -122,7 +117,8 @@
                             </svg>
                             Select Inclusions
                         </h3>
-                        <p class="text-sm text-gray-500 mt-1">Choose items from each category</p>
+                        <p class="text-sm text-gray-500 mt-1">Choose items from each category (existing items are
+                            locked)</p>
                     </div>
 
                     <div class="p-6">
@@ -147,7 +143,7 @@
                                         ? (isLocked({{ $inclusion->id }}) ? 'border-slate-400 bg-slate-50' : 'border-violet-500 bg-violet-50') 
                                         : 'border-gray-200 bg-white'">
 
-                                    {{-- Lock indicator for original inclusions that can't be removed --}}
+                                    {{-- Lock indicator for original inclusions --}}
                                     <div x-show="isLocked({{ $inclusion->id }})" class="absolute top-2 right-2 z-10">
                                         <span
                                             class="inline-flex items-center gap-1 px-2 py-1 bg-slate-600 text-white text-xs font-medium rounded-full">
@@ -215,11 +211,9 @@
                 </div>
 
                 {{-- Hidden inputs for locked inclusions (so they're always submitted) --}}
-                @if(!$canRemoveInclusions)
                 @foreach($originalInclusionIds as $lockedId)
                 <input type="hidden" name="locked_inclusions[]" value="{{ $lockedId }}">
                 @endforeach
-                @endif
 
                 {{-- Submit --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -227,16 +221,14 @@
                         <div>
                             <p class="text-sm text-gray-600">Updating inclusions will recalculate the total billing
                                 amount</p>
-                            @if(!$canRemoveInclusions)
-                            <p class="text-xs text-amber-600 mt-1">
+                            @if(count($originalInclusionIds) > 0)
+                            <p class="text-xs text-blue-600 mt-1">
                                 <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
-                                {{ count($originalInclusionIds) }} inclusion(s) are locked and cannot be removed
+                                {{ count($originalInclusionIds) }} existing inclusion(s) are locked
                             </p>
-                            @else
-                            <p class="text-xs text-gray-500 mt-1">Notes will be saved for each selected inclusion</p>
                             @endif
                         </div>
                         <div class="flex gap-3">

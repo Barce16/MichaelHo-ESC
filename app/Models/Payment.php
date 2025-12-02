@@ -36,7 +36,6 @@ class Payment extends Model
         'payment_image',
         'status',
         'rejection_reason',
-        'notes',
     ];
 
     protected $casts = [

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PayrollController extends Controller
 {
@@ -80,5 +82,41 @@ class PayrollController extends Controller
             ->update(['pay_status' => 'paid']);
 
         return back()->with('success', 'Staff marked as paid.');
+    }
+
+    /**
+     * Download payslip PDF for paid staff
+     */
+    public function downloadPayslip(Event $event, Staff $staff)
+    {
+        // Check if staff is assigned to this event
+        $pivot = $event->staffs()->where('staff_id', $staff->id)->first()?->pivot;
+
+        if (!$pivot) {
+            return back()->with('error', 'Staff is not assigned to this event.');
+        }
+
+        // Check if staff is paid
+        if ($pivot->pay_status !== 'paid') {
+            return back()->with('error', 'Payslip is only available for paid staff.');
+        }
+
+        // Get admin user for signature (prefer one with signature, or get first admin)
+        $admin = \App\Models\User::where('user_type', 'admin')
+            ->whereNotNull('signature_path')
+            ->first()
+            ?? \App\Models\User::where('user_type', 'admin')->first();
+
+        $pdf = Pdf::loadView('admin.payroll.payslip-pdf', compact('event', 'staff', 'pivot', 'admin'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('margin-top', 5)
+            ->setOption('margin-bottom', 5)
+            ->setOption('margin-left', 10)
+            ->setOption('margin-right', 10);
+
+        $filename = 'payslip-' . $staff->id . '-event-' . $event->id . '-' . now()->format('Y-m-d') . '.pdf';
+
+        // Use stream() to open in browser instead of download()
+        return $pdf->stream($filename);
     }
 }

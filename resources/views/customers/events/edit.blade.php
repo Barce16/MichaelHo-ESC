@@ -52,15 +52,10 @@
     return $incs->first()->id;
     })->toArray();
 
-    // Determine if removal is allowed based on status
-    $canRemoveInclusions = in_array($event->status, [
-    \App\Models\Event::STATUS_REQUESTED,
-    \App\Models\Event::STATUS_APPROVED,
-    \App\Models\Event::STATUS_REQUEST_MEETING,
-    \App\Models\Event::STATUS_MEETING,
-    ]);
+    // Inclusions can NEVER be removed - only new ones can be added
+    $canRemoveInclusions = false;
 
-    // Get original inclusion IDs (these cannot be removed if canRemoveInclusions is false)
+    // All existing inclusions are locked
     $originalInclusionIds = $event->inclusions->pluck('id')->toArray();
     @endphp
 
@@ -80,7 +75,8 @@
                         <p class="font-semibold mb-1">Limited Editing Mode</p>
                         <p>Since your event is already <strong>{{ $event->status_label }}</strong>, you can only
                             <strong>add new inclusions</strong>. Existing inclusions cannot be removed at this stage.
-                            Contact the admin if you need to make changes.</p>
+                            Contact the admin if you need to make changes.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -447,15 +443,20 @@
                         @enderror
 
                         {{-- Notice about locked inclusions --}}
-                        @if(!$canRemoveInclusions && count($originalInclusionIds) > 0)
-                        <div
-                            class="mt-4 flex items-center gap-2 text-sm text-slate-600 bg-slate-50 rounded-lg px-4 py-3">
-                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                            <span>{{ count($originalInclusionIds) }} inclusion(s) are locked and cannot be
-                                removed</span>
+                        @if(count($originalInclusionIds) > 0)
+                        <div class="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4">
+                            <div class="flex gap-3">
+                                <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div class="text-sm text-blue-900">
+                                    <p class="font-semibold mb-1">Add-Only Mode</p>
+                                    <p>Your current inclusions are <strong>locked</strong> and cannot be removed. You
+                                        can <strong>add new inclusions</strong> to your event.
+                                </div>
+                            </div>
                         </div>
                         @endif
                     </div>
@@ -621,7 +622,7 @@
     const existingNotes = @json($existingNotes ?? []);
     const originalInclusions = new Set(eventSelections.map(id => Number(id)));
     const originalInclusionIds = @json($originalInclusionIds);
-    const canRemove = @json($canRemoveInclusions);
+    const canRemove = false;
     const originalTotal = Number(@json($event->inclusions->sum(fn($i) => $i->pivot->price_snapshot ?? 0))) + 
                          Number(@json($event->package?->coordination_price ?? 25000)) + 
                          Number(@json($event->package?->event_styling_price ?? 55000));
