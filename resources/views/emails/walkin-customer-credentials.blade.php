@@ -136,13 +136,63 @@
             @endif
         </div>
 
-        <h3 style="color: #000;">What You Can Do:</h3>
-        <ul style="line-height: 2;">
-            <li>View your event details and timeline</li>
-            <li>Track progress updates in real-time</li>
-            <li>Manage your bookings</li>
-            <li>Update your profile information</li>
-        </ul>
+        <!-- What's Next Section -->
+        <div
+            style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px solid #3b82f6; padding: 25px; margin: 25px 0; border-radius: 12px;">
+            <h3 style="margin: 0 0 20px 0; color: #1d4ed8; font-size: 18px;">📌 What's Next?</h3>
+
+            <div style="margin-bottom: 18px;">
+                <div style="display: flex; align-items: flex-start;">
+                    <div
+                        style="background: #3b82f6; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 12px; flex-shrink: 0; font-size: 14px;">
+                        1</div>
+                    <div>
+                        <strong style="color: #1e40af;">Log in to Your Account</strong>
+                        <p style="margin: 5px 0 0 0; color: #4b5563; font-size: 14px;">Use the credentials above to
+                            access your customer dashboard.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 18px;">
+                <div style="display: flex; align-items: flex-start;">
+                    <div
+                        style="background: #3b82f6; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 12px; flex-shrink: 0; font-size: 14px;">
+                        2</div>
+                    <div>
+                        <strong style="color: #1e40af;">Change Your Password</strong>
+                        <p style="margin: 5px 0 0 0; color: #4b5563; font-size: 14px;">For security, please update your
+                            password after your first login.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 18px;">
+                <div style="display: flex; align-items: flex-start;">
+                    <div
+                        style="background: #3b82f6; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 12px; flex-shrink: 0; font-size: 14px;">
+                        3</div>
+                    <div>
+                        <strong style="color: #1e40af;">Track Your Event</strong>
+                        <p style="margin: 5px 0 0 0; color: #4b5563; font-size: 14px;">View your event details,
+                            inclusions, and payments in your dashboard.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 0;">
+                <div style="display: flex; align-items: flex-start;">
+                    <div
+                        style="background: #3b82f6; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 12px; flex-shrink: 0; font-size: 14px;">
+                        4</div>
+                    <div>
+                        <strong style="color: #1e40af;">Stay Updated</strong>
+                        <p style="margin: 5px 0 0 0; color: #4b5563; font-size: 14px;">We'll send you reminders and
+                            updates as your event date approaches.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <p style="margin-top: 30px;">If you have any questions, feel free to contact us. We're excited to make your
             event memorable!</p>

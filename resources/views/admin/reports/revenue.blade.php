@@ -6,11 +6,39 @@
         </div>
     </x-slot>
 
+    {{-- Print Styles --}}
+    <style>
+        @media print {
+
+            nav,
+            header,
+            .no-print,
+            .no-print * {
+                display: none !important;
+            }
+
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .print-container {
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+            }
+
+            .print-content {
+                box-shadow: none !important;
+            }
+        }
+    </style>
+
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 print-container">
 
             {{-- Filters --}}
-            <div class="bg-white rounded-lg shadow-sm p-6 mb-6 flex justify-between items-end">
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6 flex justify-between items-end no-print">
                 <form method="GET" class="flex gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">From</label>
@@ -29,6 +57,14 @@
                     </div>
                 </form>
                 <div class="flex gap-2">
+                    <button onclick="window.print()"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Print
+                    </button>
                     <form method="GET" class="inline">
                         <input type="hidden" name="from" value="{{ $dateFrom->format('Y-m-d') }}">
                         <input type="hidden" name="to" value="{{ $dateTo->format('Y-m-d') }}">
@@ -59,7 +95,7 @@
             </div>
 
             {{-- Report Content --}}
-            <div class="bg-white rounded-lg shadow-sm p-8">
+            <div class="bg-white rounded-lg shadow-sm p-8 print-content">
 
                 {{-- Report Header --}}
                 <div class="border-b-2 border-gray-300 pb-6 mb-6">

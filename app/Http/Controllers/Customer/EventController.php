@@ -29,12 +29,11 @@ class EventController extends Controller
         $customer = $request->user()->customer;
         abort_if(!$customer, 403);
 
-        $events = Event::with(['package'])
+        $events = Event::with(['package', 'progress'])
             ->where('customer_id', $customer->id)
             ->orderByDesc('event_date')
             ->paginate(12);
 
-        // Only this customer's schedules
         $schedules = EventSchedule::with(['inclusion', 'event'])
             ->whereHas('event', fn($q) => $q->where('customer_id', $customer->id))
             ->whereNotNull('scheduled_date')

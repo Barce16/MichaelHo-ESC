@@ -3,29 +3,28 @@
 namespace App\Mail;
 
 use App\Models\Event;
-use App\Models\EventProgress;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class EventProgressNotification extends Mailable
+class EventScheduleNotification extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $event;
-    public $progress;
-    public $isUpdate;
+    public $schedules;
+    public $action;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Event $event, EventProgress $progress, bool $isUpdate = false)
+    public function __construct(Event $event, array $schedules, string $action = 'updated')
     {
         $this->event = $event;
-        $this->progress = $progress;
-        $this->isUpdate = $isUpdate;
+        $this->schedules = $schedules;
+        $this->action = $action;
     }
 
     /**
@@ -33,10 +32,14 @@ class EventProgressNotification extends Mailable
      */
     public function envelope(): Envelope
     {
-        $prefix = $this->isUpdate ? '📝 Progress Modified' : '📋 Progress Update';
+        $actionText = match ($this->action) {
+            'created' => 'New Schedule',
+            'updated' => 'Schedule Updated',
+            default => 'Schedule Update'
+        };
 
         return new Envelope(
-            subject: "{$prefix} - {$this->event->name}",
+            subject: "📅 {$actionText} - {$this->event->name}",
         );
     }
 
@@ -46,7 +49,7 @@ class EventProgressNotification extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.event-progress-notification',
+            view: 'emails.event-schedule-notification',
         );
     }
 

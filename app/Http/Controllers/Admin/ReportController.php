@@ -38,6 +38,7 @@ class ReportController extends Controller
 
         $events = Event::with(['customer', 'package', 'billing'])
             ->whereBetween('event_date', [$dateFrom, $dateTo])
+            ->where('status', '!=', 'rejected')
             ->orderBy('event_date')
             ->get();
 
@@ -201,10 +202,11 @@ class ReportController extends Controller
         $stats = [
             'total_customers' => $customers->count(),
             'total_revenue' => $customers->sum('total_spent'),
-            'avg_per_customer' => $customers->count() > 0 ? $customers->avg('total_spent') : 0,
+            'average_spending' => $customers->count() > 0 ? $customers->avg('total_spent') : 0,
             'top_spender' => $customers->first(),
         ];
 
+        // Handle export requests
         if ($request->has('export')) {
             if ($request->export === 'pdf') {
                 return $this->exportCustomerSpendingPdf($customers, $stats, $dateFrom, $dateTo);
@@ -233,6 +235,51 @@ class ReportController extends Controller
         return $pdf->download('customer-spending-' . now()->format('Y-m-d') . '.pdf');
     }
 
+    // ========== EVENT STATUS REPORT ==========
+    public function eventStatus(Request $request)
+    {
+        $dateFrom = $request->date('from') ?? now()->startOfYear();
+        $dateTo = $request->date('to') ?? now()->endOfYear();
+
+        $events = Event::with(['customer', 'package', 'billing'])
+            ->orderBy('event_date', 'desc')
+            ->get();
+
+        $statusGroups = $events->groupBy('status');
+
+        $stats = [
+            'total_events' => $events->count(),
+            'by_status' => $statusGroups->map->count(),
+            'status_revenue' => $statusGroups->map(fn($group) => $group->sum(fn($e) => $e->billing?->total_amount ?? 0)),
+        ];
+
+        // Handle export requests
+        if ($request->has('export')) {
+            if ($request->export === 'pdf') {
+                return $this->exportEventStatusPdf($events, $stats);
+            }
+            if ($request->export === 'csv') {
+                return Excel::download(
+                    new EventStatusExport($events, $dateFrom, $dateTo, $stats),
+                    'event-status-' . now()->format('Y-m-d') . '.csv'
+                );
+            }
+        }
+
+        return view('admin.reports.event-status', compact('events', 'statusGroups', 'stats', 'dateFrom', 'dateTo'));
+    }
+
+    private function exportEventStatusPdf($events, $stats)
+    {
+        $pdf = Pdf::loadView('admin.reports.event-status-pdf', [
+            'events' => $events,
+            'stats' => $stats,
+        ])->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', true);
+
+        return $pdf->download('event-status-' . now()->format('Y-m-d') . '.pdf');
+    }
+
     // ========== PACKAGE USAGE REPORT ==========
     public function packageUsage(Request $request)
     {
@@ -243,25 +290,27 @@ class ReportController extends Controller
             ->select(
                 'p.id',
                 'p.name',
-                'p.type',
                 'p.price',
-                DB::raw('COUNT(e.id) as total_events'),
+                DB::raw('COUNT(e.id) as usage_count'),
                 DB::raw('COALESCE(SUM(b.total_amount), 0) as total_revenue')
             )
-            ->leftJoin('events as e', 'p.id', '=', 'e.package_id')
+            ->leftJoin('events as e', function ($join) use ($dateFrom, $dateTo) {
+                $join->on('p.id', '=', 'e.package_id')
+                    ->whereBetween('e.event_date', [$dateFrom, $dateTo]);
+            })
             ->leftJoin('billings as b', 'e.id', '=', 'b.event_id')
-            ->whereBetween('e.event_date', [$dateFrom, $dateTo])
-            ->groupBy('p.id', 'p.name', 'p.type', 'p.price')
-            ->orderByDesc('total_events')
+            ->groupBy('p.id', 'p.name', 'p.price')
+            ->orderByDesc('usage_count')
             ->get();
 
         $stats = [
             'total_packages' => $packages->count(),
-            'most_popular' => $packages->first(),
-            'total_bookings' => $packages->sum('total_events'),
+            'total_usage' => $packages->sum('usage_count'),
             'total_revenue' => $packages->sum('total_revenue'),
+            'most_popular' => $packages->first(),
         ];
 
+        // Handle export requests
         if ($request->has('export')) {
             if ($request->export === 'pdf') {
                 return $this->exportPackageUsagePdf($packages, $stats, $dateFrom, $dateTo);
@@ -293,50 +342,45 @@ class ReportController extends Controller
     // ========== PAYMENT METHOD REPORT ==========
     public function paymentMethod(Request $request)
     {
-        $dateFrom = $request->date('from') ?? now()->startOfMonth();
-        $dateTo = $request->date('to') ?? now()->endOfMonth();
+        $dateFrom = $request->date('from') ?? now()->startOfYear();
+        $dateTo = $request->date('to') ?? now()->endOfYear();
 
-        $paymentMethods = DB::table('payments')
-            ->select(
-                'payment_method',
-                DB::raw('COUNT(*) as payment_count'),
-                DB::raw('SUM(amount) as total_revenue')
-            )
+        $payments = Payment::with(['billing.event.customer'])
             ->where('status', 'approved')
             ->whereBetween('created_at', [$dateFrom, $dateTo])
-            ->groupBy('payment_method')
-            ->orderByDesc('total_revenue')
-            ->get()
-            ->map(function ($item) {
-                $item->payment_method_label = ucwords(str_replace('_', ' ', $item->payment_method));
-                return $item;
-            });
+            ->get();
+
+        $methodGroups = $payments->groupBy('payment_method');
 
         $stats = [
-            'total_payments' => $paymentMethods->sum('payment_count'),
-            'total_amount' => $paymentMethods->sum('total_revenue'),
-            'most_used' => $paymentMethods->first(),
+            'total_payments' => $payments->count(),
+            'total_amount' => $payments->sum('amount'),
+            'by_method' => $methodGroups->map(fn($group) => [
+                'count' => $group->count(),
+                'amount' => $group->sum('amount'),
+            ]),
         ];
 
+        // Handle export requests
         if ($request->has('export')) {
             if ($request->export === 'pdf') {
-                return $this->exportPaymentMethodPdf($paymentMethods, $stats, $dateFrom, $dateTo);
+                return $this->exportPaymentMethodPdf($payments, $stats, $dateFrom, $dateTo);
             }
             if ($request->export === 'csv') {
                 return Excel::download(
-                    new PaymentMethodExport($paymentMethods, $dateFrom, $dateTo, $stats['total_amount']),
+                    new PaymentMethodExport($payments, $dateFrom, $dateTo, $stats['total_amount']),
                     'payment-method-' . now()->format('Y-m-d') . '.csv'
                 );
             }
         }
 
-        return view('admin.reports.payment-method', compact('paymentMethods', 'stats', 'dateFrom', 'dateTo'));
+        return view('admin.reports.payment-method', compact('payments', 'methodGroups', 'stats', 'dateFrom', 'dateTo'));
     }
 
-    private function exportPaymentMethodPdf($paymentMethods, $stats, $dateFrom, $dateTo)
+    private function exportPaymentMethodPdf($payments, $stats, $dateFrom, $dateTo)
     {
         $pdf = Pdf::loadView('admin.reports.payment-method-pdf', [
-            'paymentMethods' => $paymentMethods,
+            'payments' => $payments,
             'stats' => $stats,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
@@ -346,99 +390,45 @@ class ReportController extends Controller
         return $pdf->download('payment-method-' . now()->format('Y-m-d') . '.pdf');
     }
 
-    // ========== EVENT STATUS REPORT ==========
-    public function eventStatus(Request $request)
+    // ========== REMAINING BALANCES REPORT ==========
+    public function remainingBalances(Request $request)
     {
         $dateFrom = $request->date('from') ?? now()->startOfYear();
         $dateTo = $request->date('to') ?? now()->endOfYear();
 
-        $statusSummary = DB::table('events')
-            ->select(
-                'status',
-                DB::raw('COUNT(*) as event_count')
-            )
-            ->whereBetween('event_date', [$dateFrom, $dateTo])
-            ->groupBy('status')
-            ->orderByDesc('event_count')
+        $events = Event::with(['customer', 'billing.payments'])
+            ->whereHas('billing')
             ->get()
-            ->map(function ($item) {
-                $item->status_label = ucwords(str_replace('_', ' ', $item->status));
-                return $item;
-            });
-
-        $stats = [
-            'total_events' => $statusSummary->sum('event_count'),
-            'most_common' => $statusSummary->first(),
-        ];
-
-        if ($request->has('export')) {
-            if ($request->export === 'pdf') {
-                return $this->exportEventStatusPdf($statusSummary, $stats, $dateFrom, $dateTo);
-            }
-            if ($request->export === 'csv') {
-                return Excel::download(
-                    new EventStatusExport($statusSummary, $dateFrom, $dateTo, $stats['total_events']),
-                    'event-status-' . now()->format('Y-m-d') . '.csv'
-                );
-            }
-        }
-
-        return view('admin.reports.event-status', compact('statusSummary', 'stats', 'dateFrom', 'dateTo'));
-    }
-
-    private function exportEventStatusPdf($statusSummary, $stats, $dateFrom, $dateTo)
-    {
-        $pdf = Pdf::loadView('admin.reports.event-status-pdf', [
-            'statusSummary' => $statusSummary,
-            'stats' => $stats,
-            'dateFrom' => $dateFrom,
-            'dateTo' => $dateTo,
-        ])->setOption('isHtml5ParserEnabled', true)
-            ->setOption('isRemoteEnabled', true);
-
-        return $pdf->download('event-status-' . now()->format('Y-m-d') . '.pdf');
-    }
-
-    // ========== REMAINING BALANCES REPORT ==========
-    public function remainingBalances(Request $request)
-    {
-        $events = DB::table('billings as b')
-            ->select(
-                'e.id',
-                'e.name as event_name',
-                'e.event_date',
-                'c.customer_name',
-                'c.email',
-                'c.phone',
-                'b.total_amount',
-                'b.downpayment_amount as paid_amount',
-                DB::raw('(b.total_amount - b.downpayment_amount) as balance')
-            )
-            ->join('events as e', 'b.event_id', '=', 'e.id')
-            ->join('customers as c', 'e.customer_id', '=', 'c.id')
-            ->whereRaw('(b.total_amount - b.downpayment_amount) > 0')
-            ->orderByDesc(DB::raw('(b.total_amount - b.downpayment_amount)'))
-            ->get();
+            ->map(function ($event) {
+                $paid = $event->billing->payments->where('status', 'approved')->sum('amount');
+                $event->total_paid = $paid;
+                $event->remaining_balance = $event->billing->total_amount - $paid;
+                return $event;
+            })
+            ->filter(fn($event) => $event->remaining_balance > 0)
+            ->sortByDesc('remaining_balance');
 
         $stats = [
             'total_events' => $events->count(),
-            'total_balance' => $events->sum('balance'),
-            'largest_balance' => $events->first(),
+            'total_outstanding' => $events->sum('remaining_balance'),
+            'total_billed' => $events->sum(fn($e) => $e->billing->total_amount),
+            'total_paid' => $events->sum('total_paid'),
         ];
 
+        // Handle export requests
         if ($request->has('export')) {
             if ($request->export === 'pdf') {
                 return $this->exportRemainingBalancesPdf($events, $stats);
             }
             if ($request->export === 'csv') {
                 return Excel::download(
-                    new RemainingBalancesExport($events, $stats['total_balance']),
+                    new RemainingBalancesExport($events, $dateFrom, $dateTo, $stats),
                     'remaining-balances-' . now()->format('Y-m-d') . '.csv'
                 );
             }
         }
 
-        return view('admin.reports.remaining-balances', compact('events', 'stats'));
+        return view('admin.reports.remaining-balances', compact('events', 'stats', 'dateFrom', 'dateTo'));
     }
 
     private function exportRemainingBalancesPdf($events, $stats)
@@ -477,17 +467,32 @@ class ReportController extends Controller
     // ========== CUSTOMER DETAIL REPORT ==========
     public function customerDetail(Request $request)
     {
-        // Get all customers with event count and total spent for the selection UI
-        $customers = Customer::withCount('events')
+        // Build query for customers with search
+        $query = Customer::withCount('events')
             ->withSum(['events as total_spent' => function ($query) {
                 $query->join('billings', 'events.id', '=', 'billings.event_id');
-            }], 'billings.total_amount')
-            ->orderBy('customer_name')
-            ->get();
+            }], 'billings.total_amount');
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('customer_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        // Get total counts for stats (before pagination)
+        $totalCustomers = Customer::count();
+        $customersWithEvents = Customer::whereHas('events')->count();
+
+        // Paginate with 5 per page
+        $customers = $query->orderBy('customer_name')->paginate(5)->withQueryString();
 
         // If no customer selected, show selection page
         if (!$request->has('customer_id')) {
-            return view('admin.reports.customer-detail', compact('customers'));
+            return view('admin.reports.customer-detail', compact('customers', 'totalCustomers', 'customersWithEvents'));
         }
 
         // Get the selected customer with all related data
@@ -534,7 +539,7 @@ class ReportController extends Controller
             }
         }
 
-        return view('admin.reports.customer-detail', compact('customers', 'customer', 'events', 'allPayments', 'stats'));
+        return view('admin.reports.customer-detail', compact('customers', 'customer', 'events', 'allPayments', 'stats', 'totalCustomers', 'customersWithEvents'));
     }
 
     private function exportCustomerDetailPdf($customer, $events, $allPayments, $stats)

@@ -140,8 +140,10 @@
                             default => ['bg' => 'bg-gray-100', 'text' => 'text-gray-700', 'border' => 'border-gray-200',
                             'dot' => 'bg-gray-500'],
                             };
+                            $progressList = $e->progress ? $e->progress->sortByDesc('progress_date') : collect();
+                            $progressCount = $progressList->count();
                             @endphp
-                            <tr class="hover:bg-slate-50 transition">
+                            <tr class="hover:bg-slate-50 transition" x-data="{ showProgress: false }">
                                 <td class="px-6 py-4">
                                     <div class="font-medium text-gray-900">{{ $e->name }}</div>
                                     <div class="text-xs text-gray-500 mt-1">{{ $e->venue ?: '—' }}</div>
@@ -172,6 +174,109 @@
                                             </svg>
                                             View
                                         </a>
+
+                                        @if($progressCount > 0)
+                                        <button @click="showProgress = true" type="button"
+                                            class="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                            </svg>
+                                            Progress
+                                            <span class="px-1.5 py-0.5 text-xs bg-indigo-200 rounded-full">{{
+                                                $progressCount }}</span>
+                                        </button>
+
+                                        {{-- Progress Modal --}}
+                                        <div x-show="showProgress" x-cloak @click.self="showProgress = false"
+                                            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                                            x-transition:enter="transition ease-out duration-300"
+                                            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                                            x-transition:leave="transition ease-in duration-200"
+                                            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                                            style="display: none;">
+                                            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-auto max-h-[85vh] flex flex-col"
+                                                @click.stop>
+                                                <div
+                                                    class="bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-4 rounded-t-2xl flex-shrink-0">
+                                                    <div class="flex items-center justify-between">
+                                                        <div class="flex items-center gap-3">
+                                                            <div
+                                                                class="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
+                                                                <svg class="w-5 h-5 text-white" fill="none"
+                                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2"
+                                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                                                </svg>
+                                                            </div>
+                                                            <div>
+                                                                <h3 class="text-base font-bold text-white">Event
+                                                                    Progress</h3>
+                                                                <p class="text-xs text-white/80">{{ $e->name }}</p>
+                                                            </div>
+                                                        </div>
+                                                        <button type="button" @click="showProgress = false"
+                                                            class="text-white/80 hover:text-white transition p-1">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                                viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-1 overflow-y-auto p-5">
+                                                    <div class="relative">
+                                                        <div
+                                                            class="absolute left-3 top-0 bottom-0 w-0.5 bg-gradient-to-b from-indigo-500 via-purple-400 to-gray-200">
+                                                        </div>
+                                                        <div class="space-y-4">
+                                                            @foreach($progressList as $idx => $progress)
+                                                            <div class="relative pl-8 pr-1">
+                                                                <div
+                                                                    class="absolute left-1 top-1.5 w-4 h-4 rounded-full border-2 border-white shadow {{ $idx === 0 ? 'bg-indigo-500 ring-2 ring-indigo-100' : 'bg-gray-400' }}">
+                                                                </div>
+                                                                <div
+                                                                    class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                                                    <div class="flex items-center gap-2 flex-wrap mb-2">
+                                                                        <span
+                                                                            class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $idx === 0 ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-200 text-gray-700' }}">
+                                                                            {{ $progress->status }}
+                                                                        </span>
+                                                                        <span class="text-xs text-gray-500">
+                                                                            {{
+                                                                            \Carbon\Carbon::parse($progress->progress_date)->format('M
+                                                                            d, Y') }}
+                                                                        </span>
+                                                                        @if($idx === 0)
+                                                                        <span
+                                                                            class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Latest</span>
+                                                                        @endif
+                                                                    </div>
+                                                                    @if($progress->details)
+                                                                    <p class="text-gray-600 text-sm leading-relaxed whitespace-normal"
+                                                                        style="word-wrap: break-word; overflow-wrap: break-word;">
+                                                                        {{ $progress->details }}</p>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    class="px-5 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between rounded-b-2xl flex-shrink-0">
+                                                    <span class="text-xs text-gray-500">{{ $progressCount }}
+                                                        update(s)</span>
+                                                    <button type="button" @click="showProgress = false"
+                                                        class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition">
+                                                        Close
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endif
 
                                         @if($e->status === 'requested')
                                         <a href="{{ route('customer.events.edit', $e) }}"
@@ -222,8 +327,10 @@
                     default => ['bg' => 'bg-gray-100', 'text' => 'text-gray-700', 'border' => 'border-gray-200', 'dot'
                     => 'bg-gray-500'],
                     };
+                    $progressList = $e->progress ? $e->progress->sortByDesc('progress_date') : collect();
+                    $progressCount = $progressList->count();
                     @endphp
-                    <div class="p-4 hover:bg-slate-50 transition">
+                    <div class="p-4 hover:bg-slate-50 transition" x-data="{ showProgress: false }">
                         <div class="flex items-start justify-between mb-3">
                             <div>
                                 <div class="font-semibold text-gray-900">{{ $e->name }}</div>
@@ -256,6 +363,105 @@
                                 </svg>
                                 View
                             </a>
+
+                            @if($progressCount > 0)
+                            <button @click="showProgress = true" type="button"
+                                class="inline-flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                </svg>
+                                <span class="px-1.5 py-0.5 text-xs bg-indigo-200 rounded-full">{{ $progressCount
+                                    }}</span>
+                            </button>
+
+                            {{-- Progress Modal (Mobile) --}}
+                            <div x-show="showProgress" x-cloak @click.self="showProgress = false"
+                                class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                                x-transition:enter="transition ease-out duration-300"
+                                x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                                x-transition:leave="transition ease-in duration-200"
+                                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                                style="display: none;">
+                                <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-auto max-h-[85vh] flex flex-col"
+                                    @click.stop>
+                                    <div
+                                        class="bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-4 rounded-t-2xl flex-shrink-0">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <div
+                                                    class="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
+                                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h3 class="text-base font-bold text-white">Event Progress</h3>
+                                                    <p class="text-xs text-white/80">{{ $e->name }}</p>
+                                                </div>
+                                            </div>
+                                            <button type="button" @click="showProgress = false"
+                                                class="text-white/80 hover:text-white transition p-1">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 overflow-y-auto p-5">
+                                        <div class="relative">
+                                            <div
+                                                class="absolute left-3 top-0 bottom-0 w-0.5 bg-gradient-to-b from-indigo-500 via-purple-400 to-gray-200">
+                                            </div>
+                                            <div class="space-y-4">
+                                                @foreach($progressList as $idx => $progress)
+                                                <div class="relative pl-8 pr-1">
+                                                    <div
+                                                        class="absolute left-1 top-1.5 w-4 h-4 rounded-full border-2 border-white shadow {{ $idx === 0 ? 'bg-indigo-500 ring-2 ring-indigo-100' : 'bg-gray-400' }}">
+                                                    </div>
+                                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                                        <div class="flex items-center gap-2 flex-wrap mb-2">
+                                                            <span
+                                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $idx === 0 ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-200 text-gray-700' }}">
+                                                                {{ $progress->status }}
+                                                            </span>
+                                                            <span class="text-xs text-gray-500">
+                                                                {{
+                                                                \Carbon\Carbon::parse($progress->progress_date)->format('M
+                                                                d, Y') }}
+                                                            </span>
+                                                            @if($idx === 0)
+                                                            <span
+                                                                class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Latest</span>
+                                                            @endif
+                                                        </div>
+                                                        @if($progress->details)
+                                                        <p class="text-gray-600 text-sm leading-relaxed whitespace-normal"
+                                                            style="word-wrap: break-word; overflow-wrap: break-word;">{{
+                                                            $progress->details }}</p>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="px-5 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between rounded-b-2xl flex-shrink-0">
+                                        <span class="text-xs text-gray-500">{{ $progressCount }} update(s)</span>
+                                        <button type="button" @click="showProgress = false"
+                                            class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition">
+                                            Close
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
 
                             @if($e->status === 'requested')
                             <a href="{{ route('customer.events.edit', $e) }}"

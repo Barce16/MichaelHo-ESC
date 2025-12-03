@@ -334,6 +334,12 @@ Route::middleware('auth')->group(function () {
             Route::post('/events/{event}/progress', [EventProgressController::class, 'store'])
                 ->name('events.progress.store');
 
+            Route::put('events/{event}/progress/{progress}', [EventProgressController::class, 'update'])
+                ->name('events.progress.update');
+
+            Route::delete('events/{event}/progress/{progress}', [EventProgressController::class, 'destroy'])
+                ->name('events.progress.destroy');
+
             // Inclusion Change Requests
             Route::get('/change-requests', [InclusionChangeRequestController::class, 'index'])
                 ->name('change-requests.index');

@@ -5,11 +5,47 @@
         </div>
     </x-slot>
 
+    {{-- Print Styles --}}
+    <style>
+        @media print {
+
+            nav,
+            header,
+            .no-print,
+            .no-print * {
+                display: none !important;
+            }
+
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .print-container {
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+            }
+
+            .print-content {
+                box-shadow: none !important;
+            }
+        }
+    </style>
+
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 print-container">
 
             {{-- Export Buttons --}}
-            <div class="bg-white rounded-lg shadow-sm p-6 mb-6 flex justify-end items-center gap-2">
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6 flex justify-end items-center gap-2 no-print">
+                <button onclick="window.print()"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Print
+                </button>
                 <form method="GET" class="inline">
                     <input type="hidden" name="export" value="pdf">
                     <button type="submit"
@@ -35,7 +71,7 @@
             </div>
 
             {{-- Report Content --}}
-            <div class="bg-white rounded-lg shadow-sm p-8">
+            <div class="bg-white rounded-lg shadow-sm p-8 print-content">
 
                 {{-- Report Header --}}
                 <div class="border-b-2 border-gray-300 pb-6 mb-6">
@@ -52,7 +88,7 @@
                             </div>
                         </div>
                         <div class="text-right">
-                            <h2 class="text-xl font-bold text-gray-900">Events with Remaining Balances</h2>
+                            <h2 class="text-xl font-bold text-gray-900">Remaining Balances Report</h2>
                             <p class="text-sm text-gray-600">
                                 Generated: {{ now()->format('M d, Y g:i A') }}
                             </p>
@@ -69,16 +105,17 @@
 
                     <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-6 border-2 border-orange-200">
                         <div class="text-sm text-orange-700 font-medium mb-1">Total Outstanding</div>
-                        <div class="text-3xl font-bold text-orange-900">₱{{ number_format($stats['total_balance'], 2) }}
+                        <div class="text-3xl font-bold text-orange-900">₱{{ number_format($stats['total_outstanding'],
+                            2) }}
                         </div>
                     </div>
 
-                    @if($stats['largest_balance'])
+                    @if($events->first())
                     <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 border-2 border-purple-200">
                         <div class="text-sm text-purple-700 font-medium mb-1">Largest Balance</div>
-                        <div class="text-lg font-bold text-purple-900 truncate">{{ $stats['largest_balance']->event_name
-                            }}</div>
-                        <div class="text-sm text-purple-700">₱{{ number_format($stats['largest_balance']->balance, 2) }}
+                        <div class="text-lg font-bold text-purple-900 truncate">{{ $events->first()->name }}</div>
+                        <div class="text-sm text-purple-700">₱{{ number_format($events->first()->remaining_balance, 2)
+                            }}
                         </div>
                     </div>
                     @endif
@@ -101,18 +138,15 @@
                         <tbody>
                             @forelse($events as $event)
                             <tr class="border-b border-gray-200">
-                                <td class="py-3 font-medium">{{ $event->event_name }}</td>
-                                <td class="py-3">{{ \Carbon\Carbon::parse($event->event_date)->format('M d, Y') }}</td>
-                                <td class="py-3">{{ $event->customer_name }}</td>
-                                <td class="py-3 text-xs">
-                                    <div>{{ $event->email }}</div>
-                                    <div class="text-gray-500">{{ $event->phone ?? '-' }}</div>
+                                <td class="py-3 font-medium">{{ $event->name }}</td>
+                                <td class="py-3">{{ $event->event_date->format('M d, Y') }}</td>
+                                <td class="py-3">{{ $event->customer->customer_name }}</td>
+                                <td class="py-3">{{ $event->customer->phone ?? $event->customer->email }}</td>
+                                <td class="py-3 text-right">₱{{ number_format($event->billing->total_amount, 2) }}</td>
+                                <td class="py-3 text-right text-green-700">₱{{ number_format($event->total_paid, 2) }}
                                 </td>
-                                <td class="py-3 text-right">₱{{ number_format($event->total_amount, 2) }}</td>
-                                <td class="py-3 text-right text-green-600">₱{{ number_format($event->paid_amount, 2) }}
-                                </td>
-                                <td class="py-3 text-right font-bold text-red-600">₱{{ number_format($event->balance, 2)
-                                    }}</td>
+                                <td class="py-3 text-right font-semibold text-red-700">₱{{
+                                    number_format($event->remaining_balance, 2) }}</td>
                             </tr>
                             @empty
                             <tr>
@@ -125,7 +159,7 @@
                             <tr class="border-t-2 border-gray-300 font-bold bg-red-50">
                                 <td colspan="6" class="py-4 text-right text-lg">TOTAL OUTSTANDING BALANCE:</td>
                                 <td class="py-4 text-right text-2xl text-red-700">₱{{
-                                    number_format($stats['total_balance'], 2) }}</td>
+                                    number_format($stats['total_outstanding'], 2) }}</td>
                             </tr>
                         </tfoot>
                     </table>

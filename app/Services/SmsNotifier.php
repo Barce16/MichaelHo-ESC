@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Http;
 use App\Models\Payment;
 use App\Models\Event;
 use App\Models\InclusionChangeRequest;
+use Carbon\Carbon;
 
 
 class SmsNotifier
@@ -105,6 +106,18 @@ class SmsNotifier
     }
 
     /**
+     * Get greeting based on gender
+     */
+    protected function getGreeting(?string $gender): string
+    {
+        return match (strtolower($gender ?? '')) {
+            'male' => 'Mr.',
+            'female' => 'Ms.',
+            default => '',
+        };
+    }
+
+    /**
      * Notify existing customer that their event was approved (no login details)
      */
     public function notifyEventApprovedExistingUser(Event $event): bool
@@ -183,11 +196,19 @@ class SmsNotifier
         $message .= "Hello {$prefix} {$customer->customer_name},\n\n";
         $message .= "Your {$paymentType} of P" . number_format($payment->amount, 2) . " for '{$event->name}' has been approved.\n\n";
 
-        $billing = $payment->billing;
-        if ($billing->remaining_balance > 0) {
-            $message .= "Remaining Balance: P" . number_format($billing->remaining_balance, 2) . "\n\n";
+        // Add What's Next based on payment type
+        $message .= "NEXT: ";
+        if ($payment->payment_type === 'introductory') {
+            $message .= "We'll contact you within 24-48hrs to schedule your planning meeting.\n\n";
+        } elseif ($payment->payment_type === 'downpayment') {
+            $message .= "Your event is now SCHEDULED! We'll keep you updated as we prepare.\n\n";
         } else {
-            $message .= "Your event is now fully paid!\n\n";
+            $billing = $payment->billing;
+            if ($billing->remaining_balance > 0) {
+                $message .= "Remaining balance: P" . number_format($billing->remaining_balance, 2) . "\n\n";
+            } else {
+                $message .= "Your event is now FULLY PAID! Just relax and enjoy your day.\n\n";
+            }
         }
 
         $message .= "View details: " . route('customer.events.show', $event);
@@ -211,216 +232,15 @@ class SmsNotifier
 
         $message = "Payment Issue\n\n";
         $message .= "Hello {$prefix} {$customer->customer_name},\n\n";
-        $message .= "Your payment of P" . number_format($payment->amount, 2) . " for '{$event->name}' needs attention.\n\n";
+        $message .= "Your payment of P" . number_format($payment->amount, 2) . " for '{$event->name}' could not be verified.\n\n";
         $message .= "Reason: {$reason}\n\n";
-        $message .= "Please resubmit your payment.\n\n";
-        $message .= "View event: " . route('customer.events.show', $event);
+        $message .= "NEXT STEPS:\n";
+        $message .= "1. Log in to your account\n";
+        $message .= "2. Upload a clear photo of your payment receipt\n";
+        $message .= "3. Wait for verification (24-48hrs)\n\n";
+        $message .= "Resubmit here: " . route('customer.events.show', $event);
 
         return $this->sendSms($customer->phone, $message);
-    }
-
-    /**
-     * Notify customer about event status change
-     */
-    public function notifyEventStatusChange(Event $event, string $newStatus): bool
-    {
-        $customer = $event->customer;
-
-        $statusMessages = [
-            'scheduled' => "Your event '{$event->name}' has been scheduled for " . $event->event_date->format('M d, Y') . "!",
-            'ongoing' => "Your event '{$event->name}' is now ongoing! Have a great celebration!",
-            'completed' => "Your event '{$event->name}' has been completed. Thank you for choosing us!",
-            'rejected' => "Unfortunately, your event request '{$event->name}' was not approved. Please contact us for details.",
-        ];
-
-        $message = $statusMessages[$newStatus] ?? "Your event '{$event->name}' status has been updated to: {$newStatus}";
-        $message .= "\n\nView details: " . route('customer.events.show', $event);
-
-        return $this->sendSms($customer->phone, $message);
-    }
-
-    /**
-     * Get gender-appropriate greeting
-     */
-    protected function getGreeting(?string $gender): string
-    {
-        if (!$gender) {
-            return 'Dear';
-        }
-
-        return match (strtolower($gender)) {
-            'male' => 'Mr.',
-            'female' => 'Ms.',
-            default => 'Dear',
-        };
-    }
-
-    public function notifyEventToday(Event $event): bool
-    {
-        try {
-            $customer = $event->customer;
-
-            if (!$customer || !$customer->contact_number) {
-                Log::warning('Cannot send event today SMS - missing customer or contact number', [
-                    'event_id' => $event->id
-                ]);
-                return false;
-            }
-
-            $phone = $this->formatPhoneNumber($customer->contact_number);
-            $greeting = $this->getGreeting($customer->gender);
-
-            $message = "{$greeting} {$customer->customer_name}, good morning! This is a reminder that your event '{$event->name}' is happening TODAY at " . ($event->venue ?? 'the venue') . ". Our team is ready to make your celebration memorable. For any concerns, contact us immediately. - Michael Ho Events";
-
-            $response = Http::timeout(30)->post($this->apiUrl, [
-                'token' => $this->apiToken,
-                'phone' => $phone,
-                'message' => $message,
-            ]);
-
-            if ($response->successful()) {
-                Log::info('Event today SMS sent successfully', [
-                    'event_id' => $event->id,
-                    'customer_id' => $customer->id,
-                    'phone' => $phone
-                ]);
-                return true;
-            }
-
-            Log::error('Failed to send event today SMS', [
-                'event_id' => $event->id,
-                'status' => $response->status(),
-                'response' => $response->body()
-            ]);
-            return false;
-        } catch (\Exception $e) {
-            Log::error('Exception sending event today SMS', [
-                'event_id' => $event->id,
-                'error' => $e->getMessage()
-            ]);
-            return false;
-        }
-    }
-
-    /**
-     * Send SMS notification when inclusion change request is approved
-     */
-    public function notifyChangeRequestApproved(InclusionChangeRequest $changeRequest): bool
-    {
-        try {
-            $customer = $changeRequest->customer;
-            $event = $changeRequest->event;
-
-            if (!$customer || !$customer->contact_number) {
-                Log::warning('Cannot send change request approved SMS - missing customer or contact number', [
-                    'change_request_id' => $changeRequest->id
-                ]);
-                return false;
-            }
-
-            $phone = $this->formatPhoneNumber($customer->contact_number);
-            $greeting = $this->getGreeting($customer->gender);
-
-            // Count changes
-            $addedCount = count($changeRequest->added_inclusions ?? []);
-            $removedCount = count($changeRequest->removed_inclusions ?? []);
-
-            $message = "{$greeting} {$customer->customer_name}, your inclusion change request for event '{$event->name}' has been approved! ";
-
-            if ($addedCount > 0) {
-                $message .= "{$addedCount} inclusion(s) added. ";
-            }
-            if ($removedCount > 0) {
-                $message .= "{$removedCount} inclusion(s) removed. ";
-            }
-
-            $message .= "Your billing has been updated. Check your account for details. - Michael Ho Events";
-
-            $response = Http::timeout(30)->post($this->apiUrl, [
-                'token' => $this->apiToken,
-                'phone' => $phone,
-                'message' => $message,
-            ]);
-
-            if ($response->successful()) {
-                Log::info('Change request approved SMS sent successfully', [
-                    'change_request_id' => $changeRequest->id,
-                    'customer_id' => $customer->id,
-                    'phone' => $phone
-                ]);
-                return true;
-            }
-
-            Log::error('Failed to send change request approved SMS', [
-                'change_request_id' => $changeRequest->id,
-                'status' => $response->status(),
-                'response' => $response->body()
-            ]);
-            return false;
-        } catch (\Exception $e) {
-            Log::error('Exception sending change request approved SMS', [
-                'change_request_id' => $changeRequest->id,
-                'error' => $e->getMessage()
-            ]);
-            return false;
-        }
-    }
-
-    /**
-     * Send SMS notification when inclusion change request is rejected
-     */
-    public function notifyChangeRequestRejected(InclusionChangeRequest $changeRequest): bool
-    {
-        try {
-            $customer = $changeRequest->customer;
-            $event = $changeRequest->event;
-
-            if (!$customer || !$customer->contact_number) {
-                Log::warning('Cannot send change request rejected SMS - missing customer or contact number', [
-                    'change_request_id' => $changeRequest->id
-                ]);
-                return false;
-            }
-
-            $phone = $this->formatPhoneNumber($customer->contact_number);
-            $greeting = $this->getGreeting($customer->gender);
-
-            $message = "{$greeting} {$customer->customer_name}, your inclusion change request for event '{$event->name}' has been rejected. ";
-
-            if ($changeRequest->admin_notes) {
-                $message .= "Reason: {$changeRequest->admin_notes}. ";
-            }
-
-            $message .= "Please contact us if you have questions. - Michael Ho Events";
-
-            $response = Http::timeout(30)->post($this->apiUrl, [
-                'token' => $this->apiToken,
-                'phone' => $phone,
-                'message' => $message,
-            ]);
-
-            if ($response->successful()) {
-                Log::info('Change request rejected SMS sent successfully', [
-                    'change_request_id' => $changeRequest->id,
-                    'customer_id' => $customer->id,
-                    'phone' => $phone
-                ]);
-                return true;
-            }
-
-            Log::error('Failed to send change request rejected SMS', [
-                'change_request_id' => $changeRequest->id,
-                'status' => $response->status(),
-                'response' => $response->body()
-            ]);
-            return false;
-        } catch (\Exception $e) {
-            Log::error('Exception sending change request rejected SMS', [
-                'change_request_id' => $changeRequest->id,
-                'error' => $e->getMessage()
-            ]);
-            return false;
-        }
     }
 
     /**
@@ -444,15 +264,21 @@ class SmsNotifier
             ? '+P' . number_format($difference, 2)
             : '-P' . number_format(abs($difference), 2);
 
-        $message = "{$greeting} {$customer->customer_name}, your event '{$event->name}' inclusions have been updated. ";
+        $message = "{$greeting} {$customer->customer_name}, your event '{$event->name}' inclusions have been updated by our team. ";
         $message .= "New total: P" . number_format($newTotal, 2) . " ({$changeText}). ";
-        $message .= "Check your account for details. - Michael Ho Events";
+
+        // Add What's Next
+        $message .= "NEXT: Log in to review changes. ";
+        if ($difference > 0) {
+            $message .= "Note: Balance increased. ";
+        }
+        $message .= "Contact us with questions. - Michael Ho Events";
 
         return $this->sendSms($customer->phone, $message);
     }
 
     /**
-     * Notify customer of event progress update
+     * Notify customer of event progress update (new progress added)
      */
     public function notifyEventProgress(Event $event, string $progressStatus, ?string $details = null): bool
     {
@@ -478,6 +304,74 @@ class SmsNotifier
     }
 
     /**
+     * Notify customer of event progress modification (existing progress edited)
+     */
+    public function notifyEventProgressUpdate(Event $event, string $progressStatus, ?string $details = null): bool
+    {
+        $customer = $event->customer;
+
+        if (empty($customer->phone)) {
+            Log::warning('SMS not sent: Customer has no phone number', [
+                'customer_id' => $customer->id,
+                'event_id' => $event->id
+            ]);
+            return false;
+        }
+
+        $greeting = $this->getGreeting($customer->gender);
+
+        $message = "{$greeting} {$customer->customer_name}, a progress update for '{$event->name}' has been modified: {$progressStatus}. ";
+        if ($details) {
+            $message .= "{$details} ";
+        }
+        $message .= "Check your account for details. - Michael Ho Events";
+
+        return $this->sendSms($customer->phone, $message);
+    }
+
+    /**
+     * Notify customer of event schedule update
+     */
+    public function notifyEventScheduleUpdate(Event $event, array $schedules, string $action = 'updated'): bool
+    {
+        $customer = $event->customer;
+
+        if (empty($customer->phone)) {
+            Log::warning('SMS not sent: Customer has no phone number', [
+                'customer_id' => $customer->id,
+                'event_id' => $event->id
+            ]);
+            return false;
+        }
+
+        $greeting = $this->getGreeting($customer->gender);
+        $scheduleCount = count($schedules);
+
+        $actionText = match ($action) {
+            'created' => 'scheduled',
+            'updated' => 'updated',
+            default => 'updated'
+        };
+
+        $message = "{$greeting} {$customer->customer_name}, ";
+
+        if ($scheduleCount === 1) {
+            $schedule = $schedules[0];
+            $schedule->load('inclusion');
+            $inclusionName = $schedule->inclusion->name ?? 'an item';
+            $scheduleDate = Carbon::parse($schedule->scheduled_date)->format('M d, Y');
+
+            $message .= "schedule {$actionText} for '{$event->name}': {$inclusionName} on {$scheduleDate}. ";
+        } else {
+            $message .= "{$scheduleCount} schedules have been {$actionText} for '{$event->name}'. ";
+        }
+
+        $message .= "Check your account for full details. - Michael Ho Events";
+
+        return $this->sendSms($customer->phone, $message);
+    }
+
+    /**
      * Notify customer about event reminder - 1 month before
      */
     public function notifyEventReminder1Month(Event $event): bool
@@ -485,20 +379,19 @@ class SmsNotifier
         try {
             $customer = $event->customer;
 
-            if (!$customer || !$customer->contact_number) {
-                Log::warning('Cannot send 1 month reminder SMS - missing customer or contact number', [
+            if (!$customer || !$customer->phone) {
+                Log::warning('Cannot send 1 month reminder SMS - missing customer or phone', [
                     'event_id' => $event->id
                 ]);
                 return false;
             }
 
-            $phone = $this->formatPhoneNumber($customer->contact_number);
+            $phone = $this->formatPhoneNumber($customer->phone);
             $greeting = $this->getGreeting($customer->gender);
-            $eventDate = \Carbon\Carbon::parse($event->event_date)->format('F d, Y');
+            $eventDate = Carbon::parse($event->event_date)->format('F d, Y');
 
-            $message = "{$greeting} {$customer->customer_name}, friendly reminder! Your event '{$event->name}' is 1 MONTH away ({$eventDate}). ";
-            $message .= "Now is a great time to finalize your inclusions and preferences. ";
-            $message .= "Log in to your account or contact us for any changes. - Michael Ho Events";
+            $message = "{$greeting} {$customer->customer_name}, your event '{$event->name}' is 1 MONTH away ({$eventDate})! ";
+            $message .= "THIS MONTH: 1) Review your inclusions 2) Check payment balance 3) Finalize guest count 4) Contact us for any changes. - Michael Ho Events";
 
             return $this->sendSms($phone, $message);
         } catch (\Exception $e) {
@@ -518,20 +411,19 @@ class SmsNotifier
         try {
             $customer = $event->customer;
 
-            if (!$customer || !$customer->contact_number) {
-                Log::warning('Cannot send 7 days reminder SMS - missing customer or contact number', [
+            if (!$customer || !$customer->phone) {
+                Log::warning('Cannot send 7 days reminder SMS - missing customer or phone', [
                     'event_id' => $event->id
                 ]);
                 return false;
             }
 
-            $phone = $this->formatPhoneNumber($customer->contact_number);
+            $phone = $this->formatPhoneNumber($customer->phone);
             $greeting = $this->getGreeting($customer->gender);
-            $eventDate = \Carbon\Carbon::parse($event->event_date)->format('l, F d, Y');
+            $eventDate = Carbon::parse($event->event_date)->format('l, F d');
 
-            $message = "{$greeting} {$customer->customer_name}, just 1 WEEK to go! Your event '{$event->name}' is on {$eventDate}. ";
-            $message .= "Our team is preparing everything for your special day. ";
-            $message .= "Please ensure all payments and final details are settled. - Michael Ho Events";
+            $message = "{$greeting} {$customer->customer_name}, 1 WEEK to go! Your event '{$event->name}' is on {$eventDate}. ";
+            $message .= "THIS WEEK: 1) Settle remaining balance 2) Confirm final guest count 3) Prepare personal items. We're getting everything ready! - Michael Ho Events";
 
             return $this->sendSms($phone, $message);
         } catch (\Exception $e) {
@@ -551,20 +443,19 @@ class SmsNotifier
         try {
             $customer = $event->customer;
 
-            if (!$customer || !$customer->contact_number) {
-                Log::warning('Cannot send 3 days reminder SMS - missing customer or contact number', [
+            if (!$customer || !$customer->phone) {
+                Log::warning('Cannot send 3 days reminder SMS - missing customer or phone', [
                     'event_id' => $event->id
                 ]);
                 return false;
             }
 
-            $phone = $this->formatPhoneNumber($customer->contact_number);
+            $phone = $this->formatPhoneNumber($customer->phone);
             $greeting = $this->getGreeting($customer->gender);
-            $eventDate = \Carbon\Carbon::parse($event->event_date)->format('l, F d, Y');
+            $eventDate = Carbon::parse($event->event_date)->format('l, F d');
 
             $message = "{$greeting} {$customer->customer_name}, only 3 DAYS left! Your event '{$event->name}' is on {$eventDate}. ";
-            $message .= "We're excited to make your celebration perfect! ";
-            $message .= "Contact us immediately if you have any last-minute requests. - Michael Ho Events";
+            $message .= "FINAL PREP: 1) Ensure balance is paid 2) Get plenty of rest 3) Call 0917-306-2531 for any last-minute needs. See you soon! - Michael Ho Events";
 
             return $this->sendSms($phone, $message);
         } catch (\Exception $e) {
@@ -574,5 +465,127 @@ class SmsNotifier
             ]);
             return false;
         }
+    }
+
+    /**
+     * Send SMS notification when inclusion change request is approved
+     */
+    public function notifyChangeRequestApproved(InclusionChangeRequest $changeRequest): bool
+    {
+        try {
+            $customer = $changeRequest->customer;
+            $event = $changeRequest->event;
+
+            if (!$customer || !$customer->phone) {
+                Log::warning('Cannot send change request approved SMS - missing customer or phone', [
+                    'change_request_id' => $changeRequest->id
+                ]);
+                return false;
+            }
+
+            $phone = $this->formatPhoneNumber($customer->phone);
+            $greeting = $this->getGreeting($customer->gender);
+
+            $message = "{$greeting} {$customer->customer_name}, great news! Your inclusion change request for '{$event->name}' has been APPROVED! ";
+            $message .= "NEXT: Log in to view your updated inclusions and check your new balance. ";
+            $message .= "No further action needed. - Michael Ho Events";
+
+            return $this->sendSms($phone, $message);
+        } catch (\Exception $e) {
+            Log::error('Exception sending change request approved SMS', [
+                'change_request_id' => $changeRequest->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Send SMS notification when inclusion change request is rejected
+     */
+    public function notifyChangeRequestRejected(InclusionChangeRequest $changeRequest): bool
+    {
+        try {
+            $customer = $changeRequest->customer;
+            $event = $changeRequest->event;
+
+            if (!$customer || !$customer->phone) {
+                Log::warning('Cannot send change request rejected SMS - missing customer or phone', [
+                    'change_request_id' => $changeRequest->id
+                ]);
+                return false;
+            }
+
+            $phone = $this->formatPhoneNumber($customer->phone);
+            $greeting = $this->getGreeting($customer->gender);
+
+            $message = "{$greeting} {$customer->customer_name}, your inclusion change request for '{$event->name}' was not approved. ";
+
+            if ($changeRequest->admin_notes) {
+                $message .= "Reason: {$changeRequest->admin_notes}. ";
+            }
+
+            $message .= "NEXT: Contact us to discuss alternatives or submit a different request. Your current inclusions remain unchanged. - Michael Ho Events";
+
+            return $this->sendSms($phone, $message);
+        } catch (\Exception $e) {
+            Log::error('Exception sending change request rejected SMS', [
+                'change_request_id' => $changeRequest->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Notify customer about event status change
+     */
+    public function notifyEventStatusChange(Event $event, string $newStatus): void
+    {
+        $customer = $event->customer;
+        if (!$customer || !$customer->phone) {
+            return;
+        }
+
+        $prefix = $this->getGreeting($customer->gender);
+        $customerName = $customer->customer_name;
+        $eventName = $event->name;
+
+        switch ($newStatus) {
+            case Event::STATUS_REJECTED:
+                $message = "{$prefix} {$customerName}, we regret to inform you that your event booking \"{$eventName}\" has been declined. ";
+                if ($event->rejection_reason) {
+                    $message .= "Reason: {$event->rejection_reason}. ";
+                }
+                $message .= "NEXT: Contact us to discuss alternatives or submit a new booking. - Michael Ho Events";
+                break;
+
+            case Event::STATUS_MEETING:
+                $message = "{$prefix} {$customerName}, great news! Your introductory payment for \"{$eventName}\" has been confirmed. ";
+                $message .= "NEXT: We'll contact you within 24-48hrs to schedule your planning meeting. Prepare your ideas & questions! - Michael Ho Events";
+                break;
+
+            case Event::STATUS_SCHEDULED:
+                $message = "{$prefix} {$customerName}, your event \"{$eventName}\" is now officially SCHEDULED! ";
+                $message .= "NEXT: Relax! Our team is preparing everything. We'll keep you updated. - Michael Ho Events";
+                break;
+
+            case Event::STATUS_ONGOING:
+                $message = "{$prefix} {$customerName}, your event \"{$eventName}\" is happening TODAY! ";
+                $message .= "Our team is on-site. Enjoy your special day! Contact 0917-306-2531 if needed. - Michael Ho Events";
+                break;
+
+            case Event::STATUS_COMPLETED:
+                $message = "{$prefix} {$customerName}, your event \"{$eventName}\" has been marked as completed. ";
+                $message .= "Thank you for choosing Michael Ho Events! We hope you had an amazing celebration. - Michael Ho Events";
+                break;
+
+            default:
+                $message = "{$prefix} {$customerName}, your event \"{$eventName}\" status has been updated to: {$newStatus}. ";
+                $message .= "Log in to view details. - Michael Ho Events";
+                break;
+        }
+
+        $this->sendSms($customer->phone, $message);
     }
 }

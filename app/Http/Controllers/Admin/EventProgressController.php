@@ -60,4 +60,60 @@ class EventProgressController extends Controller
 
         return back()->with('success', 'Progress update added and customer notified.');
     }
+
+    /**
+     * Update an existing progress entry
+     */
+    public function update(Request $request, Event $event, EventProgress $progress)
+    {
+        // Ensure progress belongs to this event
+        if ($progress->event_id !== $event->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|string|max:255',
+            'details' => 'nullable|string',
+            'progress_date' => 'required|date',
+        ]);
+
+        $progress->update($validated);
+
+        // Send email notification about the update
+        if ($event->customer && $event->customer->user) {
+            try {
+                Mail::to($event->customer->user->email)
+                    ->send(new EventProgressNotification($event, $progress, true)); // true = isUpdate
+            } catch (\Exception $e) {
+                Log::error('Failed to send event progress update email', ['event_id' => $event->id, 'error' => $e->getMessage()]);
+            }
+        }
+
+        // Send SMS notification about the update
+        try {
+            $this->smsNotifier->notifyEventProgressUpdate($event, $validated['status'], $validated['details']);
+        } catch (\Exception $e) {
+            Log::error('Failed to send event progress update SMS', ['event_id' => $event->id, 'error' => $e->getMessage()]);
+        }
+
+        // Send in-app notification
+        $this->notificationService->notifyCustomerEventProgressUpdate($event, $progress);
+
+        return back()->with('success', 'Progress update modified and customer notified.');
+    }
+
+    /**
+     * Delete a progress entry
+     */
+    public function destroy(Event $event, EventProgress $progress)
+    {
+        // Ensure progress belongs to this event
+        if ($progress->event_id !== $event->id) {
+            abort(403);
+        }
+
+        $progress->delete();
+
+        return back()->with('success', 'Progress update deleted successfully.');
+    }
 }

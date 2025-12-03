@@ -120,8 +120,9 @@
 
                                 <div class="flex flex-col gap-2 min-w-[140px]">
                                     @if($isPaid)
-                                    {{-- Already Paid --}}
-                                    <div class="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg">
+                                    {{-- Already Paid - Final State (No option to revert) --}}
+                                    <div
+                                        class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M5 13l4 4L19 7" />
@@ -132,26 +133,17 @@
                                     {{-- Download Payslip Button --}}
                                     <a href="{{ route('admin.payroll.downloadPayslip', [$event, $staff]) }}"
                                         target="_blank"
-                                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition">
+                                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
                                         Download Payslip
                                     </a>
-
-                                    <form method="POST"
-                                        action="{{ route('admin.payroll.markAsPending', [$event, $staff]) }}">
-                                        @csrf
-                                        <button type="submit"
-                                            class="w-full px-4 py-2 border-2 border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
-                                            Mark as Pending
-                                        </button>
-                                    </form>
                                     @else
                                     {{-- Not Paid Yet --}}
                                     <div
-                                        class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-center font-semibold">
+                                        class="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg text-center font-semibold">
                                         Pending
                                     </div>
 

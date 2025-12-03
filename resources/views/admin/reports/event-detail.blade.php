@@ -12,12 +12,52 @@
         </div>
     </x-slot>
 
+    {{-- Print Styles --}}
+    <style>
+        @media print {
+
+            nav,
+            header,
+            .no-print,
+            .no-print * {
+                display: none !important;
+            }
+
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .print-container {
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+            }
+
+            .print-content {
+                box-shadow: none !important;
+            }
+
+            .overflow-x-auto,
+            .overflow-y-auto,
+            .overflow-auto {
+                overflow: visible !important;
+            }
+
+            .max-h-64,
+            .max-h-96,
+            [class*="max-h-"] {
+                max-height: none !important;
+            }
+        }
+    </style>
+
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 print-container">
 
             {{-- Event Selection (if no event selected) --}}
             @if(!isset($event))
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden no-print">
                 {{-- Header --}}
                 <div class="bg-gradient-to-r from-violet-600 to-purple-600 px-6 py-8 text-white">
                     <div class="flex items-center gap-4">
@@ -260,7 +300,8 @@
             @else
 
             {{-- Export Buttons --}}
-            <div class="bg-white rounded-lg shadow-sm p-6 mb-6 flex flex-wrap justify-between items-center gap-4">
+            <div
+                class="bg-white rounded-lg shadow-sm p-6 mb-6 flex flex-wrap justify-between items-center gap-4 no-print">
                 <div class="flex items-center gap-3">
                     <div
                         class="w-10 h-10 bg-gradient-to-br from-violet-400 to-purple-500 rounded-xl flex items-center justify-center">
@@ -282,6 +323,14 @@
                         </svg>
                         Change Event
                     </a>
+                    <button onclick="window.print()"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Print
+                    </button>
                     <form method="GET" class="inline">
                         <input type="hidden" name="event_id" value="{{ $event->id }}">
                         <input type="hidden" name="export" value="pdf">
@@ -298,7 +347,7 @@
             </div>
 
             {{-- Report Content --}}
-            <div class="bg-white rounded-lg shadow-sm p-8">
+            <div class="bg-white rounded-lg shadow-sm p-8 print-content">
 
                 {{-- Report Header --}}
                 <div class="border-b-2 border-gray-300 pb-6 mb-6">
@@ -493,8 +542,8 @@
                                         @foreach($event->inclusions as $inclusion)
                                         <tr class="border-b border-gray-200 last:border-0">
                                             <td class="py-2 text-gray-700">{{ $inclusion->name }}</td>
-                                            <td class="py-2 text-gray-500 text-xs">{{ $inclusion->category?->value ??
-                                                'N/A' }}</td>
+                                            <td class="py-2 text-gray-500 text-xs">{{ $inclusion->category ?
+                                                ucfirst($inclusion->category->value) : 'N/A' }}</td>
                                             <td class="py-2 text-right font-medium text-gray-900">
                                                 ₱{{ number_format($inclusion->pivot->price_snapshot ??
                                                 $inclusion->price, 2) }}

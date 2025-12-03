@@ -7,9 +7,31 @@ use App\Models\User;
 use App\Models\Event;
 use App\Models\InclusionChangeRequest;
 use App\Models\Payment;
+use App\Models\EventProgress;
 
 class NotificationService
 {
+
+    protected function createNotification(
+        int $userId,
+        string $type,
+        string $title,
+        string $message,
+        array $data = [],
+        ?string $actionUrl = null
+    ): void {
+        Notification::create([
+            'user_id' => $userId,
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+            'data' => $data,
+            'action_url' => $actionUrl,
+            'read_at' => null,
+        ]);
+    }
+
+
     /**
      * Notify admin of new event request
      */
@@ -600,5 +622,64 @@ class NotificationService
             'link' => route('customer.events.show', $event),
             'is_read' => false,
         ]);
+    }
+
+    public function notifyCustomerEventProgressUpdate(Event $event, EventProgress $progress): void
+    {
+        $customer = $event->customer;
+
+        if (!$customer || !$customer->user) {
+            return;
+        }
+
+        $this->createNotification(
+            $customer->user->id,
+            'event_progress_updated',
+            'Progress Update Modified',
+            "A progress update for '{$event->name}' has been modified: {$progress->status}",
+            [
+                'event_id' => $event->id,
+                'progress_id' => $progress->id,
+                'status' => $progress->status,
+            ],
+            route('customer.events.show', $event)
+        );
+    }
+
+    /**
+     * Notify customer when event schedules are updated
+     */
+    public function notifyCustomerScheduleUpdate(Event $event, array $schedules, string $action = 'updated'): void
+    {
+        $customer = $event->customer;
+
+        if (!$customer || !$customer->user) {
+            return;
+        }
+
+        $scheduleCount = count($schedules);
+        $actionText = $action === 'created' ? 'added' : 'updated';
+
+        if ($scheduleCount === 1) {
+            $schedule = $schedules[0];
+            $schedule->load('inclusion');
+            $message = "Schedule {$actionText} for '{$event->name}': {$schedule->inclusion->name} on " .
+                \Carbon\Carbon::parse($schedule->scheduled_date)->format('M d, Y');
+        } else {
+            $message = "{$scheduleCount} schedules have been {$actionText} for '{$event->name}'";
+        }
+
+        $this->createNotification(
+            $customer->user->id,
+            'event_schedule_updated',
+            'Schedule ' . ucfirst($actionText),
+            $message,
+            [
+                'event_id' => $event->id,
+                'schedule_count' => $scheduleCount,
+                'action' => $action,
+            ],
+            route('customer.events.show', $event)
+        );
     }
 }

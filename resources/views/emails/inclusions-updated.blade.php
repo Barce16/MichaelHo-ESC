@@ -725,9 +725,54 @@
             </div>
             @endif
 
-            <div class="highlight-box">
-                <h4>📌 Note</h4>
-                <p>Billing updated to reflect changes. Contact us with any questions.</p>
+            <!-- What's Next Section -->
+            <div
+                style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px solid #3b82f6; padding: 25px; margin: 25px 0; border-radius: 12px;">
+                <h3 style="margin: 0 0 20px 0; color: #1d4ed8; font-size: 18px;">📌 What's Next?</h3>
+
+                <div style="margin-bottom: 18px;">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div
+                            style="background: #3b82f6; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 12px; flex-shrink: 0; font-size: 14px;">
+                            1</div>
+                        <div>
+                            <strong style="color: #1e40af;">Review the Changes</strong>
+                            <p style="margin: 5px 0 0 0; color: #4b5563; font-size: 14px;">Log in to your dashboard to
+                                see your complete updated inclusions list.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 18px;">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div
+                            style="background: #3b82f6; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 12px; flex-shrink: 0; font-size: 14px;">
+                            2</div>
+                        <div>
+                            <strong style="color: #1e40af;">Check Your Updated Balance</strong>
+                            <p style="margin: 5px 0 0 0; color: #4b5563; font-size: 14px;">
+                                @if($newTotal > $oldTotal)
+                                Your total has increased by ₱{{ number_format($newTotal - $oldTotal, 2) }}. Please note
+                                the new balance to be settled.
+                                @elseif($newTotal < $oldTotal) Your total has decreased by ₱{{ number_format($oldTotal -
+                                    $newTotal, 2) }}. The difference will be reflected in your remaining balance. @else
+                                    No change to your total amount. @endif </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 0;">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div
+                            style="background: #3b82f6; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 12px; flex-shrink: 0; font-size: 14px;">
+                            3</div>
+                        <div>
+                            <strong style="color: #1e40af;">No Action Required</strong>
+                            <p style="margin: 5px 0 0 0; color: #4b5563; font-size: 14px;">These changes have been
+                                applied automatically. Contact us if you have any questions about these updates.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div style="text-align: center; margin: 20px 0;">
@@ -740,7 +785,10 @@
             <div class="contact-card">
                 <h4>📞 Contact Us</h4>
                 <div class="contact-item">
-                    <span>📧 <a href="mailto:michaelhoevents@gmail.com">michaelhoevents@gmail.com</a></span>
+                    <span>📧 <a
+                            href="/cdn-cgi/l/email-protection#563b3f353e37333a3e3933203338222516313b373f3a7835393b"><span
+                                class="__cf_email__"
+                                data-cfemail="3f52565c575e5a5357505a495a514b4c7f58525e5653115c5052">[email&#160;protected]</span></a></span>
                 </div>
                 <div class="contact-item">
                     <span>📱 <a href="tel:+639173062531">+63 917 306 2531</a></span>
@@ -755,10 +803,4 @@
         </div>
 
         <!-- Footer -->
-        <div class="footer">
-            <p style="margin: 0;">© {{ date('Y') }} Michael Ho Events. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-
-</html>
+        <div class="footer"
