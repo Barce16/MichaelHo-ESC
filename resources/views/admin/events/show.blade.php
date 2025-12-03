@@ -758,7 +758,7 @@
                                     items</span>
 
                                 {{-- Edit Button - Only show if event is approved (not requested or rejected) --}}
-                                @if(!in_array($event->status, ['requested', 'rejected']))
+                                @if(!in_array($event->status, ['requested', 'rejected', 'completed']))
                                 <a href="{{ route('admin.events.editInclusions', $event) }}"
                                     class="ml-2 inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
