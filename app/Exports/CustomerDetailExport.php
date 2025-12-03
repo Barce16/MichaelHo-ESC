@@ -157,7 +157,7 @@ class CustomerEventsSheet implements FromCollection, WithHeadings, WithTitle, Sh
                         '  └ ' . $inclusion->name,
                         '',
                         '',
-                        $inclusion->category ?? '',
+                        $inclusion->category?->value ?? '',
                         '',
                         '',
                         'Php ' . number_format($inclusion->pivot->price_snapshot ?? $inclusion->price, 2),
