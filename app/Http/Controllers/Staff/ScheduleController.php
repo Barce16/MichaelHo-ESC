@@ -73,6 +73,19 @@ class ScheduleController extends Controller
             return $event;
         });
 
+        // Get ALL assignments for the calendar (no pagination, no month filter)
+        $allAssignments = Event::with(['customer', 'package'])
+            ->whereHas('staffs', function ($q) use ($staff) {
+                $q->where('staff_id', $staff->id);
+            })
+            ->orderBy('event_date', 'asc')
+            ->get()
+            ->map(function ($event) use ($staff) {
+                $pivot = $event->staffs()->where('staff_id', $staff->id)->first()?->pivot;
+                $event->staff_assignment = $pivot;
+                return $event;
+            });
+
         // Calculate stats
         $stats = [
             'total_assignments' => Event::whereHas('staffs', function ($q) use ($staff) {
@@ -93,7 +106,7 @@ class ScheduleController extends Controller
                 ->sum('pay_rate'),
         ];
 
-        return view('staff.schedules.index', compact('events', 'stats', 'status', 'month', 'staff'));
+        return view('staff.schedules.index', compact('events', 'allAssignments', 'stats', 'status', 'month', 'staff'));
     }
 
     public function show(Event $event)

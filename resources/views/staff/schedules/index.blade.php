@@ -103,6 +103,67 @@
                 </div>
             </div>
 
+            {{-- Calendar Section --}}
+            <div class="grid lg:grid-cols-2 gap-6">
+                {{-- Schedule Calendar --}}
+                <div>
+                    <x-staff-schedule-calendar :assignments="$allAssignments" />
+                </div>
+
+                {{-- Quick Stats / Upcoming --}}
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                    <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                        <h3 class="font-semibold text-gray-900">Upcoming Assignments</h3>
+                    </div>
+                    <div class="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
+                        @php
+                        $upcomingEvents = $allAssignments->filter(function($event) {
+                        return \Carbon\Carbon::parse($event->event_date)->gte(today());
+                        })->sortBy('event_date')->take(5);
+                        @endphp
+
+                        @forelse($upcomingEvents as $event)
+                        @php
+                        $workStatus = $event->staff_assignment->work_status ?? 'pending';
+                        $statusColors = match($workStatus) {
+                        'finished' => 'bg-emerald-500',
+                        'ongoing' => 'bg-amber-500',
+                        default => 'bg-indigo-500',
+                        };
+                        @endphp
+                        <a href="{{ route('staff.schedules.show', $event) }}"
+                            class="flex items-center gap-3 p-4 hover:bg-gray-50 transition">
+                            <div
+                                class="w-12 h-12 {{ $statusColors }} rounded-lg flex flex-col items-center justify-center text-white flex-shrink-0">
+                                <div class="text-lg font-bold">{{ \Carbon\Carbon::parse($event->event_date)->format('d')
+                                    }}</div>
+                                <div class="text-[10px] uppercase">{{
+                                    \Carbon\Carbon::parse($event->event_date)->format('M') }}</div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-semibold text-gray-900 truncate">{{ $event->name }}</h4>
+                                <p class="text-sm text-gray-500 truncate">{{ $event->customer->customer_name }}</p>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <div class="font-bold text-gray-900">₱{{
+                                    number_format($event->staff_assignment->pay_rate ?? 0, 2) }}</div>
+                                <div class="text-xs text-gray-500">{{ $event->staff_assignment->assignment_role ?? '-'
+                                    }}</div>
+                            </div>
+                        </a>
+                        @empty
+                        <div class="p-8 text-center text-gray-400">
+                            <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <p class="font-medium">No upcoming assignments</p>
+                        </div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+
             {{-- Filters --}}
             <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
                 <form method="GET" class="flex flex-wrap gap-3">
