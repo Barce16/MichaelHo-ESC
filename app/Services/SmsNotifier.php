@@ -476,4 +476,103 @@ class SmsNotifier
 
         return $this->sendSms($customer->phone, $message);
     }
+
+    /**
+     * Notify customer about event reminder - 1 month before
+     */
+    public function notifyEventReminder1Month(Event $event): bool
+    {
+        try {
+            $customer = $event->customer;
+
+            if (!$customer || !$customer->contact_number) {
+                Log::warning('Cannot send 1 month reminder SMS - missing customer or contact number', [
+                    'event_id' => $event->id
+                ]);
+                return false;
+            }
+
+            $phone = $this->formatPhoneNumber($customer->contact_number);
+            $greeting = $this->getGreeting($customer->gender);
+            $eventDate = \Carbon\Carbon::parse($event->event_date)->format('F d, Y');
+
+            $message = "{$greeting} {$customer->customer_name}, friendly reminder! Your event '{$event->name}' is 1 MONTH away ({$eventDate}). ";
+            $message .= "Now is a great time to finalize your inclusions and preferences. ";
+            $message .= "Log in to your account or contact us for any changes. - Michael Ho Events";
+
+            return $this->sendSms($phone, $message);
+        } catch (\Exception $e) {
+            Log::error('Exception sending 1 month reminder SMS', [
+                'event_id' => $event->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Notify customer about event reminder - 7 days before
+     */
+    public function notifyEventReminder7Days(Event $event): bool
+    {
+        try {
+            $customer = $event->customer;
+
+            if (!$customer || !$customer->contact_number) {
+                Log::warning('Cannot send 7 days reminder SMS - missing customer or contact number', [
+                    'event_id' => $event->id
+                ]);
+                return false;
+            }
+
+            $phone = $this->formatPhoneNumber($customer->contact_number);
+            $greeting = $this->getGreeting($customer->gender);
+            $eventDate = \Carbon\Carbon::parse($event->event_date)->format('l, F d, Y');
+
+            $message = "{$greeting} {$customer->customer_name}, just 1 WEEK to go! Your event '{$event->name}' is on {$eventDate}. ";
+            $message .= "Our team is preparing everything for your special day. ";
+            $message .= "Please ensure all payments and final details are settled. - Michael Ho Events";
+
+            return $this->sendSms($phone, $message);
+        } catch (\Exception $e) {
+            Log::error('Exception sending 7 days reminder SMS', [
+                'event_id' => $event->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Notify customer about event reminder - 3 days before
+     */
+    public function notifyEventReminder3Days(Event $event): bool
+    {
+        try {
+            $customer = $event->customer;
+
+            if (!$customer || !$customer->contact_number) {
+                Log::warning('Cannot send 3 days reminder SMS - missing customer or contact number', [
+                    'event_id' => $event->id
+                ]);
+                return false;
+            }
+
+            $phone = $this->formatPhoneNumber($customer->contact_number);
+            $greeting = $this->getGreeting($customer->gender);
+            $eventDate = \Carbon\Carbon::parse($event->event_date)->format('l, F d, Y');
+
+            $message = "{$greeting} {$customer->customer_name}, only 3 DAYS left! Your event '{$event->name}' is on {$eventDate}. ";
+            $message .= "We're excited to make your celebration perfect! ";
+            $message .= "Contact us immediately if you have any last-minute requests. - Michael Ho Events";
+
+            return $this->sendSms($phone, $message);
+        } catch (\Exception $e) {
+            Log::error('Exception sending 3 days reminder SMS', [
+                'event_id' => $event->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
 }

@@ -12,22 +12,18 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Run every minute to catch status changes immediately
-        $schedule->command('events:update-statuses')->everyMinute();
-        // Run at midnight every day
+        // Run event status updates and reminders once daily at 7:00 AM
+        // This handles:
+        // - 1 month reminders (30 days before)
+        // - 7 days reminders
+        // - 3 days reminders
+        // - Event today notifications
+        // - Status updates (scheduled → ongoing → completed)
         $schedule->command('events:update-statuses')
-            ->dailyAt('00:01')
-            ->withoutOverlapping();
-
-        // ALSO run early morning (6 AM) to catch events starting today
-        $schedule->command('events:update-statuses')
-            ->dailyAt('06:00')
-            ->withoutOverlapping();
-        // OR run every hour if you prefer less frequent checks
-        // $schedule->command('events:update-statuses')->hourly();
-
-        // OR run at specific times (e.g., every day at midnight and noon)
-        // $schedule->command('events:update-statuses')->twiceDaily(0, 12);
+            ->dailyAt('07:00')
+            ->timezone('Asia/Manila')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/event-reminders.log'));
     }
 
     /**
