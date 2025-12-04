@@ -46,11 +46,14 @@ class UpdateEventStatuses extends Command
         $this->info('📅 Checking for 1 month reminders...');
         $events1Month = Event::where('status', Event::STATUS_SCHEDULED)
             ->whereDate('event_date', today()->addDays(30))
+            ->whereNull('reminder_30days_sent_at') // Only if not already sent
             ->with(['customer.user', 'package'])
             ->get();
 
         foreach ($events1Month as $event) {
-            $this->sendReminder($event, '1_month', $notificationCounts);
+            if ($this->sendReminder($event, '1_month', $notificationCounts)) {
+                $event->update(['reminder_30days_sent_at' => now()]);
+            }
         }
         $this->info("   Found: {$events1Month->count()} event(s)");
         $this->newLine();
@@ -61,11 +64,14 @@ class UpdateEventStatuses extends Command
         $this->info('📅 Checking for 7 days reminders...');
         $events7Days = Event::where('status', Event::STATUS_SCHEDULED)
             ->whereDate('event_date', today()->addDays(7))
+            ->whereNull('reminder_7days_sent_at') // Only if not already sent
             ->with(['customer.user', 'package'])
             ->get();
 
         foreach ($events7Days as $event) {
-            $this->sendReminder($event, '7_days', $notificationCounts);
+            if ($this->sendReminder($event, '7_days', $notificationCounts)) {
+                $event->update(['reminder_7days_sent_at' => now()]);
+            }
         }
         $this->info("   Found: {$events7Days->count()} event(s)");
         $this->newLine();
@@ -76,11 +82,14 @@ class UpdateEventStatuses extends Command
         $this->info('📅 Checking for 3 days reminders...');
         $events3Days = Event::where('status', Event::STATUS_SCHEDULED)
             ->whereDate('event_date', today()->addDays(3))
+            ->whereNull('reminder_3days_sent_at') // Only if not already sent
             ->with(['customer.user', 'package'])
             ->get();
 
         foreach ($events3Days as $event) {
-            $this->sendReminder($event, '3_days', $notificationCounts);
+            if ($this->sendReminder($event, '3_days', $notificationCounts)) {
+                $event->update(['reminder_3days_sent_at' => now()]);
+            }
         }
         $this->info("   Found: {$events3Days->count()} event(s)");
         $this->newLine();
@@ -90,9 +99,10 @@ class UpdateEventStatuses extends Command
         // =============================================
         $this->info('🎉 Checking for events happening TODAY...');
 
-        // Get scheduled events that are TODAY (before updating)
+        // Get scheduled events that are TODAY and haven't been notified yet
         $eventsToday = Event::where('status', Event::STATUS_SCHEDULED)
             ->whereDate('event_date', today())
+            ->whereNull('reminder_today_sent_at') // Only if not already sent
             ->with(['customer.user', 'package'])
             ->get();
 
@@ -104,13 +114,17 @@ class UpdateEventStatuses extends Command
         if ($ongoingCount > 0) {
             $this->info("   ✓ {$ongoingCount} event(s) updated to ONGOING");
             Log::info("Updated {$ongoingCount} events to ongoing status");
+        }
 
-            // Send notifications for events happening today
-            foreach ($eventsToday as $event) {
-                $event->refresh();
-                $this->sendReminder($event, 'today', $notificationCounts);
+        // Send notifications for events happening today (only once)
+        foreach ($eventsToday as $event) {
+            $event->refresh();
+            if ($this->sendReminder($event, 'today', $notificationCounts)) {
+                $event->update(['reminder_today_sent_at' => now()]);
             }
-        } else {
+        }
+
+        if ($eventsToday->count() === 0 && $ongoingCount === 0) {
             $this->info("   No events today");
         }
         $this->newLine();
@@ -134,16 +148,16 @@ class UpdateEventStatuses extends Command
         // =============================================
         // Summary
         // =============================================
-        $this->info('═══════════════════════════════════════');
+        $this->info('══════════════════════════════════════');
         $this->info('📊 SUMMARY');
-        $this->info('═══════════════════════════════════════');
+        $this->info('══════════════════════════════════════');
         $this->info("   1 Month Reminders:  {$notificationCounts['1_month']}");
         $this->info("   7 Days Reminders:   {$notificationCounts['7_days']}");
         $this->info("   3 Days Reminders:   {$notificationCounts['3_days']}");
         $this->info("   Event Today:        {$notificationCounts['today']}");
         $this->info("   Updated to Ongoing: {$ongoingCount}");
         $this->info("   Updated to Complete: {$completedCount}");
-        $this->info('═══════════════════════════════════════');
+        $this->info('══════════════════════════════════════');
         $this->newLine();
 
         // Log summary
@@ -164,8 +178,9 @@ class UpdateEventStatuses extends Command
 
     /**
      * Send reminder notifications (email, SMS, in-app)
+     * Returns true if at least one notification was sent successfully
      */
-    protected function sendReminder(Event $event, string $type, array &$counts): void
+    protected function sendReminder(Event $event, string $type, array &$counts): bool
     {
         $typeLabels = [
             '1_month' => '1 Month',
@@ -178,10 +193,12 @@ class UpdateEventStatuses extends Command
 
         if (!$event->customer || !$event->customer->user) {
             $this->warn("   ⚠ Skipping {$event->name} - no customer user found");
-            return;
+            return false;
         }
 
         $this->line("   → Sending {$label} reminder for: {$event->name}");
+
+        $success = false;
 
         // Send Email
         try {
@@ -194,6 +211,7 @@ class UpdateEventStatuses extends Command
 
             $event->customer->user->notify($notification);
             $this->info("     ✓ Email sent to {$event->customer->user->email}");
+            $success = true;
         } catch (\Exception $e) {
             Log::error("Failed to send {$type} reminder email", [
                 'event_id' => $event->id,
@@ -213,6 +231,7 @@ class UpdateEventStatuses extends Command
 
             if ($smsSent) {
                 $this->info("     ✓ SMS sent");
+                $success = true;
             } else {
                 $this->warn("     ⚠ SMS sending failed");
             }
@@ -242,6 +261,7 @@ class UpdateEventStatuses extends Command
             $this->info("     ✓ In-app notification sent");
 
             $counts[$type]++;
+            $success = true;
         } catch (\Exception $e) {
             Log::error("Failed to send {$type} in-app notification", [
                 'event_id' => $event->id,
@@ -249,5 +269,7 @@ class UpdateEventStatuses extends Command
             ]);
             $this->error("     ✗ Failed to send in-app notification: {$e->getMessage()}");
         }
+
+        return $success;
     }
 }
