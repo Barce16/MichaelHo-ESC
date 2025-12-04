@@ -682,4 +682,61 @@ class NotificationService
             route('customer.events.show', $event)
         );
     }
+
+    /**
+     * Notify staff of inclusion schedule assignment
+     */
+    public function notifyStaffInclusionSchedule($schedule): void
+    {
+        $staff = $schedule->staff;
+        $user = $staff?->user;
+
+        if (!$user) return;
+
+        $event = $schedule->event;
+        $inclusion = $schedule->inclusion;
+        $date = $schedule->scheduled_date->format('M d, Y');
+        $time = $schedule->scheduled_time
+            ? \Carbon\Carbon::parse($schedule->scheduled_time)->format('g:i A')
+            : '';
+
+        $message = "You've been assigned to '{$inclusion->name}' for event '{$event->name}' on {$date}";
+        if ($time) {
+            $message .= " at {$time}";
+        }
+        if ($schedule->venue) {
+            $message .= " @ {$schedule->venue}";
+        }
+
+        \App\Models\Notification::create([
+            'user_id' => $user->id,
+            'type' => 'inclusion_schedule_assigned',
+            'title' => 'Inclusion Schedule Assigned',
+            'message' => $message,
+            'link' => route('staff.schedules.index'),
+        ]);
+    }
+
+    /**
+     * Notify admins when staff uploads proof for inclusion schedule
+     */
+    public function notifyAdminProofUploaded($schedule): void
+    {
+        $staff = $schedule->staff;
+        $event = $schedule->event;
+        $inclusion = $schedule->inclusion;
+
+        // Get all admin users
+        $admins = \App\Models\User::where('user_type', 'admin')->get();
+
+        foreach ($admins as $admin) {
+            \App\Models\Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'proof_uploaded',
+                'title' => 'Proof Uploaded',
+                'message' => "{$staff->name} uploaded proof for '{$inclusion->name}' in event '{$event->name}'",
+                'link' => route('admin.events.show', $event),
+            ]);
+        }
+    }
 }

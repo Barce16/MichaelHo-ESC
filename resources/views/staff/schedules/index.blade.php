@@ -79,24 +79,9 @@
                                 number_format($stats['total_earnings'], 2) }}</div>
                         </div>
                         <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <svg version="1.0" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
-                                xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 64 64" fill="none"
-                                class="w-6 h-6 text-gray-600">
-                                <g id="SVGRepo_iconCarrier">
-                                    <path fill="none" stroke="currentColor" stroke-width="2.88" stroke-miterlimit="10"
-                                        d="M53.92,10.081c12.107,12.105,12.107,31.732,0,43.838 
-                c-12.106,12.108-31.734,12.108-43.839,0c-12.107-12.105-12.107-31.732,0-43.838
-                C22.186-2.027,41.813-2.027,53.92,10.081z">
-                                    </path>
-                                    <line fill="none" stroke="currentColor" stroke-width="2.88" stroke-miterlimit="10"
-                                        x1="24" y1="48" x2="24" y2="16"></line>
-                                    <path fill="none" stroke="currentColor" stroke-width="2.88" stroke-miterlimit="10"
-                                        d="M24,17h7c0,0,11-1,11,9s-11,9-11,9h-7"></path>
-                                    <line fill="none" stroke="currentColor" stroke-width="2.88" stroke-miterlimit="10"
-                                        x1="19" y1="24" x2="47" y2="24"></line>
-                                    <line fill="none" stroke="currentColor" stroke-width="2.88" stroke-miterlimit="10"
-                                        x1="19" y1="28" x2="47" y2="28"></line>
-                                </g>
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                     </div>
@@ -110,16 +95,135 @@
                     <x-staff-schedule-calendar :assignments="$allAssignments" />
                 </div>
 
-                {{-- Quick Stats / Upcoming --}}
+                {{-- Upcoming & Inclusion Tasks --}}
                 <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                     <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                        <h3 class="font-semibold text-gray-900">Upcoming Assignments</h3>
+                        <h3 class="font-semibold text-gray-900">Upcoming & Tasks</h3>
                     </div>
-                    <div class="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
+                    <div class="divide-y divide-gray-100 max-h-[450px] overflow-y-auto">
+
+                        {{-- Inclusion Schedules (Tasks) --}}
+                        @if(isset($inclusionSchedules) && $inclusionSchedules->count() > 0)
+                        @foreach($inclusionSchedules as $schedule)
+                        <div class="p-3 hover:bg-amber-50/50 transition"
+                            x-data="{ showUpload: false, uploading: false }">
+                            <div class="flex items-start gap-3">
+                                {{-- Inclusion Image --}}
+                                <div class="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                                    @if($schedule->inclusion->image)
+                                    <img src="{{ Storage::url($schedule->inclusion->image) }}"
+                                        alt="{{ $schedule->inclusion->name }}" class="w-full h-full object-cover">
+                                    @else
+                                    <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    @endif
+                                </div>
+
+                                {{-- Details --}}
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div class="min-w-0">
+                                            <p class="font-medium text-gray-900 truncate text-sm">{{ $schedule->inclusion->name }}</p>
+                                            <p class="text-xs text-gray-500 truncate">{{ $schedule->event->name }}</p>
+                                            <div class="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                                                <span>{{ $schedule->scheduled_date->format('M d, Y') }}</span>
+                                                @if($schedule->scheduled_time)
+                                                <span>• {{ \Carbon\Carbon::parse($schedule->scheduled_time)->format('g:i A') }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        {{-- Status/Action - Always allow upload --}}
+                                        <div class="flex-shrink-0">
+                                            @if($schedule->proof_image)
+                                            {{-- Proof Uploaded - can re-upload --}}
+                                            <div class="flex items-center gap-1">
+                                                <button type="button"
+                                                    onclick="viewProof('{{ asset('storage/' . $schedule->proof_image) }}', '{{ addslashes($schedule->inclusion->name) }}')"
+                                                    class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-700 bg-emerald-100 rounded-full hover:bg-emerald-200 transition">
+                                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd"
+                                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                            clip-rule="evenodd" />
+                                                    </svg>
+                                                    Done
+                                                </button>
+                                                <button type="button" @click="showUpload = !showUpload"
+                                                    class="p-1 text-gray-400 hover:text-gray-600 transition" title="Re-upload">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            @else
+                                            {{-- Upload Proof - always available --}}
+                                            <button type="button" @click="showUpload = !showUpload"
+                                                class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-amber-600 rounded-full hover:bg-amber-700 transition">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                                </svg>
+                                                Upload
+                                            </button>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    {{-- Upload Form (inline) --}}
+                                    <div x-show="showUpload" x-cloak x-transition
+                                        class="mt-2 p-2 bg-gray-50 rounded-lg border">
+                                        <form action="{{ route('staff.schedules.uploadProof', $schedule) }}"
+                                            method="POST" enctype="multipart/form-data" @submit="uploading = true">
+                                            @csrf
+                                            <div class="flex items-center gap-2">
+                                                <input type="file" name="proof_image" accept="image/*" required
+                                                    class="flex-1 text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-gray-900 file:text-white hover:file:bg-black">
+                                                <button type="submit" :disabled="uploading"
+                                                    class="px-2 py-1 bg-emerald-600 text-white text-xs font-medium rounded hover:bg-emerald-700 disabled:opacity-50">
+                                                    <span x-show="!uploading">Save</span>
+                                                    <span x-show="uploading">...</span>
+                                                </button>
+                                                <button type="button" @click="showUpload = false"
+                                                    class="text-gray-400 hover:text-gray-600">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+
+                        {{-- Divider if both sections have items --}}
                         @php
                         $upcomingEvents = $allAssignments->filter(function($event) {
                         return \Carbon\Carbon::parse($event->event_date)->gte(today());
                         })->sortBy('event_date')->take(5);
+                        @endphp
+                        @if($upcomingEvents->count() > 0)
+                        <div class="px-4 py-2 bg-gray-100">
+                            <span class="text-xs font-semibold text-gray-500 uppercase">Event Assignments</span>
+                        </div>
+                        @endif
+                        @endif
+
+                        {{-- Upcoming Event Assignments --}}
+                        @php
+                        if(!isset($upcomingEvents)) {
+                        $upcomingEvents = $allAssignments->filter(function($event) {
+                        return \Carbon\Carbon::parse($event->event_date)->gte(today());
+                        })->sortBy('event_date')->take(5);
+                        }
                         @endphp
 
                         @forelse($upcomingEvents as $event)
@@ -127,54 +231,51 @@
                         $workStatus = $event->staff_assignment->work_status ?? 'pending';
                         $statusColors = match($workStatus) {
                         'finished' => 'bg-emerald-500',
-                        'ongoing' => 'bg-amber-500',
-                        default => 'bg-indigo-500',
+                        'ongoing' => 'bg-blue-500',
+                        default => 'bg-gray-400',
                         };
                         @endphp
-                        <a href="{{ route('staff.schedules.show', $event) }}"
-                            class="flex items-center gap-3 p-4 hover:bg-gray-50 transition">
-                            <div
-                                class="w-12 h-12 {{ $statusColors }} rounded-lg flex flex-col items-center justify-center text-white flex-shrink-0">
-                                <div class="text-lg font-bold">{{ \Carbon\Carbon::parse($event->event_date)->format('d')
-                                    }}</div>
-                                <div class="text-[10px] uppercase">{{
-                                    \Carbon\Carbon::parse($event->event_date)->format('M') }}</div>
+                        <div class="p-3 hover:bg-gray-50 transition">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full {{ $statusColors }}"></div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-medium text-gray-900 truncate text-sm">{{ $event->name }}</p>
+                                    <p class="text-xs text-gray-500">{{
+                                        \Carbon\Carbon::parse($event->event_date)->format('M d, Y') }}</p>
+                                </div>
+                                <a href="{{ route('staff.schedules.show', $event) }}"
+                                    class="text-gray-400 hover:text-gray-600">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </a>
                             </div>
-                            <div class="flex-1 min-w-0">
-                                <h4 class="font-semibold text-gray-900 truncate">{{ $event->name }}</h4>
-                                <p class="text-sm text-gray-500 truncate">{{ $event->customer->customer_name }}</p>
-                            </div>
-                            <div class="text-right flex-shrink-0">
-                                <div class="font-bold text-gray-900">₱{{
-                                    number_format($event->staff_assignment->pay_rate ?? 0, 2) }}</div>
-                                <div class="text-xs text-gray-500">{{ $event->staff_assignment->assignment_role ?? '-'
-                                    }}</div>
-                            </div>
-                        </a>
-                        @empty
-                        <div class="p-8 text-center text-gray-400">
-                            <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <p class="font-medium">No upcoming assignments</p>
                         </div>
+                        @empty
+                        @if(!isset($inclusionSchedules) || $inclusionSchedules->count() === 0)
+                        <div class="p-8 text-center text-gray-500">
+                            <p>No upcoming assignments</p>
+                        </div>
+                        @endif
                         @endforelse
                     </div>
                 </div>
             </div>
 
-            {{-- Filters --}}
+            {{-- Filter --}}
             <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
-                <form method="GET" class="flex flex-wrap gap-3">
-                    <div>
+                <form method="GET" class="flex flex-wrap items-end gap-4">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
                         <input type="month" name="month" value="{{ $month }}"
-                            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent">
                     </div>
-                    <div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Event Status</label>
                         <select name="status"
-                            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900">
-                            <option value="all" {{ $status==='all' ? 'selected' : '' }}>All Status</option>
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent">
+                            <option value="all" {{ $status==='all' ? 'selected' : '' }}>All Events</option>
                             <option value="scheduled" {{ $status==='scheduled' ? 'selected' : '' }}>Scheduled</option>
                             <option value="completed" {{ $status==='completed' ? 'selected' : '' }}>Completed</option>
                         </select>
@@ -303,4 +404,35 @@
 
         </div>
     </div>
+
+    {{-- Proof View Modal Script --}}
+    <script>
+        function viewProof(imageUrl, inclusionName) {
+        const modal = document.createElement('div');
+        modal.id = 'proofViewModal';
+        modal.className = 'fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/70';
+        modal.onclick = function(e) {
+            if (e.target === modal) modal.remove();
+        };
+        
+        modal.innerHTML = `
+            <div class="relative max-w-3xl w-full bg-white rounded-xl shadow-2xl overflow-hidden">
+                <button onclick="document.getElementById('proofViewModal').remove()"
+                    class="absolute top-3 right-3 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-100">
+                    <h6 class="font-medium text-emerald-900">✓ Proof: ${inclusionName}</h6>
+                </div>
+                <div class="p-3 bg-gray-50">
+                    <img src="${imageUrl}" alt="Proof" class="w-full h-auto rounded" style="max-height: 70vh; object-fit: contain;">
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+    </script>
 </x-app-layout>

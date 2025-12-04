@@ -9,6 +9,8 @@ use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\EventSchedule;
+use Illuminate\Support\Facades\Storage;
 
 class ScheduleController extends Controller
 {
@@ -21,93 +23,91 @@ class ScheduleController extends Controller
 
     public function index(Request $request)
     {
-        $user = Auth::user();
-        $staff = Staff::where('user_id', $user->id)->first();
+        $staff = auth()->user()->staff;
 
         if (!$staff) {
             return redirect()->route('dashboard')->with('error', 'Staff profile not found.');
         }
 
-        $status = $request->get('status', 'all');
-        $month = $request->get('month', now()->format('Y-m'));
+        $month = $request->input('month', now()->format('Y-m'));
+        $status = $request->input('status', 'all');
 
-        $query = Event::with(['customer', 'package'])
-            ->whereHas('staffs', function ($q) use ($staff) {
+        // Parse month for filtering
+        $startOfMonth = \Carbon\Carbon::parse($month)->startOfMonth();
+        $endOfMonth = \Carbon\Carbon::parse($month)->endOfMonth();
+
+        // Get events assigned to this staff
+        $query = Event::whereHas('staffs', function ($q) use ($staff) {
+            $q->where('staff_id', $staff->id);
+        })
+            ->with(['customer', 'staffs' => function ($q) use ($staff) {
                 $q->where('staff_id', $staff->id);
-            })
-            ->orderBy('event_date', 'asc');
+            }])
+            ->whereBetween('event_date', [$startOfMonth, $endOfMonth]);
 
+        // Filter by status if specified
         if ($status !== 'all') {
             $query->where('status', $status);
         }
 
-        if ($month) {
-            $date = \Carbon\Carbon::parse($month . '-01');
-            $query->whereYear('event_date', $date->year)
-                ->whereMonth('event_date', $date->month);
-        }
+        $events = $query->orderBy('event_date', 'asc')->paginate(10);
 
-        $events = $query->paginate(10)->withQueryString();
-
-        // Get staff assignments with pivot data and auto-update work status
+        // Add staff_assignment to each event
         $events->getCollection()->transform(function ($event) use ($staff) {
-            $pivot = $event->staffs()->where('staff_id', $staff->id)->first()?->pivot;
-
-            // Auto-update work_status to 'ongoing' if event date is today
-            if ($pivot && $pivot->work_status === 'pending') {
-                $eventDate = \Carbon\Carbon::parse($event->event_date);
-                $today = \Carbon\Carbon::today();
-
-                if ($eventDate->isSameDay($today)) {
-                    DB::table('event_staff')
-                        ->where('event_id', $event->id)
-                        ->where('staff_id', $staff->id)
-                        ->update(['work_status' => 'ongoing']);
-
-                    // Refresh pivot data
-                    $pivot = $event->staffs()->where('staff_id', $staff->id)->first()?->pivot;
-                }
-            }
-
-            $event->staff_assignment = $pivot;
+            $event->staff_assignment = $event->staffs->first()?->pivot;
             return $event;
         });
 
-        // Get ALL assignments for the calendar (no pagination, no month filter)
-        $allAssignments = Event::with(['customer', 'package'])
-            ->whereHas('staffs', function ($q) use ($staff) {
+        // Get all assignments for calendar (no pagination)
+        $allAssignments = Event::whereHas('staffs', function ($q) use ($staff) {
+            $q->where('staff_id', $staff->id);
+        })
+            ->with(['customer', 'staffs' => function ($q) use ($staff) {
                 $q->where('staff_id', $staff->id);
-            })
+            }])
+            ->whereIn('status', ['scheduled', 'ongoing', 'completed'])
             ->orderBy('event_date', 'asc')
             ->get()
-            ->map(function ($event) use ($staff) {
-                $pivot = $event->staffs()->where('staff_id', $staff->id)->first()?->pivot;
-                $event->staff_assignment = $pivot;
+            ->map(function ($event) {
+                $event->staff_assignment = $event->staffs->first()?->pivot;
                 return $event;
             });
 
-        // Calculate stats
+        // Stats
         $stats = [
-            'total_assignments' => Event::whereHas('staffs', function ($q) use ($staff) {
-                $q->where('staff_id', $staff->id);
-            })->count(),
-
-            'upcoming' => Event::whereHas('staffs', function ($q) use ($staff) {
-                $q->where('staff_id', $staff->id);
-            })->where('event_date', '>=', now())->count(),
-
-            'completed' => Event::whereHas('staffs', function ($q) use ($staff) {
-                $q->where('staff_id', $staff->id);
-            })->where('status', 'completed')->count(),
-
+            'total_assignments' => Event::whereHas('staffs', fn($q) => $q->where('staff_id', $staff->id))->count(),
+            'upcoming' => Event::whereHas('staffs', fn($q) => $q->where('staff_id', $staff->id))
+                ->where('event_date', '>=', today())
+                ->whereIn('status', ['scheduled', 'ongoing'])
+                ->count(),
+            'completed' => Event::whereHas('staffs', fn($q) => $q->where('staff_id', $staff->id))
+                ->where('status', 'completed')
+                ->count(),
             'total_earnings' => DB::table('event_staff')
                 ->where('staff_id', $staff->id)
                 ->where('pay_status', 'paid')
                 ->sum('pay_rate'),
         ];
 
-        return view('staff.schedules.index', compact('events', 'allAssignments', 'stats', 'status', 'month', 'staff'));
+        // ==========================================
+        // ADD THIS: Get inclusion schedules assigned to this staff
+        // ==========================================
+        $inclusionSchedules = EventSchedule::with(['event', 'inclusion'])
+            ->where('staff_id', $staff->id)
+            ->whereNotNull('scheduled_date')
+            ->orderBy('scheduled_date', 'asc')
+            ->get();
+
+        return view('staff.schedules.index', compact(
+            'events',
+            'allAssignments',
+            'stats',
+            'month',
+            'status',
+            'inclusionSchedules'  // ADD THIS
+        ));
     }
+
 
     public function show(Event $event)
     {
@@ -231,5 +231,42 @@ class ScheduleController extends Controller
         ];
 
         return view('staff.schedules.earnings', compact('assignments', 'monthlyEarnings', 'stats', 'year', 'staff'));
+    }
+
+    public function uploadProof(Request $request, EventSchedule $schedule)
+    {
+        $staff = auth()->user()->staff;
+
+        // Verify this schedule belongs to the logged-in staff
+        if ($schedule->staff_id !== $staff->id) {
+            abort(403, 'You are not authorized to upload proof for this schedule.');
+        }
+
+        $request->validate([
+            'proof_image' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'], // 5MB max
+        ]);
+
+        // Delete old proof if exists
+        if ($schedule->proof_image) {
+            Storage::disk('public')->delete($schedule->proof_image);
+        }
+
+        // Store new proof
+        $path = $request->file('proof_image')->store(
+            "schedule-proofs/{$schedule->event_id}",
+            'public'
+        );
+
+        // Update schedule
+        $schedule->update([
+            'proof_image' => $path,
+            'proof_uploaded_at' => now(),
+        ]);
+
+        // Notify admins
+        $schedule->load(['event', 'inclusion', 'staff']);
+        app(\App\Services\NotificationService::class)->notifyAdminProofUploaded($schedule);
+
+        return back()->with('success', 'Proof uploaded successfully for "' . $schedule->inclusion->name . '"');
     }
 }

@@ -13,6 +13,7 @@ use App\Http\Controllers\EventShowcaseController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Customer\BillingPageController;
+use App\Http\Controllers\Customer\BookingsController;
 use App\Http\Controllers\Customer\PaymentController;
 use App\Http\Controllers\Customer\EventController as CustomerEventController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
@@ -136,6 +137,9 @@ Route::middleware('auth')->group(function () {
             // Events
             Route::resource('events', CustomerEventController::class);
 
+            // Bookings
+            Route::get('bookings', [BookingsController::class, 'index'])->name('bookings');
+
             // Payment routes
             // Generic create route (auto-detects payment type)
             Route::get('/events/{event}/payments/create', [PaymentController::class, 'create'])
@@ -184,6 +188,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/schedules/{event}', [StaffScheduleController::class, 'show'])->name('schedules.show');
             Route::get('/earnings', [StaffScheduleController::class, 'earnings'])->name('earnings');
             Route::post('/schedules/{event}/finish', [StaffScheduleController::class, 'finishWork'])->name('schedules.finish');
+            Route::post('schedules/{schedule}/upload-proof', [StaffScheduleController::class, 'uploadProof'])
+                ->name('schedules.uploadProof');
         });
 
     // ========== ADMIN AREA ==========
@@ -270,11 +276,13 @@ Route::middleware('auth')->group(function () {
             Route::post('payments/{payment}/create-receipt', [CustomerPaymentController::class, 'createReceipt'])->name('payments.create-receipt');
             Route::get('payments/{payment}/download-receipt', [CustomerPaymentController::class, 'downloadReceipt'])->name('payments.download-receipt');
 
-            // Event Expenses Routes
-            Route::get('events/{event}/expenses', [EventExpenseController::class, 'index'])->name('events.expenses.index');
-            Route::post('events/{event}/expenses', [EventExpenseController::class, 'store'])->name('events.expenses.store');
-            Route::put('events/{event}/expenses/{expense}', [EventExpenseController::class, 'update'])->name('events.expenses.update');
-            Route::delete('events/{event}/expenses/{expense}', [EventExpenseController::class, 'destroy'])->name('events.expenses.destroy');
+            // Event Schedules Routes
+            Route::post('events/{event}/save-schedules', [EventScheduleController::class, 'saveAll'])->name('events.saveSchedules');
+
+            // Staff notification for schedules
+            Route::post('schedules/{schedule}/notify-staff', [EventScheduleController::class, 'notifyStaff'])->name('schedules.notifyStaff');
+            Route::post('schedules/{schedule}/complete', [EventScheduleController::class, 'markComplete'])->name('schedules.complete');
+            Route::post('schedules/{schedule}/incomplete', [EventScheduleController::class, 'markIncomplete'])->name('schedules.incomplete');
 
             // ---- Management ----
             Route::prefix('management')->name('management.')->group(function () {
@@ -316,7 +324,10 @@ Route::middleware('auth')->group(function () {
             });
 
 
-
+            // Event Expenses
+            Route::post('events/{event}/expenses', [EventExpenseController::class, 'store'])->name('events.expenses.store');
+            Route::put('events/{event}/expenses/{expense}', [EventExpenseController::class, 'update'])->name('events.expenses.update');
+            Route::delete('events/{event}/expenses/{expense}', [EventExpenseController::class, 'destroy'])->name('events.expenses.destroy');
 
             // ---- Report ----
             Route::prefix('reports')->name('reports.')->group(function () {
@@ -334,9 +345,6 @@ Route::middleware('auth')->group(function () {
                     ->name('customer-detail');
                 Route::get('/event-detail', [ReportController::class, 'eventDetail'])->name('event-detail');
             });
-
-            Route::post('events/{event}/save-schedules', [EventScheduleController::class, 'saveAll']);
-
 
             Route::post('/events/{event}/progress', [EventProgressController::class, 'store'])
                 ->name('events.progress.store');

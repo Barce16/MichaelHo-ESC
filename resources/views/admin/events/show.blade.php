@@ -1667,7 +1667,7 @@
             x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-            <div @click.stop class="bg-white rounded-xl shadow-2xl max-w-5xl w-full mx-auto max-h-[90vh] flex flex-col"
+            <div @click.stop class="bg-white rounded-xl shadow-2xl w-full mx-auto max-h-[90vh] flex flex-col"
                 x-transition:enter="transition ease-out duration-300"
                 x-transition:enter-start="opacity-0 transform scale-90"
                 x-transition:enter-end="opacity-100 transform scale-100"
@@ -1677,7 +1677,7 @@
 
                 {{-- Modal Header --}}
                 <div
-                    class="bg-amber-600 text-white px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
+                    class="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
                     <div>
                         <h3 class="text-lg font-bold">Inclusion Schedules</h3>
                         <p class="text-sm text-amber-100">{{ $event->event_date->format('M d, Y') }} • {{
@@ -1697,13 +1697,17 @@
                     @csrf
 
                     {{-- Table Header --}}
-                    <div class="bg-gray-50 border-b border-gray-200 px-6 py-3 flex-shrink-0">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex-shrink-0">
                         <div
                             class="grid grid-cols-12 gap-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                            <div class="col-span-4">Inclusion</div>
-                            <div class="col-span-3">Date</div>
-                            <div class="col-span-2">Time</div>
-                            <div class="col-span-3">Remarks</div>
+                            <div class="col-span-3">Inclusion</div>
+                            <div class="col-span-1">Date</div>
+                            <div class="col-span-1">Time</div>
+                            <div class="col-span-1">Remarks</div>
+                            <div class="col-span-2">Assigned Staff</div>
+                            <div class="col-span-1">Contact</div>
+                            <div class="col-span-2">Venue</div>
+                            <div class="col-span-1 text-center">Proof</div>
                         </div>
                     </div>
 
@@ -1713,17 +1717,33 @@
                         @php
                         $schedule = $event->schedules?->where('inclusion_id', $inclusion->id)->first();
                         $hasSchedule = $schedule && $schedule->scheduled_date;
-                        $rowBg = $hasSchedule ? 'bg-emerald-50 border-l-4 border-l-emerald-500' : 'bg-white border-l-4
-                        border-l-gray-200';
+                        $assignedStaff = $schedule ? $event->staffs->firstWhere('id', $schedule->staff_id) : null;
+                        $rowBg = $hasSchedule ? 'bg-emerald-50/50' : 'bg-white';
                         @endphp
-                        <div class="px-6 py-3 border-b border-gray-100 {{ $rowBg }} hover:bg-gray-50 transition">
+                        <div class="px-4 py-3 border-b border-gray-100 {{ $rowBg }} hover:bg-gray-50/50 transition"
+                            x-data="{ 
+                        selectedStaffId: '{{ $schedule?->staff_id ?? '' }}',
+                        selectedStaffName: '{{ addslashes($assignedStaff?->name ?? '') }}',
+                        selectedStaffAvatar: '{{ $assignedStaff?->avatar_url ?? '' }}',
+                        open: false
+                     }">
                             <input type="hidden" name="schedules[{{ $index }}][inclusion_id]"
                                 value="{{ $inclusion->id }}">
+                            @if($schedule)
+                            <input type="hidden" name="schedules[{{ $index }}][schedule_id]"
+                                value="{{ $schedule->id }}">
+                            <input type="hidden" name="schedules[{{ $index }}][original_staff_id]"
+                                value="{{ $schedule->staff_id }}">
+                            <input type="hidden" name="schedules[{{ $index }}][original_date]"
+                                value="{{ $schedule->scheduled_date?->format('Y-m-d') }}">
+                            <input type="hidden" name="schedules[{{ $index }}][was_notified]"
+                                value="{{ $schedule->notified_at ? '1' : '0' }}">
+                            @endif
+                            <input type="hidden" name="schedules[{{ $index }}][staff_id]" :value="selectedStaffId">
 
                             <div class="grid grid-cols-12 gap-3 items-center">
                                 {{-- Inclusion Info --}}
-                                <div class="col-span-4 flex items-center gap-3">
-                                    {{-- Image --}}
+                                <div class="col-span-3 flex items-center gap-2">
                                     <div class="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                                         @if($inclusion->image)
                                         <img src="{{ Storage::url($inclusion->image) }}" alt="{{ $inclusion->name }}"
@@ -1737,49 +1757,167 @@
                                         </div>
                                         @endif
                                     </div>
-                                    {{-- Name & Status --}}
-                                    <div class="min-w-0">
-                                        <div class="font-medium text-gray-900 text-sm truncate">{{ $inclusion->name }}
-                                        </div>
-                                        <div class="flex items-center gap-2 mt-0.5">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-medium text-gray-900 text-sm truncate"
+                                            title="{{ $inclusion->name }}">{{ $inclusion->name }}</div>
+                                        <div class="flex items-center gap-1.5 mt-0.5">
                                             @if($inclusion->category)
                                             <span class="text-xs text-violet-600">{{ $inclusion->category }}</span>
                                             @endif
                                             @if($hasSchedule)
-                                            <span class="inline-flex items-center gap-1 text-xs text-emerald-600">
+                                            <span class="inline-flex items-center gap-0.5 text-xs text-emerald-600">
                                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fill-rule="evenodd"
                                                         d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                                         clip-rule="evenodd" />
                                                 </svg>
-                                                Scheduled
+                                                Set
                                             </span>
-                                            @else
-                                            <span class="text-xs text-gray-400">Not set</span>
                                             @endif
                                         </div>
                                     </div>
                                 </div>
 
                                 {{-- Date --}}
-                                <div class="col-span-3">
+                                <div class="col-span-1">
                                     <input type="date" name="schedules[{{ $index }}][scheduled_date]"
                                         value="{{ $schedule?->scheduled_date?->format('Y-m-d') }}"
                                         class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent">
                                 </div>
 
                                 {{-- Time --}}
-                                <div class="col-span-2">
+                                <div class="col-span-1">
                                     <input type="time" name="schedules[{{ $index }}][scheduled_time]"
                                         value="{{ $schedule?->scheduled_time ? \Carbon\Carbon::parse($schedule->scheduled_time)->format('H:i') : '' }}"
                                         class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent">
                                 </div>
 
                                 {{-- Remarks --}}
-                                <div class="col-span-3">
+                                <div class="col-span-1">
                                     <input type="text" name="schedules[{{ $index }}][remarks]"
-                                        value="{{ $schedule?->remarks }}" placeholder="Optional"
+                                        value="{{ $schedule?->remarks }}" placeholder="Note..."
                                         class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                                </div>
+
+                                {{-- Assign Staff (Custom Dropdown) --}}
+                                <div class="col-span-2 relative">
+                                    <button type="button" @click="open = !open" @click.away="open = false"
+                                        class="w-full flex items-center gap-2 px-2 py-1.5 text-sm border border-gray-300 rounded-lg hover:border-amber-400 focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white text-left">
+                                        <template x-if="selectedStaffId">
+                                            <div class="flex items-center gap-2 flex-1 min-w-0">
+                                                <img :src="selectedStaffAvatar"
+                                                    class="w-6 h-6 rounded-full object-cover flex-shrink-0">
+                                                <span class="truncate text-gray-900" x-text="selectedStaffName"></span>
+                                            </div>
+                                        </template>
+                                        <template x-if="!selectedStaffId">
+                                            <span class="text-gray-400 flex-1">Select staff...</span>
+                                        </template>
+                                        <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+
+                                    {{-- Dropdown --}}
+                                    <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-100"
+                                        x-transition:enter-start="opacity-0 scale-95"
+                                        x-transition:enter-end="opacity-100 scale-100"
+                                        x-transition:leave="transition ease-in duration-75"
+                                        x-transition:leave-start="opacity-100 scale-100"
+                                        x-transition:leave-end="opacity-0 scale-95"
+                                        class="absolute z-50 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-1 max-h-52 overflow-y-auto left-0">
+
+                                        {{-- Clear Option --}}
+                                        <button type="button"
+                                            @click="selectedStaffId = ''; selectedStaffName = ''; selectedStaffAvatar = ''; open = false"
+                                            class="w-full px-3 py-2 text-left text-sm text-gray-500 hover:bg-gray-50 flex items-center gap-3">
+                                            <div
+                                                class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </div>
+                                            <span>No staff</span>
+                                        </button>
+
+                                        <div class="border-t border-gray-100 my-1"></div>
+
+                                        @forelse($event->staffs as $staff)
+                                        <button type="button"
+                                            @click="selectedStaffId = '{{ $staff->id }}'; selectedStaffName = '{{ addslashes($staff->name) }}'; selectedStaffAvatar = '{{ $staff->avatar_url }}'; open = false"
+                                            class="w-full px-3 py-2 text-left text-sm hover:bg-amber-50 flex items-center gap-3"
+                                            :class="selectedStaffId == '{{ $staff->id }}' ? 'bg-amber-50' : ''">
+                                            <img src="{{ $staff->avatar_url }}"
+                                                class="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-white shadow-sm">
+                                            <div class="min-w-0 flex-1">
+                                                <div class="font-medium text-gray-900 truncate">{{ $staff->name }}</div>
+                                                @if($staff->pivot->assignment_role)
+                                                <div class="text-xs text-amber-600">{{ $staff->pivot->assignment_role }}
+                                                </div>
+                                                @endif
+                                            </div>
+                                            <svg x-show="selectedStaffId == '{{ $staff->id }}'"
+                                                class="w-4 h-4 text-amber-600 flex-shrink-0" fill="currentColor"
+                                                viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd"
+                                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                        </button>
+                                        @empty
+                                        <div class="px-3 py-4 text-center text-gray-500 text-sm">
+                                            <p>No staff assigned to event</p>
+                                            <a href="{{ route('admin.events.assignStaffPage', $event) }}"
+                                                class="text-amber-600 hover:underline text-xs mt-1 inline-block">Assign
+                                                staff first →</a>
+                                        </div>
+                                        @endforelse
+                                    </div>
+                                </div>
+
+                                {{-- Contact Number --}}
+                                <div class="col-span-1">
+                                    <input type="text" name="schedules[{{ $index }}][contact_number]"
+                                        value="{{ $schedule?->contact_number }}" placeholder="Phone"
+                                        class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                                </div>
+
+                                {{-- Venue --}}
+                                <div class="col-span-2">
+                                    <input type="text" name="schedules[{{ $index }}][venue]"
+                                        value="{{ $schedule?->venue }}" placeholder="Location"
+                                        class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                                </div>
+
+                                {{-- Proof (View Only) --}}
+                                <div class="col-span-1 text-center">
+                                    @if($schedule && $schedule->proof_image)
+                                    <button type="button"
+                                        onclick="openProofModal('{{ asset('storage/' . $schedule->proof_image) }}', '{{ addslashes($inclusion->name) }}')"
+                                        class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-full hover:bg-emerald-100 transition"
+                                        title="Uploaded {{ $schedule->proof_uploaded_at?->format('M d, Y g:i A') }}">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Done
+                                    </button>
+                                    @elseif($schedule && $schedule->staff_id)
+                                    <span
+                                        class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-400 bg-gray-100 rounded-full">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Pending
+                                    </span>
+                                    @else
+                                    <span class="text-xs text-gray-300">—</span>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -1799,13 +1937,18 @@
                     <div
                         class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between flex-shrink-0 rounded-b-xl">
                         @php
-                        $scheduledCount = $event->schedules?->count() ?? 0;
+                        $scheduledCount = $event->schedules?->filter(fn($s) => $s->scheduled_date)->count() ?? 0;
                         $totalCount = $event->inclusions->count();
+                        $assignedCount = $event->schedules?->filter(fn($s) => $s->staff_id)->count() ?? 0;
                         @endphp
-                        <div class="text-sm text-gray-500">
+                        <div class="flex items-center gap-4 text-sm text-gray-500">
                             <span class="inline-flex items-center gap-1.5">
                                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                                 {{ $scheduledCount }}/{{ $totalCount }} scheduled
+                            </span>
+                            <span class="inline-flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                {{ $assignedCount }} staff assigned
                             </span>
                         </div>
                         <div class="flex items-center gap-3">
@@ -1814,7 +1957,11 @@
                                 Cancel
                             </button>
                             <button type="submit"
-                                class="px-6 py-2 bg-amber-600 text-white font-medium rounded-lg hover:bg-amber-700 transition">
+                                class="px-6 py-2 bg-amber-600 text-white font-medium rounded-lg hover:bg-amber-700 transition inline-flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7" />
+                                </svg>
                                 Save Schedules
                             </button>
                         </div>
@@ -1822,6 +1969,39 @@
                 </form>
             </div>
         </div>
+
+        {{-- Proof Modal Script --}}
+        <script>
+            function openProofModal(imageUrl, inclusionName) {
+    const modal = document.createElement('div');
+    modal.id = 'proofModal';
+    modal.className = 'fixed inset-0 z-[60] overflow-y-auto flex items-center justify-center p-4 bg-black/70';
+    modal.onclick = function(e) {
+        if (e.target === modal) modal.remove();
+    };
+    
+    modal.innerHTML = `
+        <div class="relative max-w-3xl w-full bg-white rounded-xl shadow-2xl overflow-hidden">
+            <button onclick="document.getElementById('proofModal').remove()"
+                class="absolute top-3 right-3 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-100">
+                <h6 class="font-medium text-emerald-900">✓ Proof: ${inclusionName}</h6>
+                <p class="text-xs text-emerald-600">Uploaded by assigned staff</p>
+            </div>
+            <div class="p-3 bg-gray-50">
+                <img src="${imageUrl}" alt="Proof" class="w-full h-auto rounded" style="max-height: 70vh; object-fit: contain;">
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+        </script>
+
 
         {{-- Event Progress Modal --}}
         <div x-show="showProgress" x-cloak @click.self="showProgress = false"

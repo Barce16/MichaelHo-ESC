@@ -148,7 +148,7 @@
                         </svg>
                         Events Timeline
                     </h3>
-                    <p class="text-sm text-gray-500 mt-1">Monthly event bookings for the past 12 months</p>
+                    <p class="text-sm text-gray-500 mt-1">Number of events per month this year</p>
                 </div>
                 <div class="relative h-80">
                     <canvas id="eventsChart"></canvas>
@@ -172,10 +172,10 @@
                             <tr>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Customer</th>
+                                    Event</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Event</th>
+                                    Customer</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                     Date</th>
@@ -185,34 +185,22 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($recentEvents ?? [] as $e)
-                            @php
-                            $cust = $e->customer;
-                            $custName = $cust?->user?->name ?? $cust?->customer_name ?? 'Unknown';
-                            $avatarUrl = $cust?->user?->profile_photo_url ?? 'https://ui-avatars.com/api/?name=' .
-                            urlencode($custName) . '&background=8B5CF6&color=FFFFFF&size=64';
-                            @endphp
+                            @forelse($recentEvents ?? [] as $event)
                             <tr class="hover:bg-slate-50 transition">
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-gray-900">{{ $event->name }}</div>
+                                    <div class="text-xs text-gray-500 mt-1">{{ $event->venue ?: '—' }}</div>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center gap-3">
-                                        <img src="{{ $avatarUrl }}" alt="Avatar"
-                                            class="h-10 w-10 rounded-full object-cover ring-2 ring-violet-200">
-                                        <span class="font-medium text-gray-900">{{ $custName }}</span>
+                                    <div class="text-sm text-gray-900">{{ $event->customer->customer_name ?? '—' }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4">
-                                    <a href="{{ route('admin.events.show', $e) }}"
-                                        class="font-medium text-gray-900 hover:text-violet-600 transition">
-                                        {{ $e->name }}
-                                    </a>
-                                    <div class="text-xs text-gray-500 mt-1">{{ $e->venue ?: '—' }}</div>
-                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                    {{ \Carbon\Carbon::parse($e->event_date)->format('M d, Y') }}
+                                    {{ \Carbon\Carbon::parse($event->event_date)->format('M d, Y') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @php
-                                    $statusConfig = match(strtolower($e->status)) {
+                                    $statusConfig = match(strtolower($event->status)) {
                                     'requested' => ['bg' => 'bg-amber-100', 'text' => 'text-amber-700', 'border' =>
                                     'border-amber-200', 'dot' => 'bg-amber-500'],
                                     'approved' => ['bg' => 'bg-sky-100', 'text' => 'text-sky-700', 'border' =>
@@ -236,7 +224,7 @@
                                     <span
                                         class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full {{ $statusConfig['bg'] }} {{ $statusConfig['text'] }} {{ $statusConfig['border'] }} border">
                                         <span class="w-1.5 h-1.5 rounded-full {{ $statusConfig['dot'] }}"></span>
-                                        {{ ucwords(str_replace('_', ' ', strtolower($e->status))) }}
+                                        {{ ucwords(str_replace('_', ' ', strtolower($event->status))) }}
                                     </span>
                                 </td>
                             </tr>
@@ -518,8 +506,7 @@
                                     {{ \Carbon\Carbon::parse($event->event_date)->format('M d, Y') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span
-                                        class="px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">
+                                    <span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-lg">
                                         {{ $event->assignment_role ?? 'Staff' }}
                                     </span>
                                 </td>
@@ -630,329 +617,655 @@
             </div>
 
             @else
-            {{-- ================= CUSTOMER VIEW ================= --}}
+            {{-- ================= CUSTOMER VIEW - NEW SCHEDULES & PROGRESS FOCUSED ================= --}}
 
-            {{-- Quick Stats --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div
-                    class="bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-300">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-xs font-semibold text-violet-100 uppercase tracking-wide">Upcoming Events
-                            </div>
-                            <div class="text-5xl font-bold mt-2">{{ $upcoming ?? 0 }}</div>
-                            <div class="text-xs text-violet-100 mt-1">Scheduled bookings</div>
-                        </div>
-                        <div
-                            class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                        </div>
+            {{-- Welcome Section --}}
+            <div class="bg-gradient-to-r from-violet-600 to-purple-700 rounded-2xl shadow-lg p-6 text-white">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold mb-1">Welcome back, {{ auth()->user()->name }}! 👋</h1>
+                        <p class="text-violet-100">Here's what's happening with your events</p>
                     </div>
-                </div>
-
-                <div
-                    class="bg-white border-2 border-gray-200 hover:border-violet-300 shadow-sm hover:shadow-md rounded-xl p-6 transition-all duration-300">
-                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Quick Actions</div>
-                    <a href="{{ route('customer.events.create') }}"
-                        class="flex items-center gap-2 text-gray-900 hover:text-violet-600 font-bold text-lg transition">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Book New Event
-                    </a>
-                </div>
-
-                <div
-                    class="bg-white border-2 border-gray-200 hover:border-sky-300 shadow-sm hover:shadow-md rounded-xl p-6 transition-all duration-300">
-                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">My Account</div>
-                    <a href="{{ route('profile.edit') }}"
-                        class="flex items-center gap-2 text-gray-900 hover:text-sky-600 font-bold text-lg transition">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        Edit Profile
-                    </a>
-                </div>
-            </div>
-
-            {{-- Customer Charts --}}
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {{-- My Events Status --}}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div class="mb-6">
-                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                            My Events Status
-                        </h3>
-                        <p class="text-sm text-gray-500 mt-1">Overview of your event bookings</p>
-                    </div>
-                    <div class="relative h-64">
-                        <canvas id="customerStatusChart"></canvas>
-                    </div>
-                </div>
-
-                {{-- Payment History --}}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div class="mb-6">
-                        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-
-                            <svg class="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 36 36"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z">
-                                </path>
-                                <path d="M14.18,19.7h5.19a4.28,4.28,0,0,0,3.5-1.9H14.18Z"></path>
-                                <path d="M19.37,10.51H14.18V12h8.37A4.21,4.21,0,0,0,19.37,10.51Z"></path>
-                                <path
-                                    d="M17.67,2a16,16,0,1,0,16,16A16,16,0,0,0,17.67,2Zm10.5,15.8H25.7a6.87,6.87,0,0,1-6.33,4.4H14.18v6.54a1.25,1.25,0,1,1-2.5,0V17.8H8.76a.9.9,0,1,1,0-1.8h2.92V13.8H8.76a.9.9,0,1,1,0-1.8h2.92V9.26A1.25,1.25,0,0,1,12.93,8h6.44a6.84,6.84,0,0,1,6.15,4h2.65a.9.9,0,0,1,0,1.8H26.09a6.91,6.91,0,0,1,.12,1.3,6.8,6.8,0,0,1-.06.9h2a.9.9,0,0,1,0,1.8Z">
-                                </path>
-                            </svg>
-                            Payment Overview
-                        </h3>
-                        <p class="text-sm text-gray-500 mt-1">Your payment history</p>
-                    </div>
-                    <div class="relative h-64">
-                        <canvas id="customerPaymentChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Action Buttons --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Quick Navigation</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <a href="{{ route('customer.events.create') }}"
-                        class="flex flex-col items-center justify-center gap-3 p-6 bg-gradient-to-br from-violet-500 to-purple-600 text-white rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-300 group">
-                        <div
-                            class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center gap-3">
+                        <a href="{{ route('customer.events.create') }}"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-violet-700 font-semibold rounded-xl hover:bg-violet-50 transition shadow-md">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 4v16m8-8H4" />
                             </svg>
-                        </div>
-                        <span class="text-sm font-bold">Book Event</span>
-                    </a>
+                            Book New Event
+                        </a>
+                    </div>
+                </div>
+            </div>
 
-                    <a href="{{ route('customer.events.index') }}"
-                        class="flex flex-col items-center justify-center gap-3 p-6 bg-white border-2 border-violet-200 text-gray-900 rounded-xl hover:border-violet-400 hover:shadow-lg transform hover:scale-105 transition-all duration-300">
-                        <div class="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center">
-                            <svg class="w-6 h-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {{-- Quick Stats --}}
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                         </div>
-                        <span class="text-sm font-bold">My Events</span>
-                    </a>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900">{{ $totalEvents ?? 0 }}</p>
+                            <p class="text-xs text-gray-500">Total Events</p>
+                        </div>
+                    </div>
+                </div>
 
-                    <a href="{{ route('customer.billings') }}"
-                        class="flex flex-col items-center justify-center gap-3 p-6 bg-white border-2 border-emerald-200 text-gray-900 rounded-xl hover:border-emerald-400 hover:shadow-lg transform hover:scale-105 transition-all duration-300">
-                        <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                            <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
-                        <span class="text-sm font-bold">My Billings</span>
-                    </a>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900">{{ $upcoming ?? 0 }}</p>
+                            <p class="text-xs text-gray-500">Upcoming</p>
+                        </div>
+                    </div>
+                </div>
 
-                    <a href="{{ route('profile.edit') }}"
-                        class="flex flex-col items-center justify-center gap-3 p-6 bg-white border-2 border-sky-200 text-gray-900 rounded-xl hover:border-sky-400 hover:shadow-lg transform hover:scale-105 transition-all duration-300">
-                        <div class="w-12 h-12 bg-sky-100 rounded-full flex items-center justify-center">
-                            <svg class="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                             </svg>
                         </div>
-                        <span class="text-sm font-bold">Settings</span>
-                    </a>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900">{{ $upcomingSchedules->count() ?? 0 }}</p>
+                            <p class="text-xs text-gray-500">Schedules</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900">{{ $completed ?? 0 }}</p>
+                            <p class="text-xs text-gray-500">Completed</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {{-- My Recent Events Table --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="bg-slate-50 border-b border-gray-200 px-6 py-4">
-                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        My Recent Events
-                    </h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-slate-50">
-                            <tr>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Event</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Date</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Status</th>
-                                <th
-                                    class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($recentEvents ?? [] as $e)
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="px-6 py-4">
-                                    <div class="font-medium text-gray-900">{{ $e->name }}</div>
-                                    <div class="text-xs text-gray-500 mt-1">{{ $e->venue ?: '—' }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                    {{ \Carbon\Carbon::parse($e->event_date)->format('M d, Y') }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @php
-                                    $statusConfig = match(strtolower($e->status)) {
-                                    'requested' => ['bg' => 'bg-amber-100', 'text' => 'text-amber-700', 'border' =>
-                                    'border-amber-200', 'dot' => 'bg-amber-500'],
-                                    'approved' => ['bg' => 'bg-sky-100', 'text' => 'text-sky-700', 'border' =>
-                                    'border-sky-200', 'dot' => 'bg-sky-500'],
-                                    'meeting' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-700', 'border' =>
-                                    'border-orange-200', 'dot' => 'bg-orange-500'],
-                                    'request_meeting' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-700', 'border'
-                                    => 'border-orange-200', 'dot' => 'bg-orange-500'],
-                                    'scheduled' => ['bg' => 'bg-violet-100', 'text' => 'text-violet-700', 'border' =>
-                                    'border-violet-200', 'dot' => 'bg-violet-500'],
-                                    'completed' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-700', 'border' =>
-                                    'border-emerald-200', 'dot' => 'bg-emerald-500'],
-                                    'cancelled' => ['bg' => 'bg-rose-100', 'text' => 'text-rose-700', 'border' =>
-                                    'border-rose-200', 'dot' => 'bg-rose-500'],
-                                    'rejected' => ['bg' => 'bg-rose-100', 'text' => 'text-rose-700', 'border' =>
-                                    'border-rose-200', 'dot' => 'bg-rose-500'],
-                                    default => ['bg' => 'bg-slate-100', 'text' => 'text-slate-700', 'border' =>
-                                    'border-slate-200', 'dot' => 'bg-slate-500'],
-                                    };
-                                    @endphp
-                                    <span
-                                        class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full {{ $statusConfig['bg'] }} {{ $statusConfig['text'] }} {{ $statusConfig['border'] }} border">
-                                        <span class="w-1.5 h-1.5 rounded-full {{ $statusConfig['dot'] }}"></span>
-                                        {{ ucwords(str_replace('_', ' ', strtolower($e->status))) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                    <a href="{{ route('customer.events.show', $e) }}"
-                                        class="inline-flex items-center gap-1 text-violet-600 hover:text-violet-800 font-medium transition">
-                                        View Details
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </a>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4" class="px-6 py-12 text-center text-gray-500">No recent events.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {{-- Available Packages --}}
-            @if(!empty($packages) && $packages->count())
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-                <div class="mb-6">
-                    <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                        Available Packages
-                    </h3>
-                    <p class="text-gray-500 mt-1">Choose the perfect package for your event</p>
-                </div>
-
-                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    @foreach($packages as $package)
-                    @php
-                    $inclusions = $package->inclusions ?? collect();
-                    $styling = is_array($package->event_styling ?? null) ? $package->event_styling : [];
-                    $images = $package->images ?? collect();
-                    $mainImage = $images->first();
-                    @endphp
-
-                    <div
-                        class="group bg-white border-2 border-gray-200 hover:border-violet-400 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1">
-                        {{-- Featured Image --}}
-                        <div class="relative h-48 overflow-hidden bg-gradient-to-br from-violet-100 to-purple-100">
-                            @if($mainImage)
-                            <img src="{{ asset('storage/' . $mainImage->path) }}"
-                                alt="{{ $mainImage->alt ?? $package->name }}"
-                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                            @else
-                            <div class="w-full h-full flex items-center justify-center">
-                                <svg class="w-16 h-16 text-violet-300" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
+            {{-- Event Progress Panel - Unified Timeline --}}
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                {{-- Header --}}
+                <div class="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                 </svg>
                             </div>
-                            @endif
-
-                            @if($package->type)
-                            <div
-                                class="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-lg text-xs font-bold text-gray-900 shadow-lg">
-                                {{ ucwords($package->type) }}
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Event Progress</h3>
+                                <p class="text-sm text-white/80">Schedules & preparation milestones</p>
                             </div>
-                            @endif
                         </div>
 
-                        <div class="p-6 space-y-4">
-                            <div>
-                                <h4 class="text-xl font-bold text-gray-900 mb-2">{{ $package->name }}</h4>
-                                <div class="flex items-baseline gap-2">
-                                    <span class="text-3xl font-bold text-violet-600">₱{{ number_format($package->price,
-                                        0) }}</span>
-                                    <span class="text-sm text-gray-500">per event</span>
+                        {{-- Event Filter Button & Modal --}}
+                        @if(isset($activeEvents))
+                        <div x-data="{ open: false, selectedEvent: 'all', selectedName: 'All Events' }"
+                            class="relative">
+                            {{-- Filter Button --}}
+                            <button @click="open = !open"
+                                class="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition border border-white/30">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                </svg>
+                                <span class="text-sm font-medium text-white truncate max-w-[120px]"
+                                    x-text="selectedName"></span>
+                                <svg class="w-4 h-4 text-white/80 transition-transform" :class="{ 'rotate-180': open }"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            {{-- Floating Modal Dropdown --}}
+                            <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0 translate-y-1"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 translate-y-1" @click.away="open = false"
+                                class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50">
+
+                                {{-- Modal Header --}}
+                                <div
+                                    class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b border-gray-200">
+                                    <div class="flex items-center justify-between">
+                                        <h4 class="font-semibold text-gray-900 text-sm">Filter by Event</h4>
+                                        <button @click="open = false"
+                                            class="text-gray-400 hover:text-gray-600 transition">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {{-- Event List --}}
+                                <div class="max-h-64 overflow-y-auto p-2">
+                                    {{-- All Events Option --}}
+                                    <button
+                                        @click="selectedEvent = 'all'; selectedName = 'All Events'; filterTimeline('all'); open = false"
+                                        :class="selectedEvent === 'all' ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-transparent hover:bg-gray-50'"
+                                        class="w-full flex items-center gap-3 p-3 rounded-lg border-2 transition mb-2">
+                                        <div
+                                            class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1 text-left">
+                                            <p class="font-semibold text-gray-900 text-sm">All Events</p>
+                                            <p class="text-xs text-gray-500">View all activity</p>
+                                        </div>
+                                        <div x-show="selectedEvent === 'all'" class="flex-shrink-0">
+                                            <svg class="w-5 h-5 text-indigo-600" fill="currentColor"
+                                                viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd"
+                                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </button>
+
+                                    {{-- Individual Events --}}
+                                    @foreach($activeEvents as $evt)
+                                    @php
+                                    $statusColors = [
+                                    'requested' => 'from-amber-400 to-orange-500',
+                                    'approved' => 'from-sky-400 to-blue-500',
+                                    'request_meeting' => 'from-orange-400 to-red-500',
+                                    'meeting' => 'from-blue-400 to-indigo-500',
+                                    'scheduled' => 'from-violet-400 to-purple-500',
+                                    'ongoing' => 'from-teal-400 to-emerald-500',
+                                    ];
+                                    $gradientClass = $statusColors[$evt->status] ?? 'from-gray-400 to-gray-500';
+                                    @endphp
+                                    <button
+                                        @click="selectedEvent = '{{ $evt->id }}'; selectedName = '{{ Str::limit($evt->name, 20) }}'; filterTimeline('{{ $evt->id }}'); open = false"
+                                        :class="selectedEvent === '{{ $evt->id }}' ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-transparent hover:bg-gray-50'"
+                                        class="w-full flex items-center gap-3 p-3 rounded-lg border-2 transition mb-2 last:mb-0">
+                                        <div
+                                            class="w-10 h-10 bg-gradient-to-br {{ $gradientClass }} rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1 text-left min-w-0">
+                                            <p class="font-semibold text-gray-900 text-sm truncate">{{ $evt->name }}</p>
+                                            <div class="flex items-center gap-2 mt-0.5">
+                                                <span class="text-xs text-gray-500">{{
+                                                    \Carbon\Carbon::parse($evt->event_date)->format('M d, Y') }}</span>
+                                                <span
+                                                    class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium
+                                                    {{ $evt->status === 'scheduled' ? 'bg-violet-100 text-violet-700' : '' }}
+                                                    {{ $evt->status === 'ongoing' ? 'bg-teal-100 text-teal-700' : '' }}
+                                                    {{ $evt->status === 'meeting' ? 'bg-blue-100 text-blue-700' : '' }}
+                                                    {{ $evt->status === 'approved' ? 'bg-sky-100 text-sky-700' : '' }}
+                                                    {{ $evt->status === 'request_meeting' ? 'bg-orange-100 text-orange-700' : '' }}
+                                                    {{ $evt->status === 'requested' ? 'bg-amber-100 text-amber-700' : '' }}">
+                                                    {{ ucwords(str_replace('_', ' ', $evt->status)) }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div x-show="selectedEvent === '{{ $evt->id }}'" class="flex-shrink-0">
+                                            <svg class="w-5 h-5 text-indigo-600" fill="currentColor"
+                                                viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd"
+                                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </button>
+                                    @endforeach
+                                </div>
+
+                                {{-- Modal Footer --}}
+                                <div class="bg-gray-50 px-4 py-2 border-t border-gray-200">
+                                    <p class="text-xs text-gray-500 text-center">{{ $activeEvents->count() }} active
+                                        events</p>
                                 </div>
                             </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
 
-                            <div class="flex items-center gap-4 text-sm text-gray-600 pt-3 border-t border-gray-200">
-                                <div class="flex items-center gap-1.5">
-                                    <svg class="w-4 h-4 text-violet-500" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                    </svg>
-                                    <span class="font-medium">{{ $inclusions->count() }} Items</span>
-                                </div>
-                                <div class="flex items-center gap-1.5">
-                                    <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                                    </svg>
-                                    <span class="font-medium">{{ count($styling) }} Styling</span>
-                                </div>
+                {{-- Unified Timeline Content --}}
+                <div class="max-h-[500px] overflow-y-auto">
+                    <div class="p-5">
+                        @php
+                        // Merge schedules and progress into unified timeline
+                        $timelineItems = collect();
+
+                        // Add schedules
+                        foreach($upcomingSchedules ?? [] as $schedule) {
+                        $timelineItems->push([
+                        'type' => 'schedule',
+                        'date' => \Carbon\Carbon::parse($schedule->scheduled_date),
+                        'data' => $schedule,
+                        'event_id' => $schedule->event_id,
+                        'event_name' => $schedule->event->name ?? 'Event',
+                        ]);
+                        }
+
+                        // Add progress from all active events
+                        foreach($activeEvents ?? [] as $event) {
+                        foreach($event->progress ?? [] as $progress) {
+                        $timelineItems->push([
+                        'type' => 'progress',
+                        'date' => \Carbon\Carbon::parse($progress->progress_date),
+                        'data' => $progress,
+                        'event_id' => $event->id,
+                        'event_name' => $event->name,
+                        ]);
+                        }
+                        }
+
+                        // Sort by date descending (newest first)
+                        $timelineItems = $timelineItems->sortByDesc('date')->take(15);
+                        @endphp
+
+                        @if($timelineItems->count() > 0)
+                        <div class="relative">
+                            {{-- Timeline Line --}}
+                            <div
+                                class="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-indigo-500 via-purple-400 to-gray-200">
                             </div>
 
-                            <a href="{{ route('customer.events.create', ['package_id' => $package->id]) }}"
-                                class="block w-full text-center px-6 py-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold rounded-lg hover:from-violet-600 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-md hover:shadow-xl">
-                                Select Package
+                            <div class="space-y-4">
+                                @foreach($timelineItems as $index => $item)
+                                <div class="relative pl-10 group timeline-item" data-event-id="{{ $item['event_id'] }}">
+                                    @if($item['type'] === 'schedule')
+                                    @php
+                                    $schedule = $item['data'];
+                                    $scheduleDate = $item['date'];
+                                    $isToday = $scheduleDate->isToday();
+                                    $isPast = $scheduleDate->isPast() && !$isToday;
+                                    $hasProof = !empty($schedule->proof_image);
+                                    $dotColor = $hasProof ? 'bg-emerald-500' : ($isPast ? 'bg-rose-500' : ($isToday ?
+                                    'bg-blue-500' : 'bg-amber-500'));
+                                    $ringColor = $hasProof ? 'ring-emerald-100' : ($isPast ? 'ring-rose-100' : ($isToday
+                                    ? 'ring-blue-100' : 'ring-amber-100'));
+                                    @endphp
+
+                                    {{-- Timeline Dot --}}
+                                    <div
+                                        class="absolute left-2 top-2 w-5 h-5 rounded-full border-4 border-white shadow-md transition-all {{ $dotColor }} {{ $loop->first ? 'ring-4 ' . $ringColor : '' }}">
+                                    </div>
+
+                                    {{-- Schedule Card --}}
+                                    <div
+                                        class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition group-hover:border-indigo-200">
+                                        {{-- Type Badge --}}
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <span
+                                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                Schedule
+                                            </span>
+                                            <span class="text-xs text-gray-400">{{ $item['event_name'] }}</span>
+                                            @if($loop->first)
+                                            <span
+                                                class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Latest</span>
+                                            @endif
+                                        </div>
+
+                                        <div class="flex items-start gap-3">
+                                            {{-- Inclusion Image --}}
+                                            <div class="flex-shrink-0">
+                                                @if($schedule->inclusion && $schedule->inclusion->image)
+                                                <img src="{{ asset('storage/' . $schedule->inclusion->image) }}"
+                                                    alt="{{ $schedule->inclusion->name }}"
+                                                    class="w-12 h-12 rounded-lg object-cover border-2 {{ $hasProof ? 'border-emerald-300' : ($isPast ? 'border-rose-300' : ($isToday ? 'border-blue-300' : 'border-amber-300')) }}">
+                                                @else
+                                                <div
+                                                    class="w-12 h-12 rounded-lg {{ $hasProof ? 'bg-emerald-100' : ($isPast ? 'bg-rose-100' : ($isToday ? 'bg-blue-100' : 'bg-amber-100')) }} flex items-center justify-center">
+                                                    <svg class="w-6 h-6 {{ $hasProof ? 'text-emerald-500' : ($isPast ? 'text-rose-500' : ($isToday ? 'text-blue-500' : 'text-amber-500')) }}"
+                                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                                    </svg>
+                                                </div>
+                                                @endif
+                                            </div>
+
+                                            {{-- Details --}}
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-start justify-between gap-2">
+                                                    <h4 class="font-semibold text-gray-900 text-sm">
+                                                        {{ $schedule->inclusion->name ?? 'Unknown' }}
+                                                    </h4>
+                                                    {{-- Status Badge --}}
+                                                    @if($hasProof)
+                                                    <span
+                                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd"
+                                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                                clip-rule="evenodd" />
+                                                        </svg>
+                                                        Done
+                                                    </span>
+                                                    @elseif($isPast)
+                                                    <span
+                                                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">Overdue</span>
+                                                    @elseif($isToday)
+                                                    <span
+                                                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">Today</span>
+                                                    @else
+                                                    <span
+                                                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Upcoming</span>
+                                                    @endif
+                                                </div>
+
+                                                {{-- Date & Time --}}
+                                                <div
+                                                    class="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500">
+                                                    <span class="flex items-center gap-1">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                        </svg>
+                                                        {{ $scheduleDate->format('M d, Y') }}
+                                                    </span>
+                                                    @if($schedule->scheduled_time)
+                                                    <span class="flex items-center gap-1">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        {{ \Carbon\Carbon::parse($schedule->scheduled_time)->format('g:i
+                                                        A') }}
+                                                    </span>
+                                                    @endif
+                                                    @if($schedule->venue)
+                                                    <span class="flex items-center gap-1">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                        </svg>
+                                                        {{ Str::limit($schedule->venue, 20) }}
+                                                    </span>
+                                                    @endif
+                                                </div>
+
+                                                @if($schedule->remarks)
+                                                <p class="text-xs text-gray-600 mt-2 leading-relaxed">{{
+                                                    $schedule->remarks }}</p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @else
+                                    @php
+                                    $progress = $item['data'];
+                                    @endphp
+
+                                    {{-- Timeline Dot --}}
+                                    <div
+                                        class="absolute left-2 top-2 w-5 h-5 rounded-full border-4 border-white shadow-md transition-all
+                                            {{ $loop->first ? 'bg-indigo-500 ring-4 ring-indigo-100' : 'bg-indigo-400 group-hover:bg-indigo-500' }}">
+                                    </div>
+
+                                    {{-- Progress Card --}}
+                                    <div
+                                        class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition group-hover:border-indigo-200">
+                                        {{-- Type Badge --}}
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <span
+                                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                Progress
+                                            </span>
+                                            <span class="text-xs text-gray-400">{{ $item['event_name'] }}</span>
+                                            @if($loop->first)
+                                            <span
+                                                class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Latest</span>
+                                            @endif
+                                        </div>
+
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span
+                                                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-800">
+                                                {{ $progress->status }}
+                                            </span>
+                                            <span class="text-sm text-gray-500">
+                                                {{ $item['date']->format('M d, Y') }}
+                                            </span>
+                                        </div>
+                                        @if($progress->details)
+                                        <p class="text-gray-600 text-sm mt-2 leading-relaxed">{{ $progress->details }}
+                                        </p>
+                                        @endif
+                                        <div class="text-xs text-gray-400 mt-2">
+                                            Added {{ \Carbon\Carbon::parse($progress->created_at)->diffForHumans() }}
+                                        </div>
+                                    </div>
+                                    @endif
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @else
+                        <div class="text-center py-12">
+                            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <p class="text-gray-500 font-medium mb-2">No activity yet</p>
+                            <p class="text-gray-400 text-sm mb-4">Progress and schedules will appear as we prepare your
+                                event</p>
+                            <a href="{{ route('customer.events.create') }}"
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v16m8-8H4" />
+                                </svg>
+                                Book Your First Event
                             </a>
                         </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Footer Legend --}}
+                @if($timelineItems->count() > 0)
+                <div class="px-5 py-3 bg-gray-50 border-t border-gray-200">
+                    <div class="flex items-center justify-center gap-4 text-xs text-gray-500">
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Progress
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Schedule
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Completed
+                        </span>
+                    </div>
+                </div>
+                @endif
+            </div>
+
+            {{-- Event Filter Script --}}
+            <script>
+                function filterTimeline(eventId) {
+                    const items = document.querySelectorAll('.timeline-item');
+                    items.forEach(item => {
+                        if (eventId === 'all' || item.dataset.eventId === eventId) {
+                            item.style.display = '';
+                            item.style.opacity = '0';
+                            item.style.transform = 'translateX(-10px)';
+                            setTimeout(() => {
+                                item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                                item.style.opacity = '1';
+                                item.style.transform = 'translateX(0)';
+                            }, 50);
+                        } else {
+                            item.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                            item.style.opacity = '0';
+                            item.style.transform = 'translateX(-10px)';
+                            setTimeout(() => {
+                                item.style.display = 'none';
+                            }, 200);
+                        }
+                    });
+                }
+            </script>
+
+            {{-- Action Required Section --}}
+            @if(isset($pendingActions) && $pendingActions->count() > 0)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-rose-50 to-pink-50 border-b border-gray-200 px-5 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 bg-rose-500 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">Action Required</h3>
+                            <p class="text-xs text-gray-500">These items need your attention</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divide-y divide-gray-100">
+                    @foreach($pendingActions as $action)
+                    <div class="p-4 flex items-center justify-between hover:bg-gray-50 transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center
+                                {{ $action['type'] === 'payment' ? 'bg-emerald-100' : 'bg-amber-100' }}">
+                                @if($action['type'] === 'payment')
+                                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                @else
+                                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                @endif
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 text-sm">{{ $action['title'] }}</h4>
+                                <p class="text-xs text-gray-500">{{ $action['description'] }}</p>
+                            </div>
+                        </div>
+                        <a href="{{ $action['url'] }}"
+                            class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg hover:from-violet-700 hover:to-purple-700 transition shadow-sm">
+                            {{ $action['button'] }}
+                        </a>
                     </div>
                     @endforeach
                 </div>
             </div>
             @endif
+
+            {{-- Quick Links --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Quick Navigation</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <a href="{{ route('customer.events.index') }}"
+                        class="flex flex-col items-center justify-center gap-2 p-4 bg-violet-50 border border-violet-200 rounded-xl hover:bg-violet-100 hover:border-violet-300 transition group">
+                        <div
+                            class="w-10 h-10 bg-violet-100 group-hover:bg-violet-200 rounded-lg flex items-center justify-center transition">
+                            <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">My Events</span>
+                    </a>
+
+                    <a href="{{ route('customer.bookings') }}"
+                        class="flex flex-col items-center justify-center gap-2 p-4 bg-sky-50 border border-sky-200 rounded-xl hover:bg-sky-100 hover:border-sky-300 transition group">
+                        <div
+                            class="w-10 h-10 bg-sky-100 group-hover:bg-sky-200 rounded-lg flex items-center justify-center transition">
+                            <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">My Bookings</span>
+                    </a>
+
+                    <a href="{{ route('customer.billings') }}"
+                        class="flex flex-col items-center justify-center gap-2 p-4 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 hover:border-emerald-300 transition group">
+                        <div
+                            class="w-10 h-10 bg-emerald-100 group-hover:bg-emerald-200 rounded-lg flex items-center justify-center transition">
+                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Billings</span>
+                    </a>
+
+                    <a href="{{ route('customer.payments.index') }}"
+                        class="flex flex-col items-center justify-center gap-2 p-4 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 hover:border-amber-300 transition group">
+                        <div
+                            class="w-10 h-10 bg-amber-100 group-hover:bg-amber-200 rounded-lg flex items-center justify-center transition">
+                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700">Payments</span>
+                    </a>
+                </div>
+            </div>
 
             @endif
         </div>
@@ -1075,11 +1388,6 @@
                                 },
                                 ticks: {
                                     callback: function(value) {
-                                        // If value is 1000 or more, show in k format
-                                        if (value >= 1000) {
-                                            return '₱' + (value / 1000) + 'k';
-                                        }
-                                        // Otherwise show the actual value
                                         return '₱' + value.toLocaleString();
                                     }
                                 }
@@ -1094,7 +1402,7 @@
                 });
             }
 
-            // Events Timeline - Bar Chart
+            // Events per Month - Bar Chart
             const eventsCtx = document.getElementById('eventsChart');
             if (eventsCtx) {
                 new Chart(eventsCtx, {
@@ -1135,7 +1443,7 @@
                                     color: 'rgba(0, 0, 0, 0.05)'
                                 },
                                 ticks: {
-                                    stepSize: 5
+                                    stepSize: 1
                                 }
                             },
                             x: {
@@ -1147,28 +1455,28 @@
                     }
                 });
             }
-
+            
             @elseif($isStaff)
             // ============ STAFF CHARTS ============
             
-            // Staff Schedule Chart - Horizontal Bar
+            // Staff Schedule Chart - Bar
             const staffScheduleCtx = document.getElementById('staffScheduleChart');
             if (staffScheduleCtx) {
                 new Chart(staffScheduleCtx, {
                     type: 'bar',
                     data: {
-                        labels: {!! json_encode($staffScheduleLabels ?? []) !!},
+                        labels: {!! json_encode($staffScheduleLabels ?? ['Week 1', 'Week 2', 'Week 3', 'Week 4']) !!},
                         datasets: [{
                             label: 'Events',
-                            data: {!! json_encode($staffScheduleData ?? []) !!},
-                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                            borderColor: 'rgb(59, 130, 246)',
+                            data: {!! json_encode($staffScheduleData ?? [0, 0, 0, 0]) !!},
+                            backgroundColor: 'rgba(14, 165, 233, 0.8)',
+                            borderColor: 'rgb(14, 165, 233)',
                             borderWidth: 2,
                             borderRadius: 8,
+                            borderSkipped: false,
                         }]
                     },
                     options: {
-                        indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
@@ -1180,19 +1488,22 @@
                                 padding: 12,
                                 callbacks: {
                                     label: function(context) {
-                                        return context.parsed.x + ' events';
+                                        return context.parsed.y + ' events';
                                     }
                                 }
                             }
                         },
                         scales: {
-                            x: {
+                            y: {
                                 beginAtZero: true,
                                 grid: {
                                     color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    stepSize: 1
                                 }
                             },
-                            y: {
+                            x: {
                                 grid: {
                                     display: false
                                 }
@@ -1212,14 +1523,14 @@
                         datasets: [{
                             label: 'Earnings (₱)',
                             data: {!! json_encode($staffEarningsData ?? []) !!},
-                            borderColor: 'rgb(251, 191, 36)',
-                            backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                            borderColor: 'rgb(245, 158, 11)',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
                             borderWidth: 3,
                             fill: true,
                             tension: 0.4,
                             pointRadius: 5,
                             pointHoverRadius: 7,
-                            pointBackgroundColor: 'rgb(251, 191, 36)',
+                            pointBackgroundColor: 'rgb(245, 158, 11)',
                             pointBorderColor: '#fff',
                             pointBorderWidth: 2
                         }]
@@ -1262,121 +1573,21 @@
                     }
                 });
             }
-            
-            @else
-            // ============ CUSTOMER CHARTS ============
-            
-            // Customer Events Status - Doughnut Chart
-            const customerStatusCtx = document.getElementById('customerStatusChart');
-            if (customerStatusCtx) {
-                new Chart(customerStatusCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Upcoming', 'Completed', 'Cancelled'],
-                        datasets: [{
-                            data: {!! json_encode($customerStatusData ?? [0, 0, 0]) !!},
-                            backgroundColor: [
-                                'rgba(139, 92, 246, 0.8)',
-                                'rgba(16, 185, 129, 0.8)',
-                                'rgba(239, 68, 68, 0.8)',
-                            ],
-                            borderColor: [
-                                'rgb(139, 92, 246)',
-                                'rgb(16, 185, 129)',
-                                'rgb(239, 68, 68)',
-                            ],
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    padding: 15,
-                                    font: {
-                                        size: 12,
-                                        weight: '600'
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                padding: 12,
-                                callbacks: {
-                                    label: function(context) {
-                                        return context.label + ': ' + context.parsed + ' events';
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Customer Payment History - Bar Chart
-            const customerPaymentCtx = document.getElementById('customerPaymentChart');
-            if (customerPaymentCtx) {
-                new Chart(customerPaymentCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: {!! json_encode($customerPaymentLabels ?? []) !!},
-                        datasets: [{
-                            label: 'Payments (₱)',
-                            data: {!! json_encode($customerPaymentData ?? []) !!},
-                            backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                            borderColor: 'rgb(16, 185, 129)',
-                            borderWidth: 2,
-                            borderRadius: 8,
-                            borderSkipped: false,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                padding: 12,
-                                callbacks: {
-                                    label: function(context) {
-                                        return '₱' + context.parsed.y.toLocaleString();
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: 'rgba(0, 0, 0, 0.05)'
-                                },
-                                ticks: {
-                                    callback: function(value) {
-                                        // If value is 1000 or more, show in k format
-                                        if (value >= 1000) {
-                                            return '₱' + (value / 1000) + 'k';
-                                        }
-                                        // Otherwise show the actual value
-                                        return '₱' + value.toLocaleString();
-                                    }
-                                }
-                            },
-                            x: {
-                                grid: {
-                                    display: false
-                                }
-                            }
-                        }
-                    }
-                });
-            }
             @endif
+            // Note: Customer charts are now on the My Bookings page
         });
     </script>
+
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
 </x-app-layout>

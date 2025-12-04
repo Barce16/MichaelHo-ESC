@@ -22,12 +22,15 @@
                         :active="request()->routeIs('customer.events.*')">
                         {{ __('My Events') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('customer.payments.index')"
-                        :active="request()->routeIs('customer.payments.index')">
-                        {{ __('Payment History') }}
+                    <x-nav-link :href="route('customer.bookings')" :active="request()->routeIs('customer.bookings')">
+                        {{ __('My Bookings') }}
                     </x-nav-link>
                     <x-nav-link :href="route('customer.billings')" :active="request()->routeIs('customer.billings')">
                         {{ __('Billings') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('customer.payments.index')"
+                        :active="request()->routeIs('customer.payments.index')">
+                        {{ __('Payments') }}
                     </x-nav-link>
                     @endif
 
@@ -148,61 +151,40 @@
                         'bg-gray-100 text-gray-600': notification.type === 'schedule_removed',
                         'bg-teal-100 text-teal-600': notification.type === 'payroll_paid',
                         'bg-yellow-100 text-yellow-600': notification.type === 'customer_feedback',
-                        'bg-indigo-100 text-indigo-600': notification.type === 'receipt_request',
-                    }" class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                        'bg-indigo-100 text-indigo-600': notification.type === 'inclusion_change_request',
+                        'bg-amber-100 text-amber-600': notification.type === 'proof_uploaded',
+                    }" class="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         stroke-width="2"
-                                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                                 </svg>
                                             </div>
-
                                             <div class="flex-1 min-w-0">
-                                                <p class="text-sm font-semibold text-gray-900 mb-1"
-                                                    x-text="notification.title"></p>
-                                                <p class="text-xs text-gray-600 line-clamp-2 leading-relaxed"
+                                                <div class="text-sm font-semibold text-gray-900"
+                                                    x-text="notification.title"></div>
+                                                <p class="text-xs text-gray-600 mt-0.5 line-clamp-2"
                                                     x-text="notification.message"></p>
-                                                <p class="text-xs text-gray-400 mt-2"
-                                                    x-text="formatDate(notification.created_at)"></p>
+                                                <span class="text-xs text-gray-400 mt-1 block"
+                                                    x-text="formatDate(notification.created_at)"></span>
                                             </div>
-
-                                            <template x-if="!notification.is_read">
-                                                <span
-                                                    class="w-2.5 h-2.5 bg-blue-600 rounded-full flex-shrink-0 mt-1"></span>
-                                            </template>
+                                            <div x-show="!notification.is_read" class="flex-shrink-0">
+                                                <span class="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
+                                            </div>
                                         </div>
                                     </a>
                                 </template>
                             </div>
-
-                            {{-- sticky footer (always visible at bottom) --}}
-                            <div class="px-4 py-3 border-t border-gray-100 bg-white flex items-center justify-center">
-                                <a href="{{ route('notifications.all') }}"
-                                    class="w-full inline-flex items-center justify-center gap-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md transition">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                        aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                    </svg>
-                                    View all notifications
-                                </a>
-                            </div>
                         </div>
                     </div>
-
-
                 </div>
 
-
-                <!-- User Profile -->
-                <img src="{{ Auth::user()->profile_photo_url }}" class="h-8 w-8 rounded-full object-cover"
-                    alt="{{ Auth::user()->name }}">
-
+                <!-- User Dropdown -->
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition">
+                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
                             <div>{{ Auth::user()->name }}</div>
                             <div class="ms-1">
                                 <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
@@ -214,8 +196,11 @@
                             </div>
                         </button>
                     </x-slot>
+
                     <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">{{ __('Profile') }}</x-dropdown-link>
+                        <x-dropdown-link :href="route('profile.edit')">
+                            {{ __('Profile') }}
+                        </x-dropdown-link>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
@@ -227,10 +212,10 @@
                 </x-dropdown>
             </div>
 
-            <!-- Hamburger -->
+            <!-- Hamburger Mobile -->
             <div class="-me-2 flex items-center sm:hidden">
                 <button @click="open = ! open"
-                    class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none transition">
+                    class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex"
                             stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -243,25 +228,28 @@
         </div>
     </div>
 
-    <!-- Mobile -->
+    <!-- Responsive Nav -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
 
-            {{-- Customer-only --}}
+            {{-- Customer-only mobile --}}
             @if($user && $user->user_type === 'customer')
             <x-responsive-nav-link :href="route('customer.events.index')"
                 :active="request()->routeIs('customer.events.*')">
                 {{ __('My Events') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('customer.payments.index')"
-                :active="request()->routeIs('customer.payments.index')">
-                {{ __(key: 'Payment History') }}
+            <x-responsive-nav-link :href="route('customer.bookings')" :active="request()->routeIs('customer.bookings')">
+                {{ __('My Bookings') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('customer.billings')" :active="request()->routeIs('customer.billings')">
-                {{ __(key: 'Billings') }}
+                {{ __('Billings') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('customer.payments.index')"
+                :active="request()->routeIs('customer.payments.index')">
+                {{ __('Payments') }}
             </x-responsive-nav-link>
             @endif
 
@@ -303,9 +291,6 @@
 
             {{-- STAFF --}}
             @if ($user->user_type === 'staff')
-            <x-responsive-nav-link :href="route('admin.events.index')" :active="request()->routeIs('admin.events.*')">
-                {{ __('Events') }}
-            </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('staff.schedules.index')"
                 :active="request()->routeIs('staff.schedule.*')">
                 {{ __('Schedule') }}

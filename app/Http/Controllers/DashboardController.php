@@ -9,6 +9,7 @@ use App\Models\Event;
 use App\Models\Customer;
 use App\Models\Package;
 use App\Models\Payment;
+use App\Models\EventSchedule;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -220,75 +221,153 @@ class DashboardController extends Controller
                 'staffEarningsData'
             ));
         } else {
-            // ============ CUSTOMER VIEW ============
+            // ============ CUSTOMER VIEW - NEW SCHEDULES & PROGRESS FOCUSED ============
             $customer = $user->customer;
 
             if (!$customer) {
                 return view('dashboard', [
-                    'upcoming'     => 0,
-                    'recentEvents' => collect(),
-                    'packages'     => collect(),
-                    'customerStatusData' => [0, 0, 0],
-                    'customerPaymentLabels' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    'customerPaymentData' => [0, 0, 0, 0, 0, 0],
+                    'totalEvents' => 0,
+                    'upcoming' => 0,
+                    'completed' => 0,
+                    'upcomingSchedules' => collect(),
+                    'activeEvents' => collect(),
+                    'pendingActions' => collect(),
                 ]);
             }
 
-            $packages = Package::with(['inclusions'])
-                ->where('is_active', true)
-                ->orderBy('price')
-                ->take(6)
-                ->get();
+            // Get all events for this customer
+            $events = Event::where('customer_id', $customer->id)->get();
 
-            $recentEvents = Event::where('customer_id', $customer->id)
-                ->orderByDesc('event_date')
-                ->limit(10)
-                ->get();
-
-            $upcoming = Event::where('customer_id', $customer->id)
-                ->where('event_date', '>=', now())
-                ->count();
-
-            // Chart data - Customer event status
-            $customerStatusData = [
-                Event::where('customer_id', $customer->id)
-                    ->whereIn('status', ['approved', 'scheduled', 'meeting'])
-                    ->where('event_date', '>=', now())
-                    ->count(),
-                Event::where('customer_id', $customer->id)
-                    ->where('status', 'completed')
-                    ->count(),
-                Event::where('customer_id', $customer->id)
-                    ->whereIn('status', ['cancelled', 'rejected'])
-                    ->count(),
-            ];
-
-            // Payment history for last 6 months
-            $customerPaymentLabels = [];
-            $customerPaymentData = [];
-            for ($i = 5; $i >= 0; $i--) {
-                $month = now()->subMonths($i);
-                $customerPaymentLabels[] = $month->format('M');
-
-                // Get payments for this customer's events
-                $payments = Payment::whereHas('billing.event', function ($q) use ($customer) {
-                    $q->where('customer_id', $customer->id);
+            // Stats
+            $totalEvents = $events->count();
+            $upcoming = $events->whereIn('status', ['approved', 'request_meeting', 'meeting', 'scheduled', 'ongoing'])
+                ->filter(function ($event) {
+                    return Carbon::parse($event->event_date)->gte(now()->startOfDay());
                 })
-                    ->whereMonth('payment_date', $month->month)
-                    ->whereYear('payment_date', $month->year)
-                    ->where('status', 'approved')
-                    ->sum('amount');
+                ->count();
+            $completed = $events->where('status', 'completed')->count();
 
-                $customerPaymentData[] = $payments;
+            // Upcoming schedules (inclusion schedules for customer's events)
+            $upcomingSchedules = EventSchedule::with(['event', 'inclusion', 'staff'])
+                ->whereHas('event', function ($q) use ($customer) {
+                    $q->where('customer_id', $customer->id)
+                        ->whereNotIn('status', ['completed', 'cancelled', 'rejected']);
+                })
+                ->whereNotNull('scheduled_date')
+                ->orderBy('scheduled_date', 'asc')
+                ->orderBy('scheduled_time', 'asc')
+                ->get();
+
+            // Active events (not completed/cancelled) with progress - for the progress panel
+            $activeEvents = Event::where('customer_id', $customer->id)
+                ->whereNotIn('status', ['completed', 'cancelled', 'rejected'])
+                ->with(['progress' => function ($q) {
+                    $q->orderBy('progress_date', 'desc');
+                }])
+                ->orderBy('event_date', 'asc')
+                ->get();
+
+            // Pending actions (payments needed, etc.)
+            $pendingActions = collect();
+
+            foreach ($events as $event) {
+                // Skip completed/cancelled events
+                if (in_array($event->status, ['completed', 'cancelled', 'rejected'])) {
+                    continue;
+                }
+
+                // Load billing relationship if not loaded
+                if (!$event->relationLoaded('billing')) {
+                    $event->load('billing.payments');
+                }
+
+                // Check for pending intro payment
+                if ($event->status === 'request_meeting') {
+                    $hasPendingIntro = false;
+                    if ($event->billing) {
+                        $hasPendingIntro = $event->billing->payments()
+                            ->where('payment_type', 'introductory')
+                            ->where('status', 'pending')
+                            ->exists();
+                    }
+
+                    if (!$hasPendingIntro) {
+                        $pendingActions->push([
+                            'type' => 'payment',
+                            'title' => 'Introductory Payment Required',
+                            'description' => "Pay ₱5,000 for '{$event->name}' to schedule a meeting",
+                            'url' => route('customer.payments.createIntro', $event),
+                            'button' => 'Pay Now',
+                            'priority' => 1,
+                        ]);
+                    }
+                }
+
+                // Check for pending downpayment
+                if ($event->status === 'meeting' && $event->billing && $event->billing->downpayment_amount > 0) {
+                    $hasApprovedDownpayment = $event->billing->payments()
+                        ->where('payment_type', 'downpayment')
+                        ->where('status', 'approved')
+                        ->exists();
+
+                    $hasPendingDownpayment = $event->billing->payments()
+                        ->where('payment_type', 'downpayment')
+                        ->where('status', 'pending')
+                        ->exists();
+
+                    if (!$hasApprovedDownpayment && !$hasPendingDownpayment) {
+                        $amount = $event->billing->downpayment_amount - ($event->billing->introductory_payment_amount ?? 0);
+                        $pendingActions->push([
+                            'type' => 'payment',
+                            'title' => 'Downpayment Required',
+                            'description' => "Pay ₱" . number_format($amount, 2) . " for '{$event->name}' to confirm",
+                            'url' => route('customer.payments.createDownpayment', $event),
+                            'button' => 'Pay Now',
+                            'priority' => 2,
+                        ]);
+                    }
+                }
+
+                // Check for balance payment available
+                if (in_array($event->status, ['scheduled', 'ongoing']) && $event->billing) {
+                    $hasDownpaymentPaid = $event->billing->payments()
+                        ->where('payment_type', 'downpayment')
+                        ->where('status', 'approved')
+                        ->exists();
+
+                    $remainingBalance = $event->billing->remaining_balance ?? 0;
+
+                    if ($hasDownpaymentPaid && $remainingBalance > 0) {
+                        // Check if no pending balance payment
+                        $hasPendingBalance = $event->billing->payments()
+                            ->where('payment_type', 'balance')
+                            ->where('status', 'pending')
+                            ->exists();
+
+                        if (!$hasPendingBalance) {
+                            $pendingActions->push([
+                                'type' => 'payment',
+                                'title' => 'Balance Payment Available',
+                                'description' => "₱" . number_format($remainingBalance, 2) . " remaining for '{$event->name}'",
+                                'url' => route('customer.payments.create', $event),
+                                'button' => 'Pay Balance',
+                                'priority' => 3,
+                            ]);
+                        }
+                    }
+                }
             }
 
+            // Sort by priority and take top 5
+            $pendingActions = $pendingActions->sortBy('priority')->take(5);
+
             return view('dashboard', compact(
+                'totalEvents',
                 'upcoming',
-                'recentEvents',
-                'packages',
-                'customerStatusData',
-                'customerPaymentLabels',
-                'customerPaymentData'
+                'completed',
+                'upcomingSchedules',
+                'activeEvents',
+                'pendingActions'
             ));
         }
     }

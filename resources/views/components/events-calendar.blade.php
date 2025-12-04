@@ -52,7 +52,7 @@ $data['customer_name'] = isset($event->customer->user) ? $event->customer->user-
 return $data;
 })->filter()->values()->toArray();
 
-// Convert schedules to array format with image
+// Convert schedules to array format with image and proof_image
 $schedulesCollection = collect($schedules);
 $schedulesArray = $schedulesCollection->map(function($schedule) {
 if (!is_object($schedule)) return null;
@@ -72,6 +72,12 @@ if ($schedule->inclusion && $schedule->inclusion->image) {
 $imageUrl = Storage::url($schedule->inclusion->image);
 }
 
+// Get proof image URL
+$proofImageUrl = null;
+if ($schedule->proof_image) {
+$proofImageUrl = asset('storage/' . $schedule->proof_image);
+}
+
 return [
 'id' => $schedule->id ?? 0,
 'name' => $schedule->inclusion->name ?? 'Unknown',
@@ -84,6 +90,8 @@ null,
 'image' => $imageUrl,
 'category' => $schedule->inclusion->category ?? null,
 'type' => 'schedule',
+'proof_image' => $proofImageUrl,
+'has_proof' => !empty($schedule->proof_image),
 ];
 })->filter()->values()->toArray();
 
@@ -185,27 +193,14 @@ return [
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
         <div @click.stop class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 scale-95 -translate-y-4"
-            x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+            x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100">
 
             {{-- Modal Header --}}
-            <div class="bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3">
+            <div class="bg-gradient-to-r from-violet-500 to-indigo-500 px-4 py-3">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-white text-sm">Filter by Event</h4>
-                            <p class="text-[10px] text-white/70"><span x-text="eventFilterList.length"></span> event(s)
-                                available</p>
-                        </div>
-                    </div>
-                    <button @click="showEventFilter = false" class="text-white/80 hover:text-white transition p-1">
+                    <h4 class="font-semibold text-white text-sm">Filter by Event</h4>
+                    <button @click="showEventFilter = false" class="text-white/80 hover:text-white transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12" />
@@ -214,10 +209,10 @@ return [
                 </div>
             </div>
 
-            {{-- Search Box --}}
+            {{-- Search --}}
             <div class="p-3 border-b border-gray-200">
                 <div class="relative">
-                    <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none"
+                    <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -228,14 +223,14 @@ return [
             </div>
 
             {{-- Events List --}}
-            <div class="max-h-[50vh] overflow-y-auto">
+            <div class="max-h-80 overflow-y-auto">
                 {{-- All Events Option --}}
                 <button type="button" @click="selectEvent('', 'All Events')"
                     class="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition border-b border-gray-100"
                     :class="selectedEventId === '' ? 'bg-violet-50' : ''">
                     <div
-                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-100 to-indigo-100 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                         </svg>
@@ -245,7 +240,7 @@ return [
                         <div class="text-[10px] text-gray-500">Show all events and schedules</div>
                     </div>
                     <div x-show="selectedEventId === ''"
-                        class="w-5 h-5 bg-violet-500 rounded-full flex items-center justify-center">
+                        class="w-5 h-5 bg-violet-500 rounded-full flex items-center justify-center flex-shrink-0">
                         <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
@@ -338,7 +333,8 @@ return [
                             'cursor-pointer hover:shadow-md hover:scale-[1.02]': day.events.length > 0 || day.schedules.length > 0 || day.progressUpdates.length > 0,
                             'bg-violet-50 border-violet-300': day.events.length > 0,
                             'bg-indigo-50 border-indigo-300': day.events.length === 0 && day.progressUpdates.length > 0 && day.schedules.length === 0,
-                            'bg-amber-50 border-amber-300': day.events.length === 0 && day.progressUpdates.length === 0 && day.schedules.length > 0,
+                            'bg-emerald-50 border-emerald-300': day.events.length === 0 && day.progressUpdates.length === 0 && day.schedules.length > 0 && day.schedules.every(s => s.has_proof),
+                            'bg-amber-50 border-amber-300': day.events.length === 0 && day.progressUpdates.length === 0 && day.schedules.length > 0 && !day.schedules.every(s => s.has_proof),
                             'border-gray-200': day.events.length === 0 && day.schedules.length === 0 && day.progressUpdates.length === 0
                         }" class="h-[75px] p-1 rounded border transition-all relative overflow-hidden">
 
@@ -354,7 +350,10 @@ return [
                                 <span x-show="day.progressUpdates.length > 0"
                                     class="w-3.5 h-3.5 flex items-center justify-center text-[7px] font-bold text-white bg-indigo-500 rounded-full"
                                     x-text="day.progressUpdates.length"></span>
-                                <span x-show="day.schedules.length > 0"
+                                <span x-show="day.schedules.length > 0 && day.schedules.every(s => s.has_proof)"
+                                    class="w-3.5 h-3.5 flex items-center justify-center text-[7px] font-bold text-white bg-emerald-500 rounded-full"
+                                    x-text="day.schedules.length"></span>
+                                <span x-show="day.schedules.length > 0 && !day.schedules.every(s => s.has_proof)"
                                     class="w-3.5 h-3.5 flex items-center justify-center text-[7px] font-bold text-white bg-amber-500 rounded-full"
                                     x-text="day.schedules.length"></span>
                             </div>
@@ -398,18 +397,19 @@ return [
                             <div class="flex items-stretch gap-1 mt-0.5 h-[45px]">
                                 {{-- First schedule --}}
                                 <template x-if="day.schedules[0]">
-                                    <div class="flex gap-1 flex-1 min-w-0">
-                                        {{-- Tall Image --}}
-                                        <div
-                                            class="w-11 h-full rounded overflow-hidden border border-amber-300 bg-amber-100 flex-shrink-0">
+                                    <div class="flex items-stretch gap-1 flex-1 min-w-0">
+                                        {{-- Image --}}
+                                        <div class="w-[35px] h-full rounded overflow-hidden flex-shrink-0"
+                                            :class="day.schedules[0].has_proof ? 'bg-emerald-200 border border-emerald-300' : 'bg-amber-200 border border-amber-300'">
                                             <template x-if="day.schedules[0].image">
                                                 <img :src="day.schedules[0].image" :alt="day.schedules[0].name"
                                                     class="w-full h-full object-cover">
                                             </template>
                                             <template x-if="!day.schedules[0].image">
                                                 <div class="w-full h-full flex items-center justify-center">
-                                                    <svg class="w-4 h-4 text-amber-500" fill="none"
-                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                    <svg class="w-4 h-4"
+                                                        :class="day.schedules[0].has_proof ? 'text-emerald-500' : 'text-amber-500'"
+                                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
                                                             stroke-width="2"
                                                             d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -419,12 +419,19 @@ return [
                                         </div>
                                         {{-- Name --}}
                                         <div class="flex-1 min-w-0 flex flex-col justify-center">
-                                            <span
-                                                class="text-[8px] text-amber-800 font-semibold leading-tight line-clamp-2"
-                                                x-text="day.schedules[0].name"></span>
-                                            <template x-if="day.schedules.length > 1">
-                                                <span class="text-[7px] text-amber-600 mt-0.5">+<span
-                                                        x-text="day.schedules.length - 1"></span> more</span>
+                                            <div class="text-[8px] font-semibold truncate leading-tight"
+                                                :class="day.schedules[0].has_proof ? 'text-emerald-800' : 'text-amber-800'"
+                                                x-text="day.schedules[0].name"></div>
+                                            <template x-if="day.schedules[0].has_proof">
+                                                <div class="flex items-center gap-0.5 mt-0.5">
+                                                    <svg class="w-2.5 h-2.5 text-emerald-600" fill="currentColor"
+                                                        viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd"
+                                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                            clip-rule="evenodd" />
+                                                    </svg>
+                                                    <span class="text-[7px] font-semibold text-emerald-600">Done</span>
+                                                </div>
                                             </template>
                                         </div>
                                     </div>
@@ -433,46 +440,21 @@ return [
                         </template>
                     </div>
 
-                    {{-- Outside month (empty) --}}
-                    <div x-show="!day.inCurrentMonth" class="h-[75px]"></div>
+                    {{-- Empty day placeholder --}}
+                    <div x-show="!day.inCurrentMonth" class="h-[75px] bg-gray-50/50 rounded"></div>
                 </div>
             </template>
         </div>
-
-        {{-- Legend - Compact --}}
-        <div class="mt-2 pt-2 border-t border-gray-200">
-            <div class="flex flex-wrap items-center justify-center gap-3 text-[10px]">
-                <div class="flex items-center gap-1">
-                    <div class="w-4 h-4 rounded bg-violet-100 border border-violet-400 flex items-center justify-center text-[8px] font-bold text-violet-600"
-                        x-text="eventsInMonth"></div>
-                    <span class="text-gray-600">Events</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <div class="w-4 h-4 rounded bg-indigo-100 border border-indigo-400 flex items-center justify-center text-[8px] font-bold text-indigo-600"
-                        x-text="progressInMonth"></div>
-                    <span class="text-gray-600">Progress</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <div class="w-4 h-4 rounded bg-amber-100 border border-amber-400 flex items-center justify-center text-[8px] font-bold text-amber-600"
-                        x-text="schedulesInMonth"></div>
-                    <span class="text-gray-600">Schedules</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <div class="w-4 h-4 rounded border border-violet-500 ring-1 ring-violet-500 ring-offset-1"></div>
-                    <span class="text-gray-600">Today</span>
-                </div>
-            </div>
-        </div>
     </div>
 
-    {{-- Day Detail Modal --}}
+    {{-- Day Detail Modal - Compact --}}
     <div x-show="showModal" x-cloak @click.self="showModal = false" @keydown.escape.window="showModal = false"
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-        <div @click.stop class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden"
+        <div @click.stop class="bg-white rounded-xl shadow-2xl max-w-sm w-full max-h-[80vh] overflow-hidden"
             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95"
             x-transition:enter-end="opacity-100 scale-100">
 
@@ -480,7 +462,7 @@ return [
             <div class="bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 flex items-center justify-between">
                 <div>
                     <h4 class="font-bold text-white text-sm" x-text="modalDate"></h4>
-                    <p class="text-[10px] text-white/70 mt-0.5">
+                    <p class="text-[10px] text-white/80">
                         <span x-text="selectedDayEvents.length"></span> event(s),
                         <span x-text="selectedDayProgress.length"></span> progress,
                         <span x-text="selectedDaySchedules.length"></span> schedule(s)
@@ -494,7 +476,8 @@ return [
                 </button>
             </div>
 
-            <div class="overflow-y-auto max-h-[65vh]">
+            {{-- Modal Content - Scrollable --}}
+            <div class="overflow-y-auto max-h-[60vh]">
                 {{-- Events Section --}}
                 <div x-show="selectedDayEvents.length > 0" class="p-3 border-b border-gray-100">
                     <h5
@@ -505,50 +488,38 @@ return [
                     <div class="space-y-2">
                         <template x-for="event in selectedDayEvents" :key="event.id">
                             <div class="p-2.5 rounded-lg bg-violet-50 border border-violet-200">
-                                <div class="flex items-start justify-between gap-2">
-                                    <div class="min-w-0 flex-1">
-                                        <h6 class="font-semibold text-violet-900 text-xs truncate" x-text="event.name">
-                                        </h6>
-                                        @if($userType === 'admin')
-                                        <p class="text-[10px] text-violet-600 mt-0.5" x-text="event.customer_name"></p>
-                                        @endif
-                                        <p class="text-[10px] text-violet-600 mt-0.5"
-                                            x-text="event.venue || 'No venue'"></p>
+                                <div class="flex items-center justify-between gap-2 mb-1.5">
+                                    <span class="font-semibold text-violet-900 text-xs truncate"
+                                        x-text="event.name"></span>
+                                    <span
+                                        class="shrink-0 px-2 py-0.5 text-[9px] font-semibold rounded-full bg-violet-100 text-violet-700"
+                                        x-text="event.status.charAt(0).toUpperCase() + event.status.slice(1)"></span>
+                                </div>
+                                <p x-show="event.venue" class="text-[10px] text-violet-600 flex items-center gap-1">
+                                    <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <span class="truncate" x-text="event.venue"></span>
+                                </p>
+                                <template x-if="event.progress_count > 0">
+                                    <div class="flex items-center justify-between mt-2 pt-2 border-t border-violet-200">
+                                        <span class="text-[10px] text-violet-600">
+                                            <span x-text="event.progress_count"></span> progress update(s)
+                                        </span>
+                                        <button type="button" @click="showProgressModal(event)"
+                                            class="text-[10px] font-semibold text-violet-700 hover:text-violet-900 transition flex items-center gap-1">
+                                            View
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </button>
                                     </div>
-                                    <span class="shrink-0 px-2 py-0.5 text-[9px] font-semibold rounded-full" :class="{
-                                            'bg-amber-100 text-amber-700': event.status === 'requested',
-                                            'bg-emerald-100 text-emerald-700': event.status === 'approved',
-                                            'bg-blue-100 text-blue-700': event.status === 'meeting',
-                                            'bg-violet-100 text-violet-700': event.status === 'scheduled',
-                                            'bg-green-100 text-green-700': event.status === 'completed',
-                                            'bg-gray-100 text-gray-700': !['requested','approved','meeting','scheduled','completed'].includes(event.status)
-                                        }" x-text="event.status.charAt(0).toUpperCase() + event.status.slice(1)">
-                                    </span>
-                                </div>
-                                {{-- Action Buttons --}}
-                                <div class="flex items-center gap-2 mt-2 pt-2 border-t border-violet-200">
-                                    <a :href="'{{ $userType === 'admin' ? '/admin/events/' : '/customer/events/' }}' + event.id"
-                                        class="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium text-violet-700 bg-white border border-violet-300 rounded-lg hover:bg-violet-100 transition">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                        View Event
-                                    </a>
-                                    <button type="button" x-show="event.progress_count > 0"
-                                        @click="showProgressModal(event)"
-                                        class="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 text-[10px] font-medium text-indigo-700 bg-indigo-100 border border-indigo-300 rounded-lg hover:bg-indigo-200 transition">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                                        </svg>
-                                        Progress
-                                        <span class="px-1 py-0.5 text-[8px] bg-indigo-200 rounded-full"
-                                            x-text="event.progress_count"></span>
-                                    </button>
-                                </div>
+                                </template>
                             </div>
                         </template>
                     </div>
@@ -587,18 +558,20 @@ return [
                     </h5>
                     <div class="space-y-2">
                         <template x-for="schedule in selectedDaySchedules" :key="schedule.id">
-                            <div class="flex gap-3 p-2.5 rounded-lg bg-amber-50 border border-amber-200">
+                            <div class="flex gap-3 p-2.5 rounded-lg border"
+                                :class="schedule.has_proof ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'">
                                 {{-- Image --}}
-                                <div
-                                    class="w-14 h-14 rounded-lg overflow-hidden border border-amber-300 bg-amber-100 flex-shrink-0">
+                                <div class="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0"
+                                    :class="schedule.has_proof ? 'border border-emerald-300 bg-emerald-100' : 'border border-amber-300 bg-amber-100'">
                                     <template x-if="schedule.image">
                                         <img :src="schedule.image" :alt="schedule.name"
                                             class="w-full h-full object-cover">
                                     </template>
                                     <template x-if="!schedule.image">
                                         <div class="w-full h-full flex items-center justify-center">
-                                            <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
+                                            <svg class="w-6 h-6"
+                                                :class="schedule.has_proof ? 'text-emerald-400' : 'text-amber-400'"
+                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                             </svg>
@@ -607,10 +580,28 @@ return [
                                 </div>
                                 {{-- Details --}}
                                 <div class="flex-1 min-w-0">
-                                    <h6 class="font-semibold text-amber-900 text-xs" x-text="schedule.name"></h6>
-                                    <p class="text-[10px] text-amber-700 mt-0.5" x-text="schedule.event_name"></p>
+                                    <div class="flex items-start justify-between gap-2">
+                                        <h6 class="font-semibold text-xs"
+                                            :class="schedule.has_proof ? 'text-emerald-900' : 'text-amber-900'"
+                                            x-text="schedule.name"></h6>
+                                        <template x-if="schedule.has_proof">
+                                            <span
+                                                class="shrink-0 px-1.5 py-0.5 text-[9px] font-semibold rounded-full bg-emerald-500 text-white flex items-center gap-0.5">
+                                                <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                                Done
+                                            </span>
+                                        </template>
+                                    </div>
+                                    <p class="text-[10px] mt-0.5"
+                                        :class="schedule.has_proof ? 'text-emerald-700' : 'text-amber-700'"
+                                        x-text="schedule.event_name"></p>
                                     <template x-if="schedule.scheduled_time">
-                                        <p class="text-[10px] text-amber-600 mt-0.5 flex items-center gap-1">
+                                        <p class="text-[10px] mt-0.5 flex items-center gap-1"
+                                            :class="schedule.has_proof ? 'text-emerald-600' : 'text-amber-600'">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -619,8 +610,8 @@ return [
                                         </p>
                                     </template>
                                     <template x-if="schedule.category">
-                                        <span
-                                            class="inline-block mt-1 px-1.5 py-0.5 text-[8px] font-medium bg-amber-200 text-amber-800 rounded"
+                                        <span class="inline-block mt-1 px-1.5 py-0.5 text-[8px] font-medium rounded"
+                                            :class="schedule.has_proof ? 'bg-emerald-200 text-emerald-800' : 'bg-amber-200 text-amber-800'"
                                             x-text="schedule.category"></span>
                                     </template>
                                 </div>
@@ -675,15 +666,17 @@ return [
                     <div class="space-y-2">
                         <template x-for="schedule in sortedFilteredSchedules" :key="schedule.id">
                             <div class="flex gap-3 p-3 rounded-lg border transition-all" :class="{
-                                'bg-rose-50 border-rose-200': isOverdue(schedule.scheduled_date),
-                                'bg-blue-50 border-blue-200': isToday(schedule.scheduled_date),
-                                'bg-amber-50 border-amber-200': !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
+                                'bg-emerald-50 border-emerald-200': schedule.has_proof,
+                                'bg-rose-50 border-rose-200': !schedule.has_proof && isOverdue(schedule.scheduled_date),
+                                'bg-blue-50 border-blue-200': !schedule.has_proof && isToday(schedule.scheduled_date),
+                                'bg-amber-50 border-amber-200': !schedule.has_proof && !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
                             }">
                                 {{-- Image --}}
                                 <div class="w-16 h-16 rounded-lg overflow-hidden border flex-shrink-0" :class="{
-                                    'border-rose-300 bg-rose-100': isOverdue(schedule.scheduled_date),
-                                    'border-blue-300 bg-blue-100': isToday(schedule.scheduled_date),
-                                    'border-amber-300 bg-amber-100': !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
+                                    'border-emerald-300 bg-emerald-100': schedule.has_proof,
+                                    'border-rose-300 bg-rose-100': !schedule.has_proof && isOverdue(schedule.scheduled_date),
+                                    'border-blue-300 bg-blue-100': !schedule.has_proof && isToday(schedule.scheduled_date),
+                                    'border-amber-300 bg-amber-100': !schedule.has_proof && !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
                                 }">
                                     <template x-if="schedule.image">
                                         <img :src="schedule.image" :alt="schedule.name"
@@ -692,9 +685,10 @@ return [
                                     <template x-if="!schedule.image">
                                         <div class="w-full h-full flex items-center justify-center">
                                             <svg class="w-6 h-6" :class="{
-                                                'text-rose-400': isOverdue(schedule.scheduled_date),
-                                                'text-blue-400': isToday(schedule.scheduled_date),
-                                                'text-amber-400': !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
+                                                'text-emerald-400': schedule.has_proof,
+                                                'text-rose-400': !schedule.has_proof && isOverdue(schedule.scheduled_date),
+                                                'text-blue-400': !schedule.has_proof && isToday(schedule.scheduled_date),
+                                                'text-amber-400': !schedule.has_proof && !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
                                             }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -708,27 +702,31 @@ return [
                                     <div class="flex items-start justify-between gap-2">
                                         <div class="min-w-0">
                                             <h6 class="font-semibold text-sm truncate" :class="{
-                                                'text-rose-900': isOverdue(schedule.scheduled_date),
-                                                'text-blue-900': isToday(schedule.scheduled_date),
-                                                'text-amber-900': !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
+                                                'text-emerald-900': schedule.has_proof,
+                                                'text-rose-900': !schedule.has_proof && isOverdue(schedule.scheduled_date),
+                                                'text-blue-900': !schedule.has_proof && isToday(schedule.scheduled_date),
+                                                'text-amber-900': !schedule.has_proof && !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
                                             }" x-text="schedule.name"></h6>
                                             <p class="text-xs mt-0.5" :class="{
-                                                'text-rose-700': isOverdue(schedule.scheduled_date),
-                                                'text-blue-700': isToday(schedule.scheduled_date),
-                                                'text-amber-700': !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
+                                                'text-emerald-700': schedule.has_proof,
+                                                'text-rose-700': !schedule.has_proof && isOverdue(schedule.scheduled_date),
+                                                'text-blue-700': !schedule.has_proof && isToday(schedule.scheduled_date),
+                                                'text-amber-700': !schedule.has_proof && !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
                                             }" x-text="schedule.event_name"></p>
                                         </div>
                                         <div class="text-right shrink-0">
                                             <div class="text-xs font-semibold" :class="{
-                                                'text-rose-700': isOverdue(schedule.scheduled_date),
-                                                'text-blue-700': isToday(schedule.scheduled_date),
-                                                'text-amber-700': !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
+                                                'text-emerald-700': schedule.has_proof,
+                                                'text-rose-700': !schedule.has_proof && isOverdue(schedule.scheduled_date),
+                                                'text-blue-700': !schedule.has_proof && isToday(schedule.scheduled_date),
+                                                'text-amber-700': !schedule.has_proof && !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
                                             }" x-text="formatScheduleDate(schedule.scheduled_date)"></div>
                                             <template x-if="schedule.scheduled_time">
                                                 <div class="text-[10px] mt-0.5" :class="{
-                                                    'text-rose-600': isOverdue(schedule.scheduled_date),
-                                                    'text-blue-600': isToday(schedule.scheduled_date),
-                                                    'text-amber-600': !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
+                                                    'text-emerald-600': schedule.has_proof,
+                                                    'text-rose-600': !schedule.has_proof && isOverdue(schedule.scheduled_date),
+                                                    'text-blue-600': !schedule.has_proof && isToday(schedule.scheduled_date),
+                                                    'text-amber-600': !schedule.has_proof && !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
                                                 }" x-text="schedule.scheduled_time"></div>
                                             </template>
                                         </div>
@@ -736,27 +734,42 @@ return [
                                     <div class="flex items-center gap-2 mt-1.5">
                                         <template x-if="schedule.category">
                                             <span class="px-1.5 py-0.5 text-[9px] font-medium rounded" :class="{
-                                                'bg-rose-200 text-rose-800': isOverdue(schedule.scheduled_date),
-                                                'bg-blue-200 text-blue-800': isToday(schedule.scheduled_date),
-                                                'bg-amber-200 text-amber-800': !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
+                                                'bg-emerald-200 text-emerald-800': schedule.has_proof,
+                                                'bg-rose-200 text-rose-800': !schedule.has_proof && isOverdue(schedule.scheduled_date),
+                                                'bg-blue-200 text-blue-800': !schedule.has_proof && isToday(schedule.scheduled_date),
+                                                'bg-amber-200 text-amber-800': !schedule.has_proof && !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
                                             }" x-text="schedule.category"></span>
                                         </template>
-                                        <span class="px-1.5 py-0.5 text-[9px] font-semibold rounded-full" :class="{
-                                            'bg-rose-500 text-white': isOverdue(schedule.scheduled_date),
-                                            'bg-blue-500 text-white': isToday(schedule.scheduled_date),
-                                            'bg-amber-500 text-white': !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
+                                        <span
+                                            class="px-1.5 py-0.5 text-[9px] font-semibold rounded-full flex items-center gap-0.5"
+                                            :class="{
+                                            'bg-emerald-500 text-white': schedule.has_proof,
+                                            'bg-rose-500 text-white': !schedule.has_proof && isOverdue(schedule.scheduled_date),
+                                            'bg-blue-500 text-white': !schedule.has_proof && isToday(schedule.scheduled_date),
+                                            'bg-amber-500 text-white': !schedule.has_proof && !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
                                         }">
-                                            <span x-show="isOverdue(schedule.scheduled_date)">Overdue</span>
-                                            <span x-show="isToday(schedule.scheduled_date)">Today</span>
+                                            <template x-if="schedule.has_proof">
+                                                <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            </template>
+                                            <span x-show="schedule.has_proof">Done</span>
                                             <span
-                                                x-show="!isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)">Upcoming</span>
+                                                x-show="!schedule.has_proof && isOverdue(schedule.scheduled_date)">Overdue</span>
+                                            <span
+                                                x-show="!schedule.has_proof && isToday(schedule.scheduled_date)">Today</span>
+                                            <span
+                                                x-show="!schedule.has_proof && !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)">Upcoming</span>
                                         </span>
                                     </div>
                                     <template x-if="schedule.remarks">
                                         <p class="text-[10px] mt-1.5 italic" :class="{
-                                            'text-rose-600': isOverdue(schedule.scheduled_date),
-                                            'text-blue-600': isToday(schedule.scheduled_date),
-                                            'text-amber-600': !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
+                                            'text-emerald-600': schedule.has_proof,
+                                            'text-rose-600': !schedule.has_proof && isOverdue(schedule.scheduled_date),
+                                            'text-blue-600': !schedule.has_proof && isToday(schedule.scheduled_date),
+                                            'text-amber-600': !schedule.has_proof && !isOverdue(schedule.scheduled_date) && !isToday(schedule.scheduled_date)
                                         }" x-text="schedule.remarks"></p>
                                     </template>
                                 </div>
@@ -784,6 +797,10 @@ return [
             <div class="border-t border-gray-200 px-4 py-2 bg-gray-50">
                 <div class="flex items-center justify-center gap-4 text-[10px]">
                     <div class="flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span class="text-gray-600">Done</span>
+                    </div>
+                    <div class="flex items-center gap-1">
                         <span class="w-2 h-2 rounded-full bg-rose-500"></span>
                         <span class="text-gray-600">Overdue</span>
                     </div>
@@ -800,101 +817,71 @@ return [
         </div>
     </div>
 
-    {{-- Event Progress Modal --}}
+    {{-- Progress Modal --}}
     <div x-show="showProgress" x-cloak @click.self="showProgress = false" @keydown.escape.window="showProgress = false"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-        <div @click.stop class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col"
+        <div @click.stop class="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden"
             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95"
             x-transition:enter-end="opacity-100 scale-100">
 
-            {{-- Modal Header --}}
-            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-4 rounded-t-2xl flex-shrink-0">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-base font-bold text-white">Event Progress</h3>
-                            <p class="text-xs text-white/80" x-text="progressEventName"></p>
-                        </div>
-                    </div>
-                    <button type="button" @click="showProgress = false"
-                        class="text-white/80 hover:text-white transition p-1">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
+            {{-- Header --}}
+            <div class="bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-3 flex items-center justify-between">
+                <div>
+                    <h4 class="font-bold text-white text-sm">Progress Updates</h4>
+                    <p class="text-[10px] text-white/80" x-text="progressEventName"></p>
                 </div>
+                <button @click="showProgress = false" class="text-white/80 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
 
-            {{-- Modal Body --}}
-            <div class="flex-1 overflow-y-auto p-5">
+            {{-- Content --}}
+            <div class="overflow-y-auto max-h-[60vh] p-4">
                 <template x-if="progressData.length > 0">
-                    <div class="relative">
-                        {{-- Timeline Line --}}
-                        <div
-                            class="absolute left-3 top-0 bottom-0 w-0.5 bg-gradient-to-b from-indigo-500 via-purple-400 to-gray-200">
-                        </div>
-
-                        <div class="space-y-4">
-                            <template x-for="(progress, idx) in progressData" :key="progress.id">
-                                <div class="relative pl-8 pr-1">
-                                    {{-- Timeline Dot --}}
-                                    <div class="absolute left-1 top-1.5 w-4 h-4 rounded-full border-2 border-white shadow"
-                                        :class="idx === 0 ? 'bg-indigo-500 ring-2 ring-indigo-100' : 'bg-gray-400'">
-                                    </div>
-
-                                    {{-- Progress Card --}}
-                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                                        <div class="flex items-center gap-2 flex-wrap mb-2">
-                                            <span
-                                                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
-                                                :class="idx === 0 ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-200 text-gray-700'"
-                                                x-text="progress.status"></span>
-                                            <span class="text-xs text-gray-500" x-text="progress.progress_date"></span>
-                                            <span x-show="idx === 0"
-                                                class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Latest</span>
-                                        </div>
-                                        <p x-show="progress.details"
-                                            class="text-gray-600 text-sm leading-relaxed whitespace-normal"
-                                            style="word-wrap: break-word; overflow-wrap: break-word;"
-                                            x-text="progress.details"></p>
-                                    </div>
+                    <div class="space-y-3">
+                        <template x-for="(progress, index) in progressData" :key="progress.id">
+                            <div class="relative pl-6">
+                                {{-- Timeline dot and line --}}
+                                <div class="absolute left-0 top-0 bottom-0 w-4 flex flex-col items-center">
+                                    <div class="w-3 h-3 rounded-full bg-indigo-500 flex-shrink-0 z-10"></div>
+                                    <div x-show="index < progressData.length - 1"
+                                        class="flex-1 w-0.5 bg-indigo-200 mt-1"></div>
                                 </div>
-                            </template>
-                        </div>
+
+                                {{-- Content --}}
+                                <div class="bg-indigo-50 rounded-lg p-3 border border-indigo-200">
+                                    <div class="flex items-center justify-between gap-2 mb-1">
+                                        <span
+                                            class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-indigo-100 text-indigo-700"
+                                            x-text="progress.status"></span>
+                                        <span class="text-[10px] text-indigo-600"
+                                            x-text="progress.progress_date"></span>
+                                    </div>
+                                    <p x-show="progress.details" class="text-xs text-indigo-700 leading-relaxed"
+                                        x-text="progress.details"></p>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </template>
 
-                {{-- Empty State --}}
-                <div x-show="progressData.length === 0" class="py-8 text-center">
-                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    <p class="text-sm text-gray-500 font-medium">No progress updates yet</p>
-                    <p class="text-xs text-gray-400 mt-1">Progress updates will appear here</p>
-                </div>
-            </div>
-
-            {{-- Modal Footer --}}
-            <div
-                class="px-5 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between rounded-b-2xl flex-shrink-0">
-                <span class="text-xs text-gray-500"><span x-text="progressData.length"></span> update(s)</span>
-                <button type="button" @click="showProgress = false"
-                    class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition">
-                    Close
-                </button>
+                <template x-if="progressData.length === 0">
+                    <div class="py-8 text-center text-gray-400">
+                        <svg class="w-10 h-10 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <p class="text-sm">No progress updates yet</p>
+                    </div>
+                </template>
             </div>
         </div>
     </div>
@@ -911,78 +898,64 @@ return [
         allEvents: [],
         allSchedules: [],
         eventFilterList: [],
-        selectedEventId: '',
-        selectedEventName: 'All Events',
-        eventSearchQuery: '',
-        showModal: false,
-        showSchedulesList: false,
-        showEventFilter: false,
-        showProgress: false,
-        progressData: [],
-        progressEventName: '',
-        selectedDayEvents: [],
-        selectedDaySchedules: [],
-        selectedDayProgress: [],
-        modalDate: '',
         eventsInMonth: 0,
         schedulesInMonth: 0,
         progressInMonth: 0,
 
+        // Modal states
+        showModal: false,
+        showEventFilter: false,
+        showSchedulesList: false,
+        showProgress: false,
+        selectedDayEvents: [],
+        selectedDaySchedules: [],
+        selectedDayProgress: [],
+        modalDate: '',
+
+        // Filter state
+        selectedEventId: '',
+        selectedEventName: 'All Events',
+        eventSearchQuery: '',
+
+        // Progress modal
+        progressData: [],
+        progressEventName: '',
+
         get filteredEventList() {
-            if (this.eventSearchQuery === '') {
-                return this.eventFilterList;
-            }
+            if (!this.eventSearchQuery) return this.eventFilterList;
             const query = this.eventSearchQuery.toLowerCase();
-            return this.eventFilterList.filter(e => 
+            return this.eventFilterList.filter(e =>
                 e.name.toLowerCase().includes(query)
             );
         },
 
         get filteredSchedules() {
-            if (this.selectedEventId === '') {
-                return this.schedules;
-            }
-            return this.schedules.filter(s => s.event_id == this.selectedEventId);
+            return this.schedules;
         },
 
         get sortedFilteredSchedules() {
             return [...this.filteredSchedules].sort((a, b) => {
-                const dateA = new Date(a.scheduled_date);
-                const dateB = new Date(b.scheduled_date);
-                return dateA - dateB;
+                // Done items go to bottom
+                if (a.has_proof && !b.has_proof) return 1;
+                if (!a.has_proof && b.has_proof) return -1;
+                // Then sort by date
+                return new Date(a.scheduled_date) - new Date(b.scheduled_date);
             });
         },
 
-        get sortedSchedules() {
-            return [...this.schedules].sort((a, b) => {
-                const dateA = new Date(a.scheduled_date);
-                const dateB = new Date(b.scheduled_date);
-                return dateA - dateB;
-            });
-        },
-
-        initCalendar(eventsData, schedulesData, eventFilterListData) {
-            this.allEvents = Array.isArray(eventsData) ? eventsData : [];
-            this.allSchedules = Array.isArray(schedulesData) ? schedulesData : [];
-            this.eventFilterList = Array.isArray(eventFilterListData) ? eventFilterListData.map(e => {
-                // Find full event data to get status
-                const fullEvent = this.allEvents.find(ae => ae.id === e.id);
-                return {
-                    ...e,
-                    status: fullEvent?.status || 'unknown',
-                    event_date: fullEvent?.event_date || ''
-                };
-            }) : [];
-            this.events = [...this.allEvents];
-            this.schedules = [...this.allSchedules];
+        initCalendar(eventsData, schedulesData, eventFilterList) {
+            this.allEvents = eventsData;
+            this.allSchedules = schedulesData;
+            this.events = [...eventsData];
+            this.schedules = [...schedulesData];
+            this.eventFilterList = eventFilterList;
             this.calculateStats();
             this.renderCalendar();
         },
 
-        selectEvent(eventId, eventName) {
-            this.selectedEventId = eventId === '' ? '' : eventId;
-            this.selectedEventName = eventName;
-            this.eventSearchQuery = '';
+        selectEvent(id, name) {
+            this.selectedEventId = id;
+            this.selectedEventName = name;
             this.showEventFilter = false;
             this.applyFilter();
         },

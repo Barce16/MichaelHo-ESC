@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventSchedule;
 use App\Mail\EventScheduleNotification;
+use App\Mail\StaffScheduleAssignmentMail;
 use App\Services\NotificationService;
 use App\Services\SmsNotifier;
 use Illuminate\Http\Request;
@@ -26,6 +27,7 @@ class EventScheduleController extends Controller
 
     /**
      * Save/Update all schedules for an event (called from modal)
+     * Auto-notifies staff if newly assigned or schedule changed
      */
     public function saveAll(Request $request, Event $event)
     {
@@ -36,10 +38,13 @@ class EventScheduleController extends Controller
                 'schedules.*.scheduled_date' => ['nullable', 'date'],
                 'schedules.*.scheduled_time' => ['nullable'],
                 'schedules.*.remarks' => ['nullable', 'string', 'max:500'],
+                'schedules.*.staff_id' => ['nullable', 'exists:staffs,id'],
+                'schedules.*.contact_number' => ['nullable', 'string', 'max:50'],
+                'schedules.*.venue' => ['nullable', 'string', 'max:255'],
             ]);
 
             $savedCount = 0;
-            $updatedSchedules = [];
+            $staffToNotify = [];
 
             foreach ($validated['schedules'] as $scheduleData) {
                 // Skip if no date is set
@@ -51,6 +56,31 @@ class EventScheduleController extends Controller
                     continue;
                 }
 
+                // Find existing schedule to check for changes
+                $existingSchedule = EventSchedule::where('event_id', $event->id)
+                    ->where('inclusion_id', $scheduleData['inclusion_id'])
+                    ->first();
+
+                // Check if we need to notify staff
+                $newStaffId = !empty($scheduleData['staff_id']) ? $scheduleData['staff_id'] : null;
+                $shouldNotify = false;
+
+                if ($newStaffId) {
+                    if (!$existingSchedule) {
+                        // New schedule with staff assigned
+                        $shouldNotify = true;
+                    } elseif ($existingSchedule->staff_id != $newStaffId) {
+                        // Staff changed
+                        $shouldNotify = true;
+                    } elseif (!$existingSchedule->notified_at) {
+                        // Staff assigned but never notified
+                        $shouldNotify = true;
+                    } elseif ($this->scheduleDetailsChanged($existingSchedule, $scheduleData)) {
+                        // Key details changed (date, time, venue)
+                        $shouldNotify = true;
+                    }
+                }
+
                 $schedule = EventSchedule::updateOrCreate(
                     [
                         'event_id' => $event->id,
@@ -60,20 +90,42 @@ class EventScheduleController extends Controller
                         'scheduled_date' => $scheduleData['scheduled_date'],
                         'scheduled_time' => !empty($scheduleData['scheduled_time']) ? $scheduleData['scheduled_time'] : null,
                         'remarks' => !empty($scheduleData['remarks']) ? $scheduleData['remarks'] : null,
-                        'created_by' => Auth::id(),
+                        'staff_id' => $newStaffId,
+                        'contact_number' => !empty($scheduleData['contact_number']) ? $scheduleData['contact_number'] : null,
+                        'venue' => !empty($scheduleData['venue']) ? $scheduleData['venue'] : null,
+                        'created_by' => $existingSchedule?->created_by ?? Auth::id(),
+                        // Reset notified_at if we're going to notify
+                        'notified_at' => $shouldNotify ? null : ($existingSchedule?->notified_at),
                     ]
                 );
 
-                $updatedSchedules[] = $schedule;
+                if ($shouldNotify && $newStaffId) {
+                    $staffToNotify[] = $schedule;
+                }
+
                 $savedCount++;
             }
 
-            // Send notifications if any schedules were saved
-            if ($savedCount > 0) {
-                $this->sendScheduleNotifications($event, $updatedSchedules);
+            // Auto-notify staff members (only staff, not customers)
+            $notifiedStaffCount = 0;
+            foreach ($staffToNotify as $schedule) {
+                try {
+                    $this->notifyStaffAboutSchedule($schedule);
+                    $notifiedStaffCount++;
+                } catch (\Exception $e) {
+                    Log::error('Failed to auto-notify staff', [
+                        'schedule_id' => $schedule->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
 
-            return back()->with('success', "Schedules saved successfully and customer notified.");
+            $message = "Schedules saved successfully.";
+            if ($notifiedStaffCount > 0) {
+                $message .= " {$notifiedStaffCount} staff member(s) notified.";
+            }
+
+            return back()->with('success', $message);
         } catch (\Exception $e) {
             Log::error('Failed to save schedules', [
                 'event_id' => $event->id,
@@ -82,6 +134,178 @@ class EventScheduleController extends Controller
 
             return back()->with('error', 'Failed to save schedules: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Check if schedule details have changed (date, time, venue)
+     */
+    protected function scheduleDetailsChanged(?EventSchedule $existing, array $newData): bool
+    {
+        if (!$existing) {
+            return true;
+        }
+
+        // Check date
+        $existingDate = $existing->scheduled_date?->format('Y-m-d');
+        $newDate = $newData['scheduled_date'] ?? null;
+        if ($existingDate !== $newDate) {
+            return true;
+        }
+
+        // Check time
+        $existingTime = $existing->scheduled_time ? \Carbon\Carbon::parse($existing->scheduled_time)->format('H:i') : null;
+        $newTime = !empty($newData['scheduled_time']) ? $newData['scheduled_time'] : null;
+        if ($existingTime !== $newTime) {
+            return true;
+        }
+
+        // Check venue
+        $existingVenue = $existing->venue;
+        $newVenue = !empty($newData['venue']) ? $newData['venue'] : null;
+        if ($existingVenue !== $newVenue) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Notify a single staff member about their schedule assignment
+     * Uses NotificationService for in-app + SmsNotifier for SMS
+     */
+    protected function notifyStaffAboutSchedule(EventSchedule $schedule): void
+    {
+        $schedule->load(['event', 'inclusion', 'staff.user']);
+
+        $staff = $schedule->staff;
+        $user = $staff?->user;
+
+        if (!$user) {
+            Log::warning('Cannot notify staff - no user account', ['schedule_id' => $schedule->id]);
+            return;
+        }
+
+        // 1. Send In-App Notification via NotificationService
+        $this->notificationService->notifyStaffInclusionSchedule($schedule);
+
+        // 2. Send SMS Notification
+        $contactNumber = $schedule->contact_number ?: $staff->contact_number;
+        if ($contactNumber) {
+            $smsMessage = $this->buildStaffSmsMessage($schedule);
+            $this->smsNotifier->sendSms($contactNumber, $smsMessage);
+        }
+
+        // 3. Send Email Notification
+        if ($user->email) {
+            Mail::to($user->email)->queue(new StaffScheduleAssignmentMail($schedule));
+        }
+
+        // Mark as notified
+        $schedule->update(['notified_at' => now()]);
+    }
+
+    /**
+     * Send notification to assigned staff for a specific schedule
+     * Sends: In-app + SMS + Email
+     */
+    public function notifyStaff(EventSchedule $schedule)
+    {
+        // Load relationships
+        $schedule->load(['event.customer', 'inclusion', 'staff.user']);
+
+        // Validate schedule has required data
+        if (!$schedule->staff_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No staff assigned to this schedule.'
+            ], 400);
+        }
+
+        if (!$schedule->scheduled_date) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Schedule date is not set.'
+            ], 400);
+        }
+
+        $staff = $schedule->staff;
+        $user = $staff->user;
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Staff does not have a user account.'
+            ], 400);
+        }
+
+        $contactNumber = $schedule->contact_number ?: $staff->contact_number;
+
+        try {
+            // 1. Send In-App Notification via NotificationService
+            $this->notificationService->notifyStaffInclusionSchedule($schedule);
+
+            // 2. Send SMS Notification
+            if ($contactNumber) {
+                $smsMessage = $this->buildStaffSmsMessage($schedule);
+                $this->smsNotifier->sendSms($contactNumber, $smsMessage);
+            }
+
+            // 3. Send Email Notification via Mailable
+            if ($user->email) {
+                Mail::to($user->email)->queue(new StaffScheduleAssignmentMail($schedule));
+            }
+
+            // Mark as notified
+            $schedule->markAsNotified();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Notification sent successfully to ' . $staff->name
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send staff schedule notification', [
+                'schedule_id' => $schedule->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send notification: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Build SMS message for staff schedule notification
+     */
+    protected function buildStaffSmsMessage(EventSchedule $schedule): string
+    {
+        $event = $schedule->event;
+        $inclusion = $schedule->inclusion;
+        $date = $schedule->scheduled_date->format('M d, Y');
+        $time = $schedule->scheduled_time
+            ? \Carbon\Carbon::parse($schedule->scheduled_time)->format('g:i A')
+            : 'TBA';
+
+        $message = "MICHAEL HO EVENTS\n\n";
+        $message .= "Hi {$schedule->staff->name}!\n\n";
+        $message .= "You've been assigned to:\n";
+        $message .= "• {$inclusion->name}\n";
+        $message .= "• Event: {$event->name}\n";
+        $message .= "• Date: {$date}\n";
+        $message .= "• Time: {$time}\n";
+
+        if ($schedule->venue) {
+            $message .= "• Venue: {$schedule->venue}\n";
+        }
+
+        if ($schedule->remarks) {
+            $message .= "\nNote: {$schedule->remarks}\n";
+        }
+
+        $message .= "\nPlease upload proof after completion. Log in to your dashboard for details.";
+
+        return $message;
     }
 
     /**
@@ -162,7 +386,33 @@ class EventScheduleController extends Controller
     }
 
     /**
-     * Send email, SMS, and in-app notifications for schedule changes
+     * Mark schedule as completed
+     */
+    public function markComplete(EventSchedule $schedule)
+    {
+        $schedule->markAsCompleted();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Schedule marked as completed.'
+        ]);
+    }
+
+    /**
+     * Mark schedule as incomplete
+     */
+    public function markIncomplete(EventSchedule $schedule)
+    {
+        $schedule->markAsIncomplete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Schedule marked as incomplete.'
+        ]);
+    }
+
+    /**
+     * Send email, SMS, and in-app notifications for schedule changes (to CUSTOMER)
      */
     protected function sendScheduleNotifications(Event $event, array $schedules, string $action = 'updated')
     {

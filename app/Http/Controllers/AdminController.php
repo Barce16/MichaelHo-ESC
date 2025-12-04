@@ -10,7 +10,7 @@ use App\Models\Inclusion;
 use App\Models\Feedback;
 use Illuminate\Http\Request;
 use App\Support\HandlesProfilePhotos;
-use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
@@ -89,7 +89,7 @@ class AdminController extends Controller
             return redirect()->route('admin.users.list')
                 ->with('success', 'Administrator created successfully.');
         } catch (\Exception $e) {
-            \Log::error('User creation failed: ' . $e->getMessage());
+            Log::error('User creation failed: ' . $e->getMessage());
 
             return redirect()->back()
                 ->withInput()
