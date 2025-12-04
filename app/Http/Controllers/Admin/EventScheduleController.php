@@ -221,23 +221,17 @@ class EventScheduleController extends Controller
             ], 400);
         }
 
-        if (!$schedule->scheduled_date) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Schedule date is not set.'
-            ], 400);
-        }
-
         $staff = $schedule->staff;
-        $user = $staff->user;
+        $user = $staff?->user;
 
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Staff does not have a user account.'
+                'message' => 'Staff member has no user account.'
             ], 400);
         }
 
+        // Get contact number (schedule override or staff default)
         $contactNumber = $schedule->contact_number ?: $staff->contact_number;
 
         try {
@@ -338,7 +332,7 @@ class EventScheduleController extends Controller
             'created_by' => Auth::id(),
         ]);
 
-        // Send notifications
+        // Send notifications (Email + SMS + In-app)
         $this->sendScheduleNotifications($event, [$schedule], 'created');
 
         return back()->with('success', 'Schedule created and customer notified.');
@@ -365,7 +359,7 @@ class EventScheduleController extends Controller
             'remarks' => $validated['remarks'] ?? null,
         ]);
 
-        // Send notifications
+        // Send notifications (Email + SMS + In-app)
         $this->sendScheduleNotifications($event, [$schedule], 'updated');
 
         return back()->with('success', 'Schedule updated and customer notified.');
@@ -413,6 +407,7 @@ class EventScheduleController extends Controller
 
     /**
      * Send email, SMS, and in-app notifications for schedule changes (to CUSTOMER)
+     * Triple notification pattern: Email + SMS + In-app
      */
     protected function sendScheduleNotifications(Event $event, array $schedules, string $action = 'updated')
     {
@@ -424,7 +419,7 @@ class EventScheduleController extends Controller
             return;
         }
 
-        // Send email notification
+        // 1. Send email notification
         if ($event->customer->user && $event->customer->user->email) {
             try {
                 Mail::to($event->customer->user->email)
@@ -437,7 +432,7 @@ class EventScheduleController extends Controller
             }
         }
 
-        // Send SMS notification
+        // 2. Send SMS notification
         try {
             $this->smsNotifier->notifyEventScheduleUpdate($event, $schedules, $action);
         } catch (\Exception $e) {
@@ -447,7 +442,7 @@ class EventScheduleController extends Controller
             ]);
         }
 
-        // Send in-app notification
+        // 3. Send in-app notification
         try {
             $this->notificationService->notifyCustomerScheduleUpdate($event, $schedules, $action);
         } catch (\Exception $e) {

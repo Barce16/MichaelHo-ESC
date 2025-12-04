@@ -1002,6 +1002,9 @@ class AdminEventController extends Controller
         $oldInclusionIds = $event->inclusions->pluck('id')->toArray();
         $oldInclusions = $event->inclusions; // Keep the collection
 
+        // Get categories that currently have inclusions
+        $oldCategoryIds = $oldInclusions->pluck('category')->unique()->toArray();
+
         // Get submitted inclusions
         $selectedInclusionIds = $request->input('inclusions', []);
 
@@ -1009,23 +1012,38 @@ class AdminEventController extends Controller
         $lockedInclusionIds = $request->input('locked_inclusions', []);
         $selectedInclusionIds = array_unique(array_merge($selectedInclusionIds, $lockedInclusionIds));
 
-        // Validate: ensure NO original inclusions were removed
-        $removedInclusionIds = array_diff($oldInclusionIds, $selectedInclusionIds);
-        if (!empty($removedInclusionIds)) {
-            return redirect()
-                ->back()
-                ->with('error', 'Existing inclusions cannot be removed. Only new inclusions can be added.');
+        // Get the NEW inclusions with their categories
+        $newInclusions = Inclusion::whereIn('id', $selectedInclusionIds)->get();
+
+        // Validate: Each category that had inclusions must still have at least one
+        $missingCategories = [];
+        foreach ($oldCategoryIds as $category) {
+            $categoryHasInclusion = $newInclusions->contains(function ($inclusion) use ($category) {
+                // Handle both enum and string category comparison
+                $inclusionCategory = is_object($inclusion->category) ? $inclusion->category->value : $inclusion->category;
+                $checkCategory = is_object($category) ? $category->value : $category;
+                return $inclusionCategory === $checkCategory;
+            });
+
+            if (!$categoryHasInclusion) {
+                // Get category name for error message
+                $categoryName = is_object($category) ? $category->value : $category;
+                $missingCategories[] = ucwords(str_replace('_', ' ', $categoryName));
+            }
         }
 
-        // Get the inclusions with their prices
-        $inclusions = Inclusion::whereIn('id', $selectedInclusionIds)->get();
+        if (!empty($missingCategories)) {
+            return redirect()
+                ->back()
+                ->with('error', 'Each category must have at least one inclusion. Missing: ' . implode(', ', $missingCategories));
+        }
 
         // Get inclusion notes
         $inclusionNotes = $request->input('inclusion_notes', []);
 
         // Prepare sync data with price snapshots and notes
         $syncData = [];
-        foreach ($inclusions as $inclusion) {
+        foreach ($newInclusions as $inclusion) {
             // For existing inclusions, preserve their original price_snapshot
             $existingPivot = $oldInclusions->find($inclusion->id)?->pivot;
 
@@ -1045,20 +1063,25 @@ class AdminEventController extends Controller
         $event->refresh();
         $newTotal = $event->billing->total_amount;
 
-        // Track what changed - GET FULL INCLUSION OBJECTS (only additions now)
+        // Track what changed - now includes both additions AND removals
         $addedInclusionIds = array_diff($selectedInclusionIds, $oldInclusionIds);
+        $removedInclusionIds = array_diff($oldInclusionIds, $selectedInclusionIds);
 
         // Get full inclusion objects for added items
         $addedInclusions = Inclusion::whereIn('id', $addedInclusionIds)->get();
 
-        // No removals allowed, so empty collection
-        $removedInclusions = collect([]);
+        // Get removed inclusions from old collection
+        $removedInclusions = $oldInclusions->whereIn('id', $removedInclusionIds);
 
         // Build change details for progress log
         $changes = [];
         if ($addedInclusions->count() > 0) {
             $added = $addedInclusions->pluck('name')->toArray();
             $changes[] = "Added: " . implode(', ', $added);
+        }
+        if ($removedInclusions->count() > 0) {
+            $removed = $removedInclusions->pluck('name')->toArray();
+            $changes[] = "Swapped out: " . implode(', ', $removed);
         }
 
         // If no changes, just show success
