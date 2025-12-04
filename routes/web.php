@@ -278,8 +278,9 @@ Route::middleware('auth')->group(function () {
 
             // Event Schedules Routes
             Route::post('events/{event}/save-schedules', [EventScheduleController::class, 'saveAll'])->name('events.saveSchedules');
-
+            Route::get('events/{event}/schedules', [AdminEventController::class, 'schedulesPage'])->name('events.schedules');
             // Staff notification for schedules
+
             Route::post('schedules/{schedule}/notify-staff', [EventScheduleController::class, 'notifyStaff'])->name('schedules.notifyStaff');
             Route::post('schedules/{schedule}/complete', [EventScheduleController::class, 'markComplete'])->name('schedules.complete');
             Route::post('schedules/{schedule}/incomplete', [EventScheduleController::class, 'markIncomplete'])->name('schedules.incomplete');

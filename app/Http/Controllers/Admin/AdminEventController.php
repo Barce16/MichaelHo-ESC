@@ -91,6 +91,7 @@ class AdminEventController extends Controller
             'billing.payments',
             'schedules',
             'schedules.inclusion',
+            'changeRequests',
         ]);
 
         $inclusionsSubtotal = $event->inclusions->sum(fn($i) => (float) ($i->pivot->price_snapshot ?? 0));
@@ -1216,5 +1217,22 @@ class AdminEventController extends Controller
         return redirect()
             ->route('admin.events.show', $event)
             ->with('success', 'Event information updated successfully.');
+    }
+
+    /**
+     * Show the schedules management page for an event
+     */
+    public function schedulesPage(Event $event)
+    {
+        $event->load([
+            'customer.user',
+            'package',
+            'inclusions' => fn($q) => $q->withPivot('price_snapshot', 'notes'),
+            'schedules.inclusion',
+            'schedules.staff',
+            'staffs' => fn($q) => $q->withPivot('assignment_role'),
+        ]);
+
+        return view('admin.events.schedules', compact('event'));
     }
 }
