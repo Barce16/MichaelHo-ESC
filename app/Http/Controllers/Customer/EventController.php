@@ -184,8 +184,8 @@ class EventController extends Controller
         $customer = Auth::user()->customer;
         if (!$customer || $event->customer_id !== $customer->id) abort(403);
 
-        // load relations
-        $event->load(['package', 'inclusions', 'customer', 'billing.payments']);
+        // load relations (added expenses)
+        $event->load(['package', 'inclusions', 'customer', 'billing.payments', 'expenses.addedBy']);
 
         // pricing
         $incSubtotal = $event->inclusions->sum(fn($i) => (float) ($i->pivot->price_snapshot ?? 0));

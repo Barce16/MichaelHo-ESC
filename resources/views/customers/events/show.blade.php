@@ -25,8 +25,25 @@
         </div>
     </x-slot>
 
-    <div class="py-6">
+    <div class="py-6" x-data="{ showExpenses: false }">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
+
+            {{-- Event Expenses Button (for scheduled, ongoing, completed) --}}
+            @if(in_array($event->status, ['scheduled', 'ongoing', 'completed']) && $event->expenses->count() > 0)
+            <div class="flex justify-end">
+                <button @click="showExpenses = true"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    Post-Event Expenses
+                    <span class="px-2 py-0.5 text-xs bg-white/20 rounded-full">
+                        ₱{{ number_format($event->expenses->sum('amount'), 2) }}
+                    </span>
+                </button>
+            </div>
+            @endif
 
             {{-- Event Header Card --}}
             @php
@@ -849,5 +866,233 @@
     </div>
 
     </div>
+
+    {{-- Event Expenses Modal (View Only) --}}
+    @if(in_array($event->status, ['scheduled', 'ongoing', 'completed']) && $event->expenses->count() > 0)
+    <div x-show="showExpenses" x-cloak @click.self="showExpenses = false"
+        class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full mx-auto max-h-[85vh] flex flex-col" @click.stop
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform scale-90"
+            x-transition:enter-end="opacity-100 transform scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 transform scale-100"
+            x-transition:leave-end="opacity-0 transform scale-90">
+
+            {{-- Modal Header --}}
+            <div class="bg-gradient-to-r from-rose-500 to-pink-600 px-6 py-4 rounded-t-2xl flex-shrink-0">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">Event Expenses</h3>
+                            <p class="text-sm text-rose-100">Additional costs incurred for your event</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <div class="text-xs text-rose-200">Total</div>
+                            <div class="text-xl font-bold text-white">₱{{ number_format($event->expenses->sum('amount'),
+                                2) }}</div>
+                        </div>
+                        <button type="button" @click="showExpenses = false"
+                            class="text-white/80 hover:text-white transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Modal Body --}}
+            <div class="flex-1 overflow-y-auto p-6">
+                {{-- Summary Cards --}}
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                    <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 text-center">
+                        <div class="text-xs text-gray-500 mb-1">Total</div>
+                        <div class="text-lg font-bold text-rose-600">₱{{ number_format($event->expenses->sum('amount'),
+                            2) }}</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 text-center">
+                        <div class="text-xs text-gray-500 mb-1">Items</div>
+                        <div class="text-lg font-bold text-gray-900">{{ $event->expenses->count() }}</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 text-center">
+                        <div class="text-xs text-gray-500 mb-1">Highest</div>
+                        <div class="text-lg font-bold text-gray-900">₱{{ number_format($event->expenses->max('amount'),
+                            2) }}</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 text-center">
+                        <div class="text-xs text-gray-500 mb-1">Average</div>
+                        <div class="text-lg font-bold text-gray-900">₱{{ number_format($event->expenses->avg('amount'),
+                            2) }}</div>
+                    </div>
+                </div>
+
+                {{-- Category Breakdown --}}
+                @php
+                $expensesByCategory = $event->expenses->groupBy('category')->map(fn($items) => $items->sum('amount'));
+                $totalExpenses = $event->expenses->sum('amount');
+                @endphp
+                @if($expensesByCategory->count() > 1)
+                <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-6">
+                    <h5 class="font-medium text-gray-800 mb-3 text-sm">Category Breakdown</h5>
+                    <div class="space-y-2">
+                        @foreach($expensesByCategory as $category => $amount)
+                        @php
+                        $percentage = $totalExpenses > 0 ? ($amount / $totalExpenses) * 100 : 0;
+                        $categoryLabel = \App\Models\EventExpense::getCategories()[$category] ?? ucfirst($category ??
+                        'Uncategorized');
+                        @endphp
+                        <div>
+                            <div class="flex items-center justify-between text-xs mb-1">
+                                <span class="text-gray-600">{{ $categoryLabel }}</span>
+                                <span class="font-medium text-gray-900">₱{{ number_format($amount, 2) }}</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                <div class="bg-rose-500 h-1.5 rounded-full" style="width: {{ $percentage }}%"></div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                {{-- Expenses List --}}
+                <div class="bg-white rounded-lg border border-gray-200">
+                    <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                        <h5 class="font-medium text-gray-800 text-sm">Expense Details</h5>
+                    </div>
+                    <div class="divide-y divide-gray-100 max-h-[350px] overflow-y-auto">
+                        @foreach($event->expenses->sortByDesc('expense_date') as $expense)
+                        <div class="p-4 hover:bg-gray-50 transition" x-data="{ showReceipt: false }">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h6 class="font-medium text-gray-900 text-sm">{{ $expense->description }}</h6>
+                                        @if($expense->category)
+                                        <span
+                                            class="px-1.5 py-0.5 text-xs font-medium bg-rose-100 text-rose-700 rounded">
+                                            {{ $expense->category_label }}
+                                        </span>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-3 text-xs text-gray-500">
+                                        <span class="flex items-center gap-1">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            {{ $expense->expense_date?->format('M d, Y') ?? 'No date' }}
+                                        </span>
+                                    </div>
+                                    @if($expense->notes)
+                                    <p class="text-xs text-gray-600 mt-2 bg-gray-50 rounded p-2">{{ $expense->notes }}
+                                    </p>
+                                    @endif
+                                </div>
+                                <div class="text-right flex-shrink-0">
+                                    <div class="text-base font-bold text-rose-600">₱{{ number_format($expense->amount,
+                                        2) }}</div>
+                                    @if($expense->receipt_image)
+                                    <button @click="showReceipt = true"
+                                        class="mt-1 inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        Receipt
+                                    </button>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Receipt Modal --}}
+                            @if($expense->receipt_image)
+                            <div x-show="showReceipt" x-cloak @click.self="showReceipt = false"
+                                class="fixed inset-0 z-[60] overflow-y-auto flex items-center justify-center p-4 bg-black/70">
+                                <div class="relative max-w-2xl w-full bg-white rounded-xl shadow-2xl overflow-hidden"
+                                    @click.stop>
+                                    <button @click="showReceipt = false"
+                                        class="absolute top-3 right-3 z-10 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition">
+                                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                    <div class="bg-gray-100 px-4 py-3 border-b">
+                                        <h6 class="font-medium text-gray-900 text-sm">Receipt: {{ $expense->description
+                                            }}</h6>
+                                        <p class="text-xs text-gray-500">₱{{ number_format($expense->amount, 2) }}</p>
+                                    </div>
+                                    <div class="p-3 bg-gray-50">
+                                        <img src="{{ asset('storage/' . $expense->receipt_image) }}" alt="Receipt"
+                                            class="w-full h-auto rounded"
+                                            style="max-height: 60vh; object-fit: contain;">
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Info Note --}}
+                <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div class="text-sm text-blue-800">
+                            <p class="font-medium mb-1">About Event Expenses</p>
+                            <p class="text-xs text-blue-700">These are additional costs incurred during your event
+                                preparation and execution. They may include transportation, extra materials, and other
+                                miscellaneous expenses. For questions, please contact your event coordinator.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Modal Footer --}}
+            <div
+                class="bg-gray-50 border-t border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-b-2xl">
+                <div class="text-sm text-gray-500">
+                    <span class="inline-flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        {{ $event->expenses->count() }} expense(s) totaling ₱{{
+                        number_format($event->expenses->sum('amount'), 2) }}
+                    </span>
+                </div>
+                <button type="button" @click="showExpenses = false"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">
+                    Close
+                </button>
+            </div>
+        </div>
     </div>
+    @endif
+
+    </div>
+
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
 </x-app-layout>

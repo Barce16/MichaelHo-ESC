@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\InclusionChangeRequestController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\EventScheduleController;
 use App\Http\Controllers\Admin\AdminBillingController;
+use App\Http\Controllers\Admin\EventExpenseController;
 use App\Http\Controllers\Staff\ScheduleController as StaffScheduleController;
 use App\Http\Middleware\CheckAdmin;
 use App\Http\Middleware\EnsureCustomer;
@@ -268,6 +269,12 @@ Route::middleware('auth')->group(function () {
 
             Route::post('payments/{payment}/create-receipt', [CustomerPaymentController::class, 'createReceipt'])->name('payments.create-receipt');
             Route::get('payments/{payment}/download-receipt', [CustomerPaymentController::class, 'downloadReceipt'])->name('payments.download-receipt');
+
+            // Event Expenses Routes
+            Route::get('events/{event}/expenses', [EventExpenseController::class, 'index'])->name('events.expenses.index');
+            Route::post('events/{event}/expenses', [EventExpenseController::class, 'store'])->name('events.expenses.store');
+            Route::put('events/{event}/expenses/{expense}', [EventExpenseController::class, 'update'])->name('events.expenses.update');
+            Route::delete('events/{event}/expenses/{expense}', [EventExpenseController::class, 'destroy'])->name('events.expenses.destroy');
 
             // ---- Management ----
             Route::prefix('management')->name('management.')->group(function () {

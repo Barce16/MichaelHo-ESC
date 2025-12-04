@@ -346,4 +346,20 @@ class Event extends Model
 
         return (int) round(($completed / $total) * 100);
     }
+
+    /**
+     * Get all expenses for this event
+     */
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(EventExpense::class);
+    }
+
+    /**
+     * Get total expenses amount
+     */
+    public function getTotalExpensesAttribute(): float
+    {
+        return $this->expenses->sum('amount');
+    }
 }
