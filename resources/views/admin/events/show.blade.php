@@ -1386,7 +1386,6 @@
     </div>
     </div>
     </div>
-    </div>
     {{-- Approve Event Modal --}}
     <div x-show="showApprove" x-cloak @click.self="showApprove=false"
         class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
