@@ -560,14 +560,38 @@ class ReportController extends Controller
     // ========== EVENT DETAIL REPORT ==========
     public function eventDetail(Request $request)
     {
-        // Get all events with customer and billing for the selection UI
-        $events = Event::with(['customer', 'billing'])
-            ->orderBy('event_date', 'desc')
-            ->get();
+        // Build query for events with search
+        $query = Event::with(['customer', 'billing.payments'])
+            ->orderBy('event_date', 'desc');
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('customer', function ($cq) use ($search) {
+                        $cq->where('customer_name', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        // Get total counts for stats (before pagination)
+        $totalEvents = Event::count();
+        $completedEvents = Event::where('status', 'completed')->count();
+        $scheduledEvents = Event::where('status', 'scheduled')->count();
+
+        // Paginate with 10 per page
+        $events = $query->paginate(10)->withQueryString();
 
         // If no event selected, show selection page
         if (!$request->has('event_id')) {
-            return view('admin.reports.event-detail', compact('events'));
+            return view('admin.reports.event-detail', compact(
+                'events',
+                'totalEvents',
+                'completedEvents',
+                'scheduledEvents'
+            ));
         }
 
         // Get the selected event with all related data
@@ -618,7 +642,10 @@ class ReportController extends Controller
             'payments',
             'progressUpdates',
             'staffAssignments',
-            'stats'
+            'stats',
+            'totalEvents',
+            'completedEvents',
+            'scheduledEvents'
         ));
     }
 

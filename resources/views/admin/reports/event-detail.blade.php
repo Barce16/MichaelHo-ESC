@@ -74,653 +74,487 @@
                     </div>
                 </div>
 
-                {{-- Search & Filter Section --}}
-                <div class="p-6 border-b border-gray-200 bg-gray-50" x-data="eventSearch()">
-                    <div class="flex flex-col md:flex-row gap-4">
-                        {{-- Search Input --}}
-                        <div class="flex-1 relative">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </div>
-                            <input type="text" x-model="search" placeholder="Search by event name or customer..."
-                                style="padding-left: 3rem;"
-                                class="w-full py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-violet-200 focus:border-violet-400 text-gray-900">
-                        </div>
-
-                        {{-- Status Filter --}}
-                        <div class="md:w-48">
-                            <select x-model="statusFilter" @change="filterEvents()"
-                                class="w-full py-3 px-4 rounded-xl border-gray-300 focus:ring-2 focus:ring-violet-200 focus:border-violet-400">
-                                <option value="">All Statuses</option>
-                                <option value="requested">Requested</option>
-                                <option value="approved">Approved</option>
-                                <option value="request_meeting">Request Meeting</option>
-                                <option value="meeting">Meeting</option>
-                                <option value="scheduled">Scheduled</option>
-                                <option value="ongoing">Ongoing</option>
-                                <option value="completed">Completed</option>
-                                <option value="rejected">Rejected</option>
-                                <option value="cancelled">Cancelled</option>
-                            </select>
-                        </div>
-
-                        {{-- Sort Dropdown --}}
-                        <div class="md:w-48">
-                            <select x-model="sortBy" @change="sortEvents()"
-                                class="w-full py-3 px-4 rounded-xl border-gray-300 focus:ring-2 focus:ring-violet-200 focus:border-violet-400">
-                                <option value="date_desc">Date (Newest)</option>
-                                <option value="date_asc">Date (Oldest)</option>
-                                <option value="name">Event Name</option>
-                                <option value="amount">Amount (Highest)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {{-- Quick Stats --}}
-                    <div class="mt-4 flex flex-wrap gap-4 text-sm">
-                        <span
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg border border-gray-200">
-                            <span class="w-2 h-2 bg-violet-500 rounded-full"></span>
-                            <span class="text-gray-600">Total Events:</span>
-                            <span class="font-semibold text-gray-900">{{ $events->count() }}</span>
-                        </span>
-                        <span
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg border border-gray-200">
-                            <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-                            <span class="text-gray-600">Completed:</span>
-                            <span class="font-semibold text-gray-900">{{ $events->where('status', 'completed')->count()
-                                }}</span>
-                        </span>
-                        <span
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg border border-gray-200">
-                            <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-                            <span class="text-gray-600">Scheduled:</span>
-                            <span class="font-semibold text-gray-900">{{ $events->where('status', 'scheduled')->count()
-                                }}</span>
-                        </span>
-                        <span class="text-gray-400 ml-auto" x-show="search || statusFilter"
-                            x-text="visibleCount + ' results found'"></span>
-                    </div>
-
-                    {{-- Event List --}}
-                    <div class="mt-6 grid gap-3 max-h-[500px] overflow-y-auto pr-2" id="eventList">
-                        @foreach($events as $e)
-                        <a href="{{ route('admin.reports.event-detail', ['event_id' => $e->id]) }}"
-                            class="event-card block bg-white rounded-xl border-2 border-gray-200 hover:border-violet-400 hover:shadow-md transition-all p-4"
-                            data-name="{{ strtolower($e->name) }}"
-                            data-customer="{{ strtolower($e->customer->customer_name ?? '') }}"
-                            data-status="{{ $e->status }}" data-date="{{ $e->event_date }}"
-                            data-amount="{{ $e->billing->total_amount ?? 0 }}"
-                            x-show="filterEvent('{{ addslashes(strtolower($e->name)) }}', '{{ addslashes(strtolower($e->customer->customer_name ?? '')) }}', '{{ $e->status }}')"
-                            x-transition:enter="transition ease-out duration-200"
-                            x-transition:enter-start="opacity-0 transform -translate-y-2"
-                            x-transition:enter-end="opacity-100 transform translate-y-0">
-                            <div class="flex items-center gap-4">
-                                {{-- Event Icon --}}
-                                <div
-                                    class="w-12 h-12 bg-gradient-to-br from-violet-400 to-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor"
+                {{-- Search & Stats Section --}}
+                <div class="p-6 border-b border-gray-200 bg-gray-50">
+                    <div class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                        {{-- Search Form --}}
+                        <form method="GET" class="flex-1 max-w-md">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                     </svg>
                                 </div>
-
-                                {{-- Info --}}
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 flex-wrap">
-                                        <h4 class="font-semibold text-gray-900 truncate">{{ $e->name }}</h4>
-                                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold
-                                            @if($e->status === 'completed') bg-green-100 text-green-800
-                                            @elseif($e->status === 'scheduled') bg-blue-100 text-blue-800
-                                            @elseif(in_array($e->status, ['rejected', 'cancelled'])) bg-red-100 text-red-800
-                                            @elseif(in_array($e->status, ['approved', 'request_meeting', 'meeting'])) bg-yellow-100 text-yellow-800
-                                            @elseif($e->status === 'ongoing') bg-indigo-100 text-indigo-800
-                                            @else bg-gray-100 text-gray-800
-                                            @endif">
-                                            {{ ucwords(str_replace('_', ' ', $e->status)) }}
-                                        </span>
-                                    </div>
-                                    <div class="flex items-center gap-3 mt-1 text-sm text-gray-500">
-                                        <span class="flex items-center gap-1">
-                                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                            </svg>
-                                            <span class="truncate">{{ $e->customer->customer_name ?? 'N/A' }}</span>
-                                        </span>
-                                        <span class="flex items-center gap-1 flex-shrink-0">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                            {{ \Carbon\Carbon::parse($e->event_date)->format('M d, Y') }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {{-- Amount --}}
-                                @if($e->billing)
-                                <div class="text-right hidden sm:block">
-                                    <div class="text-xs text-gray-500">Total Amount</div>
-                                    <div class="font-bold text-violet-600">₱{{ number_format($e->billing->total_amount
-                                        ?? 0, 2) }}</div>
-                                </div>
-                                @endif
-
-                                {{-- Arrow --}}
-                                <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 5l7 7-7 7" />
-                                </svg>
+                                <input type="text" name="search" value="{{ request('search') }}"
+                                    placeholder="Search by event name or customer..."
+                                    class="w-full pl-12 pr-4 py-3 rounded-xl border-gray-300 focus:ring-2 focus:ring-violet-200 focus:border-violet-400 text-gray-900">
                             </div>
-                        </a>
-                        @endforeach
-                    </div>
+                        </form>
 
-                    {{-- No Results --}}
-                    <div x-show="noResults" x-cloak class="text-center py-12">
-                        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <p class="text-gray-500">No events found matching your criteria.</p>
-                    </div>
-                </div>
-            </div>
-
-            <script>
-                function eventSearch() {
-                    return {
-                        search: '',
-                        statusFilter: '',
-                        sortBy: 'date_desc',
-                        noResults: false,
-                        visibleCount: {{ $events->count() }},
-                        filterEvent(name, customer, status) {
-                            let matchesSearch = true;
-                            let matchesStatus = true;
-                            
-                            if (this.search) {
-                                const query = this.search.toLowerCase().trim();
-                                matchesSearch = name.includes(query) || customer.includes(query);
-                            }
-                            
-                            if (this.statusFilter) {
-                                matchesStatus = status === this.statusFilter;
-                            }
-                            
-                            return matchesSearch && matchesStatus;
-                        },
-                        filterEvents() {
-                            this.$nextTick(() => this.updateCount());
-                        },
-                        sortEvents() {
-                            const list = document.getElementById('eventList');
-                            const cards = Array.from(list.querySelectorAll('.event-card'));
-                            
-                            cards.sort((a, b) => {
-                                switch(this.sortBy) {
-                                    case 'date_asc':
-                                        return new Date(a.dataset.date) - new Date(b.dataset.date);
-                                    case 'name':
-                                        return a.dataset.name.localeCompare(b.dataset.name);
-                                    case 'amount':
-                                        return parseFloat(b.dataset.amount) - parseFloat(a.dataset.amount);
-                                    default: // date_desc
-                                        return new Date(b.dataset.date) - new Date(a.dataset.date);
-                                }
-                            });
-                            
-                            cards.forEach(card => list.appendChild(card));
-                        },
-                        updateCount() {
-                            const cards = document.querySelectorAll('.event-card');
-                            let visible = 0;
-                            cards.forEach(card => {
-                                if (card.style.display !== 'none') visible++;
-                            });
-                            this.visibleCount = visible;
-                            this.noResults = visible === 0 && (this.search.length > 0 || this.statusFilter);
-                        },
-                        init() {
-                            this.$watch('search', () => this.$nextTick(() => this.updateCount()));
-                            this.$watch('statusFilter', () => this.$nextTick(() => this.updateCount()));
-                        }
-                    }
-                }
-            </script>
-            @else
-
-            {{-- Export Buttons --}}
-            <div
-                class="bg-white rounded-lg shadow-sm p-6 mb-6 flex flex-wrap justify-between items-center gap-4 no-print">
-                <div class="flex items-center gap-3">
-                    <div
-                        class="w-10 h-10 bg-gradient-to-br from-violet-400 to-purple-500 rounded-xl flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <div class="text-sm text-gray-500">Viewing report for</div>
-                        <div class="font-semibold text-gray-900">{{ $event->name }}</div>
-                    </div>
-                </div>
-                <div class="flex gap-2 flex-wrap">
-                    <a href="{{ route('admin.reports.event-detail') }}"
-                        class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                        Change Event
-                    </a>
-                    <button onclick="window.print()"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                        </svg>
-                        Print
-                    </button>
-                    <form method="GET" class="inline">
-                        <input type="hidden" name="event_id" value="{{ $event->id }}">
-                        <input type="hidden" name="export" value="pdf">
-                        <button type="submit"
-                            class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                            </svg>
-                            Export PDF
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            {{-- Report Content --}}
-            <div class="bg-white rounded-lg shadow-sm p-8 print-content">
-
-                {{-- Report Header --}}
-                <div class="border-b-2 border-gray-300 pb-6 mb-6">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <div class="flex items-center gap-3 mb-2">
-                                <div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                                    <span class="text-2xl font-bold text-gray-600">MH</span>
-                                </div>
-                                <div>
-                                    <h1 class="text-2xl font-bold text-gray-900">MichaelHo Events</h1>
-                                    <p class="text-sm text-gray-600">Event Management System</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <h2 class="text-xl font-bold text-gray-900">Event Detail Report</h2>
-                            <p class="text-sm text-gray-600">Generated: {{ now()->format('M d, Y g:i A') }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Event Overview --}}
-                <div class="mb-8">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Event Overview
-                    </h3>
-                    <div class="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-6 border border-violet-200">
-                        <div class="flex items-center justify-between mb-4">
-                            <h4 class="text-2xl font-bold text-gray-900">{{ $event->name }}</h4>
-                            <span class="px-4 py-2 rounded-full text-sm font-semibold
-                                @if($event->status === 'completed') bg-green-100 text-green-800
-                                @elseif($event->status === 'scheduled') bg-blue-100 text-blue-800
-                                @elseif(in_array($event->status, ['rejected', 'cancelled'])) bg-red-100 text-red-800
-                                @elseif(in_array($event->status, ['approved', 'request_meeting', 'meeting'])) bg-yellow-100 text-yellow-800
-                                @elseif($event->status === 'ongoing') bg-indigo-100 text-indigo-800
-                                @else bg-gray-100 text-gray-800
-                                @endif">
-                                {{ ucwords(str_replace('_', ' ', $event->status)) }}
+                        {{-- Quick Stats --}}
+                        <div class="flex flex-wrap gap-3 text-sm">
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg border border-gray-200">
+                                <span class="w-2 h-2 bg-violet-500 rounded-full"></span>
+                                <span class="text-gray-600">Total:</span>
+                                <span class="font-semibold text-gray-900">{{ $totalEvents ?? $events->total() }}</span>
+                            </span>
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg border border-gray-200">
+                                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                                <span class="text-gray-600">Completed:</span>
+                                <span class="font-semibold text-gray-900">{{ $completedEvents ?? 0 }}</span>
+                            </span>
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg border border-gray-200">
+                                <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                <span class="text-gray-600">Scheduled:</span>
+                                <span class="font-semibold text-gray-900">{{ $scheduledEvents ?? 0 }}</span>
                             </span>
                         </div>
-                        <div class="grid md:grid-cols-3 gap-6">
-                            <div>
-                                <div class="text-sm text-gray-500 mb-1">Event Date</div>
-                                <div class="text-lg font-semibold text-gray-900">{{
-                                    \Carbon\Carbon::parse($event->event_date)->format('F d, Y') }}</div>
-                            </div>
-                            <div>
-                                <div class="text-sm text-gray-500 mb-1">Venue</div>
-                                <div class="text-lg font-semibold text-gray-900">{{ $event->venue ?? 'TBD' }}</div>
-                            </div>
-                            <div>
-                                <div class="text-sm text-gray-500 mb-1">Theme</div>
-                                <div class="text-lg font-semibold text-gray-900">{{ $event->theme ?? 'N/A' }}</div>
-                            </div>
-                            <div>
-                                <div class="text-sm text-gray-500 mb-1">Package</div>
-                                <div class="text-lg font-semibold text-gray-900">{{ $event->package->name ?? 'N/A' }}
-                                </div>
-                            </div>
-                            <div>
-                                <div class="text-sm text-gray-500 mb-1">Expected Guests</div>
-                                <div class="text-lg font-semibold text-gray-900">{{ $event->guests ?? 'N/A' }}</div>
-                            </div>
-                            <div>
-                                <div class="text-sm text-gray-500 mb-1">Booked On</div>
-                                <div class="text-lg font-semibold text-gray-900">{{ $event->created_at->format('M d, Y')
-                                    }}</div>
-                            </div>
-                        </div>
-                        @if($event->notes)
-                        <div class="mt-4 pt-4 border-t border-violet-200">
-                            <div class="text-sm text-gray-500 mb-1">Notes</div>
-                            <div class="text-gray-700">{{ $event->notes }}</div>
-                        </div>
-                        @endif
                     </div>
-                </div>
 
-                {{-- Customer Information --}}
-                <div class="mb-8">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        Customer Information
-                    </h3>
-                    <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6 border border-indigo-200">
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div>
-                                <div class="text-sm text-gray-500 mb-1">Customer Name</div>
-                                <div class="text-lg font-semibold text-gray-900">{{ $event->customer->customer_name ??
-                                    'N/A' }}</div>
-                            </div>
-                            <div>
-                                <div class="text-sm text-gray-500 mb-1">Email Address</div>
-                                <div class="text-lg font-semibold text-gray-900">{{ $event->customer->email ?? 'N/A' }}
-                                </div>
-                            </div>
-                            <div>
-                                <div class="text-sm text-gray-500 mb-1">Phone Number</div>
-                                <div class="text-lg font-semibold text-gray-900">{{ $event->customer->phone ??
-                                    $event->customer->contact_number ?? 'N/A' }}</div>
-                            </div>
-                            <div>
-                                <div class="text-sm text-gray-500 mb-1">Address</div>
-                                <div class="text-lg font-semibold text-gray-900">{{ $event->customer->address ?? 'N/A'
-                                    }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Financial Summary --}}
-                <div class="mb-8">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Financial Summary
-                    </h3>
-                    <div class="grid md:grid-cols-4 gap-4">
-                        <div
-                            class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg p-5 border border-amber-200">
-                            <div class="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Total Amount
-                            </div>
-                            <div class="text-2xl font-bold text-amber-900">₱{{ number_format($stats['total_amount'], 2)
-                                }}</div>
-                        </div>
-                        <div
-                            class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-5 border border-green-200">
-                            <div class="text-xs font-semibold text-green-700 uppercase tracking-wide mb-1">Total Paid
-                            </div>
-                            <div class="text-2xl font-bold text-green-900">₱{{ number_format($stats['total_paid'], 2) }}
-                            </div>
-                        </div>
-                        <div class="bg-gradient-to-br from-red-50 to-rose-50 rounded-lg p-5 border border-red-200">
-                            <div class="text-xs font-semibold text-red-700 uppercase tracking-wide mb-1">Remaining
-                                Balance</div>
-                            <div class="text-2xl font-bold text-red-900">₱{{ number_format($stats['remaining_balance'],
-                                2) }}</div>
-                        </div>
-                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-5 border border-blue-200">
-                            <div class="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">Payment
-                                Progress</div>
-                            <div class="text-2xl font-bold text-blue-900">{{ $stats['payment_percentage'] }}%</div>
-                            <div class="mt-2 h-2 bg-blue-200 rounded-full overflow-hidden">
-                                <div class="h-full bg-blue-600 rounded-full"
-                                    style="width: {{ $stats['payment_percentage'] }}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Billing & Inclusions --}}
-                <div class="mb-8">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                        </svg>
-                        Billing Breakdown
-                    </h3>
-                    <div class="grid md:grid-cols-2 gap-6">
-                        {{-- Inclusions --}}
-                        <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                            <h4 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                </svg>
-                                Inclusions ({{ $event->inclusions->count() }})
-                            </h4>
-                            @if($event->inclusions->count() > 0)
-                            <div class="max-h-64 overflow-y-auto">
-                                <table class="w-full text-sm">
-                                    <thead class="sticky top-0 bg-gray-50">
-                                        <tr class="border-b border-gray-300">
-                                            <th class="py-2 text-left font-medium text-gray-700">Item</th>
-                                            <th class="py-2 text-left font-medium text-gray-700">Category</th>
-                                            <th class="py-2 text-right font-medium text-gray-700">Price</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($event->inclusions as $inclusion)
-                                        <tr class="border-b border-gray-200 last:border-0">
-                                            <td class="py-2 text-gray-700">{{ $inclusion->name }}</td>
-                                            <td class="py-2 text-gray-500 text-xs">{{ $inclusion->category ?
-                                                ucfirst($inclusion->category->value) : 'N/A' }}</td>
-                                            <td class="py-2 text-right font-medium text-gray-900">
-                                                ₱{{ number_format($inclusion->pivot->price_snapshot ??
-                                                $inclusion->price, 2) }}
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                            @else
-                            <p class="text-sm text-gray-500 italic">No inclusions recorded</p>
-                            @endif
-                        </div>
-
-                        {{-- Billing Summary --}}
-                        <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                            <h4 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                                Cost Breakdown
-                            </h4>
-                            @if($event->billing)
-                            @php
-                            $inclTotal = $event->inclusions->sum(fn($i) => $i->pivot->price_snapshot ?? $i->price);
-                            $coordPrice = $event->package->coordination_price ?? 25000;
-                            $stylingPrice = $event->package->event_styling_price ?? 55000;
-                            @endphp
-                            <table class="w-full text-sm">
-                                <tr class="border-b border-gray-200">
-                                    <td class="py-3 text-gray-600">Coordination Fee</td>
-                                    <td class="py-3 text-right font-medium">₱{{ number_format($coordPrice, 2) }}</td>
-                                </tr>
-                                <tr class="border-b border-gray-200">
-                                    <td class="py-3 text-gray-600">Event Styling Fee</td>
-                                    <td class="py-3 text-right font-medium">₱{{ number_format($stylingPrice, 2) }}</td>
-                                </tr>
-                                <tr class="border-b border-gray-200">
-                                    <td class="py-3 text-gray-600">Inclusions Subtotal</td>
-                                    <td class="py-3 text-right font-medium">₱{{ number_format($inclTotal, 2) }}</td>
-                                </tr>
-                                <tr class="bg-amber-50">
-                                    <td class="py-3 font-bold text-gray-900">Grand Total</td>
-                                    <td class="py-3 text-right font-bold text-amber-700 text-lg">₱{{
-                                        number_format($event->billing->total_amount, 2) }}</td>
-                                </tr>
-                            </table>
-                            <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <span class="text-gray-500">Introductory:</span>
-                                    <span
-                                        class="font-semibold {{ $event->billing->intro_paid ? 'text-green-600' : 'text-gray-600' }}">
-                                        ₱{{ number_format($event->billing->intro_amount ?? 5000, 2) }}
-                                        @if($event->billing->intro_paid) ✓ @endif
-                                    </span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Downpayment:</span>
-                                    <span
-                                        class="font-semibold {{ $event->billing->downpayment_paid ? 'text-green-600' : 'text-gray-600' }}">
-                                        ₱{{ number_format($event->billing->downpayment_amount ?? 0, 2) }}
-                                        @if($event->billing->downpayment_paid) ✓ @endif
-                                    </span>
-                                </div>
-                            </div>
-                            @else
-                            <p class="text-sm text-gray-500 italic">No billing information</p>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Payment History --}}
-                <div class="mb-8">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        Payment History
-                    </h3>
-                    @if($payments->count() > 0)
-                    <div class="overflow-x-auto bg-gray-50 rounded-xl p-4">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b-2 border-gray-300">
-                                    <th class="py-3 px-4 text-left font-semibold text-gray-700">Date</th>
-                                    <th class="py-3 px-4 text-left font-semibold text-gray-700">Type</th>
-                                    <th class="py-3 px-4 text-left font-semibold text-gray-700">Method</th>
-                                    <th class="py-3 px-4 text-left font-semibold text-gray-700">Reference</th>
-                                    <th class="py-3 px-4 text-right font-semibold text-gray-700">Amount</th>
-                                    <th class="py-3 px-4 text-center font-semibold text-gray-700">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($payments as $payment)
-                                <tr class="border-b border-gray-200 hover:bg-white">
-                                    <td class="py-3 px-4">{{ $payment->created_at->format('M d, Y h:i A') }}</td>
-                                    <td class="py-3 px-4 capitalize">{{ str_replace('_', ' ', $payment->payment_type) }}
-                                    </td>
-                                    <td class="py-3 px-4 capitalize">{{ str_replace('_', ' ', $payment->payment_method)
-                                        }}</td>
-                                    <td class="py-3 px-4 font-mono text-xs">{{ $payment->reference_number ?? '-' }}</td>
-                                    <td class="py-3 px-4 text-right font-semibold">₱{{ number_format($payment->amount,
-                                        2) }}</td>
-                                    <td class="py-3 px-4 text-center">
-                                        <span class="px-2 py-1 rounded-full text-xs font-semibold
-                                            @if($payment->status === 'approved') bg-green-100 text-green-800
-                                            @elseif($payment->status === 'pending') bg-yellow-100 text-yellow-800
-                                            @else bg-red-100 text-red-800
-                                            @endif">
-                                            {{ ucfirst($payment->status) }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                @if($payment->status === 'rejected' && $payment->rejection_reason)
-                                <tr class="bg-red-50">
-                                    <td colspan="6" class="py-2 px-4 text-sm text-red-700">
-                                        <span class="font-medium">Rejection reason:</span> {{ $payment->rejection_reason
-                                        }}
-                                    </td>
-                                </tr>
-                                @endif
-                                @endforeach
-                            </tbody>
-                            <tfoot>
-                                <tr class="border-t-2 border-gray-300 bg-green-50">
-                                    <td colspan="4" class="py-3 px-4 text-right font-bold text-gray-900">Total Paid
-                                        (Approved):</td>
-                                    <td class="py-3 px-4 text-right font-bold text-green-700 text-lg">₱{{
-                                        number_format($stats['total_paid'], 2) }}</td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                    @else
-                    <div class="text-center py-8 bg-gray-50 rounded-xl">
-                        <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <p class="text-gray-500">No payments recorded yet.</p>
+                    @if(request('search'))
+                    <div class="mt-3 flex items-center gap-2">
+                        <span class="text-sm text-gray-600">Showing results for "<strong>{{ request('search')
+                                }}</strong>"</span>
+                        <a href="{{ route('admin.reports.event-detail') }}"
+                            class="text-sm text-violet-600 hover:text-violet-800 underline">Clear</a>
                     </div>
                     @endif
                 </div>
 
-                {{-- Event Progress / Timeline --}}
-                <div class="mb-8">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                        </svg>
-                        Event Progress & Updates
-                    </h3>
-                    @if($progressUpdates->count() > 0)
-                    <div class="relative">
-                        {{-- Timeline Line --}}
-                        <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                {{-- Event Table --}}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200">
+                                <th class="px-6 py-4 text-left font-semibold text-gray-700">Event</th>
+                                <th class="px-6 py-4 text-left font-semibold text-gray-700">Customer</th>
+                                <th class="px-6 py-4 text-center font-semibold text-gray-700">Date</th>
+                                <th class="px-6 py-4 text-center font-semibold text-gray-700">Status</th>
+                                <th class="px-6 py-4 text-right font-semibold text-gray-700">Total Amount</th>
+                                <th class="px-6 py-4 text-center font-semibold text-gray-700">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @forelse($events as $e)
+                            <tr class="hover:bg-gray-50 transition">
+                                {{-- Event Name & Icon --}}
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-10 h-10 bg-gradient-to-br from-violet-400 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <div class="font-semibold text-gray-900">{{ $e->name }}</div>
+                                            <div class="text-xs text-gray-500">ID: #{{ str_pad($e->id, 6, '0',
+                                                STR_PAD_LEFT) }}</div>
+                                        </div>
+                                    </div>
+                                </td>
 
-                        <div class="space-y-6">
-                            @foreach($progressUpdates as $progress)
-                            <div class="relative flex gap-4">
-                                {{-- Timeline Dot --}}
-                                <div
-                                    class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 z-10 border-4 border-white">
-                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor"
+                                {{-- Customer --}}
+                                <td class="px-6 py-4">
+                                    <div class="text-gray-900 font-medium">{{ $e->customer->customer_name ?? 'N/A' }}
+                                    </div>
+                                    @if($e->customer?->phone)
+                                    <div class="text-xs text-gray-500">{{ $e->customer->phone }}</div>
+                                    @endif
+                                </td>
+
+                                {{-- Date --}}
+                                <td class="px-6 py-4 text-center">
+                                    <div class="text-gray-900">{{ $e->event_date->format('M d, Y') }}</div>
+                                    <div class="text-xs text-gray-500">{{ $e->event_date->diffForHumans() }}</div>
+                                </td>
+
+                                {{-- Status --}}
+                                <td class="px-6 py-4 text-center">
+                                    @php
+                                    $statusColors = [
+                                    'requested' => 'bg-amber-100 text-amber-800',
+                                    'approved' => 'bg-emerald-100 text-emerald-800',
+                                    'request_meeting' => 'bg-orange-100 text-orange-800',
+                                    'meeting' => 'bg-blue-100 text-blue-800',
+                                    'scheduled' => 'bg-indigo-100 text-indigo-800',
+                                    'ongoing' => 'bg-teal-100 text-teal-800',
+                                    'completed' => 'bg-green-100 text-green-800',
+                                    'rejected' => 'bg-rose-100 text-rose-800',
+                                    'cancelled' => 'bg-gray-100 text-gray-800',
+                                    ];
+                                    @endphp
+                                    <span
+                                        class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusColors[$e->status] ?? 'bg-gray-100 text-gray-800' }}">
+                                        {{ ucwords(str_replace('_', ' ', $e->status)) }}
+                                    </span>
+                                </td>
+
+                                {{-- Total Amount --}}
+                                <td class="px-6 py-4 text-right">
+                                    @if($e->billing)
+                                    <div class="font-semibold text-gray-900">₱{{
+                                        number_format($e->billing->total_amount ?? 0, 2) }}</div>
+                                    @php
+                                    $paid = $e->billing->payments->where('status', 'approved')->sum('amount');
+                                    $balance = ($e->billing->total_amount ?? 0) - $paid;
+                                    @endphp
+                                    @if($balance > 0)
+                                    <div class="text-xs text-red-600">Bal: ₱{{ number_format($balance, 2) }}</div>
+                                    @else
+                                    <div class="text-xs text-green-600">Fully Paid</div>
+                                    @endif
+                                    @else
+                                    <span class="text-gray-400">—</span>
+                                    @endif
+                                </td>
+
+                                {{-- Action --}}
+                                <td class="px-6 py-4 text-center">
+                                    <a href="{{ route('admin.reports.event-detail', ['event_id' => $e->id]) }}"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        View Report
+                                    </a>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center">
+                                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
-                                </div>
+                                    <p class="text-gray-500 font-medium">No events found</p>
+                                    @if(request('search'))
+                                    <p class="text-gray-400 text-sm mt-1">Try a different search term</p>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
 
+                {{-- Pagination --}}
+                @if($events->hasPages())
+                <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                    {{ $events->links() }}
+                </div>
+                @endif
+            </div>
+            @else
+            {{-- ========== EVENT REPORT CONTENT ========== --}}
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden print-content">
+                {{-- Report Header with Actions --}}
+                <div class="bg-gradient-to-r from-violet-600 to-purple-600 px-6 py-8 text-white relative">
+                    <div class="no-print absolute top-4 right-4 flex gap-2">
+                        <button onclick="window.print()"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                            Print
+                        </button>
+                        <a href="{{ route('admin.reports.event-detail', ['event_id' => $event->id, 'export' => 'pdf']) }}"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Export PDF
+                        </a>
+                        <a href="{{ route('admin.reports.event-detail') }}"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            Back to List
+                        </a>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
+                            <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-3xl font-bold">{{ $event->name }}</h1>
+                            <p class="text-violet-100 mt-1">Event ID: #{{ str_pad($event->id, 6, '0', STR_PAD_LEFT) }} •
+                                Generated {{ now()->format('M d, Y h:i A') }}</p>
+                        </div>
+                    </div>
+
+                    {{-- Status Badge --}}
+                    @php
+                    $statusColors = [
+                    'requested' => 'bg-amber-400 text-amber-900',
+                    'approved' => 'bg-emerald-400 text-emerald-900',
+                    'request_meeting' => 'bg-orange-400 text-orange-900',
+                    'meeting' => 'bg-blue-400 text-blue-900',
+                    'scheduled' => 'bg-indigo-400 text-indigo-900',
+                    'ongoing' => 'bg-teal-400 text-teal-900',
+                    'completed' => 'bg-green-400 text-green-900',
+                    'rejected' => 'bg-rose-400 text-rose-900',
+                    'cancelled' => 'bg-gray-400 text-gray-900',
+                    ];
+                    @endphp
+                    <div class="mt-4">
+                        <span
+                            class="inline-flex px-3 py-1 rounded-full text-sm font-bold {{ $statusColors[$event->status] ?? 'bg-gray-400 text-gray-900' }}">
+                            {{ ucwords(str_replace('_', ' ', $event->status)) }}
+                        </span>
+                    </div>
+                </div>
+
+                {{-- Report Body --}}
+                <div class="p-6">
+
+                    {{-- Stats Cards --}}
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                        <div
+                            class="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-4 border border-violet-200">
+                            <div class="text-xs text-violet-600 font-medium uppercase tracking-wider">Total Amount</div>
+                            <div class="text-2xl font-bold text-violet-900 mt-1">₱{{
+                                number_format($stats['total_amount'], 2) }}</div>
+                        </div>
+                        <div
+                            class="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-4 border border-emerald-200">
+                            <div class="text-xs text-emerald-600 font-medium uppercase tracking-wider">Total Paid</div>
+                            <div class="text-2xl font-bold text-emerald-900 mt-1">₱{{
+                                number_format($stats['total_paid'], 2) }}</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-rose-50 to-red-50 rounded-xl p-4 border border-rose-200">
+                            <div class="text-xs text-rose-600 font-medium uppercase tracking-wider">Balance</div>
+                            <div class="text-2xl font-bold text-rose-900 mt-1">₱{{
+                                number_format($stats['remaining_balance'], 2) }}</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                            <div class="text-xs text-blue-600 font-medium uppercase tracking-wider">Payment Progress
+                            </div>
+                            <div class="text-2xl font-bold text-blue-900 mt-1">{{ $stats['payment_percentage'] }}%</div>
+                            <div class="w-full bg-blue-200 rounded-full h-1.5 mt-2">
+                                <div class="bg-blue-600 h-1.5 rounded-full"
+                                    style="width: {{ $stats['payment_percentage'] }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Event Information --}}
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Event Information
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-gray-50 rounded-xl p-5 border border-gray-200">
+                                <h4 class="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Event Details
+                                </h4>
+                                <dl class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-600">Event Date:</dt>
+                                        <dd class="font-medium text-gray-900">{{ $event->event_date->format('F d, Y') }}
+                                        </dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-600">Venue:</dt>
+                                        <dd class="font-medium text-gray-900">{{ $event->venue ?? 'TBD' }}</dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-600">Theme:</dt>
+                                        <dd class="font-medium text-gray-900">{{ $event->theme ?? 'N/A' }}</dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-600">Package:</dt>
+                                        <dd class="font-medium text-gray-900">{{ $event->package->name ?? 'N/A' }}</dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-600">Created:</dt>
+                                        <dd class="font-medium text-gray-900">{{ $event->created_at->format('M d, Y') }}
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </div>
+                            <div class="bg-gray-50 rounded-xl p-5 border border-gray-200">
+                                <h4 class="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">Customer
+                                    Information</h4>
+                                <dl class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-600">Name:</dt>
+                                        <dd class="font-medium text-gray-900">{{ $event->customer->customer_name ??
+                                            'N/A' }}</dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-600">Email:</dt>
+                                        <dd class="font-medium text-gray-900">{{ $event->customer->email ?? 'N/A' }}
+                                        </dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-600">Phone:</dt>
+                                        <dd class="font-medium text-gray-900">{{ $event->customer->phone ?? 'N/A' }}
+                                        </dd>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-600">Address:</dt>
+                                        <dd class="font-medium text-gray-900 text-right max-w-[200px]">{{
+                                            $event->customer->address ?? 'N/A' }}</dd>
+                                    </div>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Inclusions --}}
+                    @if($event->inclusions->count() > 0)
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                            Package Inclusions
+                        </h3>
+                        <div class="overflow-x-auto bg-gray-50 rounded-xl p-4">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b-2 border-gray-300">
+                                        <th class="py-3 px-4 text-left font-semibold text-gray-700">Inclusion</th>
+                                        <th class="py-3 px-4 text-left font-semibold text-gray-700">Category</th>
+                                        <th class="py-3 px-4 text-right font-semibold text-gray-700">Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($event->inclusions as $inclusion)
+                                    <tr class="border-b border-gray-200 hover:bg-white">
+                                        <td class="py-3 px-4 font-medium">{{ $inclusion->name }}</td>
+                                        <td class="py-3 px-4 text-gray-600 capitalize">{{ $inclusion->category }}</td>
+                                        <td class="py-3 px-4 text-right">₱{{
+                                            number_format($inclusion->pivot->price_snapshot ?? $inclusion->price, 2) }}
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr class="border-t-2 border-gray-300 bg-amber-50">
+                                        <td colspan="2" class="py-3 px-4 text-right font-bold text-gray-900">Total
+                                            Inclusions:</td>
+                                        <td class="py-3 px-4 text-right font-bold text-amber-700">₱{{
+                                            number_format($event->inclusions->sum(fn($i) => $i->pivot->price_snapshot ??
+                                            $i->price), 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Payment History --}}
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            Payment History
+                        </h3>
+                        @if($payments->count() > 0)
+                        <div class="overflow-x-auto bg-gray-50 rounded-xl p-4">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b-2 border-gray-300">
+                                        <th class="py-3 px-4 text-left font-semibold text-gray-700">Date</th>
+                                        <th class="py-3 px-4 text-left font-semibold text-gray-700">Type</th>
+                                        <th class="py-3 px-4 text-left font-semibold text-gray-700">Method</th>
+                                        <th class="py-3 px-4 text-left font-semibold text-gray-700">Reference</th>
+                                        <th class="py-3 px-4 text-right font-semibold text-gray-700">Amount</th>
+                                        <th class="py-3 px-4 text-center font-semibold text-gray-700">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($payments as $payment)
+                                    <tr class="border-b border-gray-200 hover:bg-white">
+                                        <td class="py-3 px-4">{{ $payment->created_at->format('M d, Y') }}</td>
+                                        <td class="py-3 px-4 capitalize">{{ str_replace('_', ' ',
+                                            $payment->payment_type) }}</td>
+                                        <td class="py-3 px-4 capitalize">{{ str_replace('_', ' ',
+                                            $payment->payment_method) }}</td>
+                                        <td class="py-3 px-4 font-mono text-xs">{{ $payment->reference_number ?? '—' }}
+                                        </td>
+                                        <td class="py-3 px-4 text-right font-semibold">₱{{
+                                            number_format($payment->amount, 2) }}</td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold
+                                                @if($payment->status === 'approved') bg-green-100 text-green-800
+                                                @elseif($payment->status === 'pending') bg-yellow-100 text-yellow-800
+                                                @else bg-red-100 text-red-800
+                                                @endif">
+                                                {{ ucfirst($payment->status) }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr class="border-t-2 border-gray-300 bg-emerald-50">
+                                        <td colspan="4" class="py-3 px-4 text-right font-bold text-gray-900">Total Paid
+                                            (Approved):</td>
+                                        <td class="py-3 px-4 text-right font-bold text-emerald-700 text-lg">₱{{
+                                            number_format($stats['total_paid'], 2) }}</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        @else
+                        <div class="text-center py-8 bg-gray-50 rounded-xl">
+                            <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <p class="text-gray-500">No payments recorded yet.</p>
+                        </div>
+                        @endif
+                    </div>
+
+                    {{-- Progress Updates --}}
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                            Progress Updates
+                        </h3>
+                        @if($progressUpdates->count() > 0)
+                        <div class="space-y-4">
+                            @foreach($progressUpdates as $index => $progress)
+                            <div class="flex gap-4">
+                                {{-- Timeline Line --}}
+                                <div class="flex flex-col items-center">
+                                    <div class="w-3 h-3 bg-indigo-500 rounded-full ring-4 ring-indigo-100"></div>
+                                    @if(!$loop->last)
+                                    <div class="w-0.5 flex-1 bg-indigo-200 my-1"></div>
+                                    @endif
+                                </div>
                                 {{-- Content --}}
                                 <div class="flex-1 bg-gray-50 rounded-xl p-4 border border-gray-200">
                                     <div class="flex items-center justify-between mb-2">
@@ -733,118 +567,120 @@
                             </div>
                             @endforeach
                         </div>
+                        @else
+                        <div class="text-center py-8 bg-gray-50 rounded-xl">
+                            <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <p class="text-gray-500">No progress updates recorded.</p>
+                        </div>
+                        @endif
                     </div>
-                    @else
-                    <div class="text-center py-8 bg-gray-50 rounded-xl">
-                        <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <p class="text-gray-500">No progress updates recorded.</p>
+
+                    {{-- Staff Assignments --}}
+                    @if($staffAssignments->count() > 0)
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            Staff Assignments
+                        </h3>
+                        <div class="overflow-x-auto bg-gray-50 rounded-xl p-4">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b-2 border-gray-300">
+                                        <th class="py-3 px-4 text-left font-semibold text-gray-700">Staff Member</th>
+                                        <th class="py-3 px-4 text-left font-semibold text-gray-700">Role</th>
+                                        <th class="py-3 px-4 text-right font-semibold text-gray-700">Pay Rate</th>
+                                        <th class="py-3 px-4 text-center font-semibold text-gray-700">Work Status</th>
+                                        <th class="py-3 px-4 text-center font-semibold text-gray-700">Pay Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($staffAssignments as $assignment)
+                                    <tr class="border-b border-gray-200 hover:bg-white">
+                                        <td class="py-3 px-4 font-medium">{{ $assignment->user->name ?? 'N/A' }}</td>
+                                        <td class="py-3 px-4 capitalize">{{ $assignment->pivot->assignment_role ??
+                                            'Staff' }}</td>
+                                        <td class="py-3 px-4 text-right">₱{{ number_format($assignment->pivot->pay_rate
+                                            ?? 0, 2) }}</td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold
+                                                @if($assignment->pivot->work_status === 'finished') bg-green-100 text-green-800
+                                                @elseif($assignment->pivot->work_status === 'ongoing') bg-blue-100 text-blue-800
+                                                @else bg-gray-100 text-gray-800
+                                                @endif">
+                                                {{ ucfirst($assignment->pivot->work_status ?? 'Assigned') }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold
+                                                @if($assignment->pivot->pay_status === 'paid') bg-green-100 text-green-800
+                                                @elseif($assignment->pivot->pay_status === 'approved') bg-blue-100 text-blue-800
+                                                @else bg-yellow-100 text-yellow-800
+                                                @endif">
+                                                {{ ucfirst($assignment->pivot->pay_status ?? 'Pending') }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr class="border-t-2 border-gray-300 bg-orange-50">
+                                        <td colspan="2" class="py-3 px-4 text-right font-bold text-gray-900">Total
+                                            Payroll:</td>
+                                        <td class="py-3 px-4 text-right font-bold text-orange-700">₱{{
+                                            number_format($staffAssignments->sum(fn($s) => $s->pivot->pay_rate ?? 0), 2)
+                                            }}</td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
                     @endif
-                </div>
 
-                {{-- Staff Assignments --}}
-                @if($staffAssignments->count() > 0)
-                <div class="mb-8">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        Staff Assignments
-                    </h3>
-                    <div class="overflow-x-auto bg-gray-50 rounded-xl p-4">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b-2 border-gray-300">
-                                    <th class="py-3 px-4 text-left font-semibold text-gray-700">Staff Member</th>
-                                    <th class="py-3 px-4 text-left font-semibold text-gray-700">Role</th>
-                                    <th class="py-3 px-4 text-right font-semibold text-gray-700">Pay Rate</th>
-                                    <th class="py-3 px-4 text-center font-semibold text-gray-700">Work Status</th>
-                                    <th class="py-3 px-4 text-center font-semibold text-gray-700">Pay Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($staffAssignments as $assignment)
-                                <tr class="border-b border-gray-200 hover:bg-white">
-                                    <td class="py-3 px-4 font-medium">{{ $assignment->user->name ?? 'N/A' }}</td>
-                                    <td class="py-3 px-4 capitalize">{{ $assignment->pivot->assignment_role ?? 'Staff'
-                                        }}</td>
-                                    <td class="py-3 px-4 text-right">₱{{ number_format($assignment->pivot->pay_rate ??
-                                        0, 2) }}</td>
-                                    <td class="py-3 px-4 text-center">
-                                        <span class="px-2 py-1 rounded-full text-xs font-semibold
-                                            @if($assignment->pivot->work_status === 'finished') bg-green-100 text-green-800
-                                            @elseif($assignment->pivot->work_status === 'ongoing') bg-blue-100 text-blue-800
-                                            @else bg-gray-100 text-gray-800
-                                            @endif">
-                                            {{ ucfirst($assignment->pivot->work_status ?? 'Assigned') }}
-                                        </span>
-                                    </td>
-                                    <td class="py-3 px-4 text-center">
-                                        <span class="px-2 py-1 rounded-full text-xs font-semibold
-                                            @if($assignment->pivot->pay_status === 'paid') bg-green-100 text-green-800
-                                            @elseif($assignment->pivot->pay_status === 'approved') bg-blue-100 text-blue-800
-                                            @else bg-yellow-100 text-yellow-800
-                                            @endif">
-                                            {{ ucfirst($assignment->pivot->pay_status ?? 'Pending') }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                            <tfoot>
-                                <tr class="border-t-2 border-gray-300 bg-orange-50">
-                                    <td colspan="2" class="py-3 px-4 text-right font-bold text-gray-900">Total Payroll:
-                                    </td>
-                                    <td class="py-3 px-4 text-right font-bold text-orange-700">₱{{
-                                        number_format($staffAssignments->sum(fn($s) => $s->pivot->pay_rate ?? 0), 2) }}
-                                    </td>
-                                    <td colspan="2"></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-                @endif
-
-                {{-- Feedback --}}
-                @if($event->feedback)
-                <div class="mb-8">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                        </svg>
-                        Customer Feedback
-                    </h3>
-                    <div class="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl p-6 border border-yellow-200">
-                        <div class="flex items-center gap-2 mb-3">
-                            @for($i = 1; $i <= 5; $i++) <svg
-                                class="w-6 h-6 {{ $i <= $event->feedback->rating ? 'text-yellow-400' : 'text-gray-300' }}"
-                                fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                                @endfor
-                                <span class="ml-2 font-semibold text-gray-700">{{ $event->feedback->rating }}/5</span>
+                    {{-- Feedback --}}
+                    @if($event->feedback)
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                            Customer Feedback
+                        </h3>
+                        <div
+                            class="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl p-6 border border-yellow-200">
+                            <div class="flex items-center gap-2 mb-3">
+                                @for($i = 1; $i <= 5; $i++) <svg
+                                    class="w-6 h-6 {{ $i <= $event->feedback->rating ? 'text-yellow-400' : 'text-gray-300' }}"
+                                    fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                    @endfor
+                                    <span class="ml-2 font-semibold text-gray-700">{{ $event->feedback->rating
+                                        }}/5</span>
+                            </div>
+                            @if($event->feedback->comment)
+                            <p class="text-gray-700 italic">"{{ $event->feedback->comment }}"</p>
+                            @endif
+                            <p class="text-sm text-gray-500 mt-3">Submitted on {{
+                                $event->feedback->created_at->format('M d, Y') }}</p>
                         </div>
-                        @if($event->feedback->comment)
-                        <p class="text-gray-700 italic">"{{ $event->feedback->comment }}"</p>
-                        @endif
-                        <p class="text-sm text-gray-500 mt-3">Submitted on {{ $event->feedback->created_at->format('M d,
-                            Y') }}</p>
                     </div>
-                </div>
-                @endif
+                    @endif
 
-                {{-- Footer --}}
-                <div class="mt-8 pt-6 border-t border-gray-300 text-center text-sm text-gray-600">
-                    <p>MichaelHo Events - Event Management System</p>
-                    <p>Contact: michaelhoevents@gmail.com | Phone: 0917 306 2531</p>
+                    {{-- Footer --}}
+                    <div class="mt-8 pt-6 border-t border-gray-300 text-center text-sm text-gray-600">
+                        <p>MichaelHo Events - Event Management System</p>
+                        <p>Contact: michaelhoevents@gmail.com | Phone: 0917 306 2531</p>
+                    </div>
                 </div>
             </div>
             @endif
