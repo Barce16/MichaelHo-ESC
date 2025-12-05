@@ -915,6 +915,7 @@
                                     'bg-blue-500' : 'bg-amber-500'));
                                     $ringColor = $hasProof ? 'ring-emerald-100' : ($isPast ? 'ring-rose-100' : ($isToday
                                     ? 'ring-blue-100' : 'ring-amber-100'));
+                                    $assignedStaff = $schedule->staff;
                                     @endphp
 
                                     {{-- Timeline Dot --}}
@@ -993,7 +994,7 @@
                                                     @endif
                                                 </div>
 
-                                                {{-- Date & Time --}}
+                                                {{-- Date, Time & Venue --}}
                                                 <div
                                                     class="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500">
                                                     <span class="flex items-center gap-1">
@@ -1030,9 +1031,70 @@
                                                     @endif
                                                 </div>
 
+                                                {{-- Assigned Staff Section --}}
+                                                @if($assignedStaff)
+                                                <div class="mt-3 pt-3 border-t border-gray-100">
+                                                    <div class="flex items-center gap-2">
+                                                        {{-- Staff Avatar --}}
+                                                        <div class="flex-shrink-0">
+                                                            @if($assignedStaff->avatar_url)
+                                                            <img src="{{ $assignedStaff->avatar_url }}"
+                                                                alt="{{ $assignedStaff->name }}"
+                                                                class="w-8 h-8 rounded-full object-cover border-2 border-violet-200 shadow-sm">
+                                                            @else
+                                                            <div
+                                                                class="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center border-2 border-violet-200">
+                                                                <svg class="w-4 h-4 text-violet-600" fill="none"
+                                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2"
+                                                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                                </svg>
+                                                            </div>
+                                                            @endif
+                                                        </div>
+
+                                                        {{-- Staff Info --}}
+                                                        <div class="flex-1 min-w-0">
+                                                            <div class="flex items-center gap-2">
+                                                                <span class="text-xs font-medium text-gray-900">{{
+                                                                    $assignedStaff->name }}</span>
+                                                                <span
+                                                                    class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-violet-50 text-violet-700">
+                                                                    <svg class="w-3 h-3" fill="none"
+                                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round"
+                                                                            stroke-linejoin="round" stroke-width="2"
+                                                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                                    </svg>
+                                                                    Assigned Staff
+                                                                </span>
+                                                            </div>
+                                                            {{-- Contact Number (if available) --}}
+                                                            @if($schedule->contact_number)
+                                                            <div
+                                                                class="flex items-center gap-1 mt-0.5 text-xs text-gray-500">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                                    viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2"
+                                                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                                                </svg>
+                                                                <span>{{ $schedule->contact_number }}</span>
+                                                            </div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endif
+
+                                                {{-- Remarks --}}
                                                 @if($schedule->remarks)
-                                                <p class="text-xs text-gray-600 mt-2 leading-relaxed">{{
-                                                    $schedule->remarks }}</p>
+                                                <p
+                                                    class="text-xs text-gray-600 mt-2 leading-relaxed {{ $assignedStaff ? '' : 'pt-2 border-t border-gray-100 mt-3' }}">
+                                                    <span class="font-medium text-gray-700">Note:</span> {{
+                                                    $schedule->remarks }}
+                                                </p>
                                                 @endif
                                             </div>
                                         </div>
