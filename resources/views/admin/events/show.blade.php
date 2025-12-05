@@ -1100,6 +1100,7 @@
                         </div>
                         @endif
 
+
                         {{-- SCHEDULED Status - Assign staff --}}
                         @if($event->status === 'scheduled')
                         <div class="space-y-3">
@@ -1157,602 +1158,665 @@
                                 </span>
                                 @endif
                             </button>
-                        </div>
-                        @endif
 
-                        {{-- ONGOING Status --}}
-                        @if($event->status === 'ongoing')
-                        <div class="space-y-3">
-                            <div class="text-center py-4 bg-teal-50 rounded-lg border border-teal-200">
-                                <svg class="w-8 h-8 text-teal-500 mx-auto mb-2" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div class="text-sm font-medium text-teal-900 mb-1">Event is Ongoing</div>
-                                <div class="text-xs text-teal-700">Event is currently in progress</div>
-                            </div>
-
-                            {{-- Post-Event Expenses Button --}}
-                            <button @click="showExpenses = true"
-                                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-rose-600 text-white font-medium hover:bg-rose-700 transition">
+                            {{-- Record Payment Button --}}
+                            @if($event->billing && $event->billing->remaining_balance > 0)
+                            <a href="{{ route('admin.billings.create-payment', $event) }}"
+                                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
-                                Event Expenses
-                                @if($event->expenses->count() > 0)
+                                Record Payment
                                 <span class="ml-1 px-2 py-0.5 text-xs bg-white/20 rounded-full">
-                                    ₱{{ number_format($event->expenses->sum('amount'), 2) }}
+                                    ₱{{ number_format($event->billing->remaining_balance, 2) }}
                                 </span>
-                                @endif
-                            </button>
-                        </div>
-                        @endif
-
-                        {{-- COMPLETED Status --}}
-                        @if($event->status === 'completed')
-                        <div class="space-y-3">
-                            <div class="text-center py-4 bg-emerald-50 rounded-lg border border-emerald-200">
-                                <svg class="w-8 h-8 text-emerald-500 mx-auto mb-2" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
+                            </a>
+                            @elseif($event->billing && $event->billing->remaining_balance <= 0) <div
+                                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-100 text-emerald-700 font-medium border border-emerald-200">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <div class="text-sm font-medium text-emerald-900 mb-1">Event Completed</div>
-                                <div class="text-xs text-emerald-700">This event has been completed successfully</div>
-                            </div>
-
-                            {{-- Post-Event Expenses Button --}}
-                            <button @click="showExpenses = true"
-                                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-rose-600 text-white font-medium hover:bg-rose-700 transition">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                                Post-Event Expenses
-                                @if($event->expenses->count() > 0)
-                                <span class="ml-1 px-2 py-0.5 text-xs bg-white/20 rounded-full">
-                                    ₱{{ number_format($event->expenses->sum('amount'), 2) }}
-                                </span>
-                                @endif
-                            </button>
+                                Fully Paid
                         </div>
                         @endif
+                    </div>
+                    @endif
 
-
-                        {{-- Change Requests Section --}}
-                        @if($event->changeRequests->count() > 0 || $event->hasPendingChangeRequest())
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-                            <div class="bg-slate-50 border-b border-gray-200 px-6 py-4">
-                                <div class="flex items-center justify-between">
-                                    <h4 class="text-base font-semibold text-gray-800 flex items-center gap-2">
-                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                        </svg>
-                                        Change Requests
-                                    </h4>
-                                    <div class="flex items-center gap-2">
-                                        @if($event->hasPendingChangeRequest())
-                                        <span
-                                            class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
-                                            Pending Review
-                                        </span>
-                                        @endif
-                                        <a href="{{ route('admin.change-requests.index', ['event_id' => $event->id]) }}"
-                                            class="text-xs text-violet-600 hover:text-violet-800 font-medium">
-                                            See All →
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="p-4 space-y-3">
-                                @foreach($event->changeRequests->sortByDesc('created_at')->take(5) as $request)
-                                <a href="{{ route('admin.change-requests.show', $request) }}"
-                                    class="block p-3 rounded-lg border border-gray-200 hover:border-violet-300 hover:bg-violet-50/50 transition group">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-center gap-2">
-                                                <span
-                                                    class="text-sm font-medium text-gray-900 group-hover:text-violet-700 transition">
-                                                    Request #{{ $request->id }}
-                                                </span>
-                                                @php
-                                                $statusClasses = [
-                                                'pending' => 'bg-yellow-100 text-yellow-800',
-                                                'approved' => 'bg-emerald-100 text-emerald-800',
-                                                'rejected' => 'bg-rose-100 text-rose-800',
-                                                ];
-                                                @endphp
-                                                <span
-                                                    class="px-2 py-0.5 text-xs font-medium rounded-full {{ $statusClasses[$request->status] ?? 'bg-gray-100 text-gray-800' }}">
-                                                    {{ ucfirst($request->status) }}
-                                                </span>
-                                            </div>
-                                            <p class="text-xs text-gray-500 mt-1">
-                                                {{ $request->created_at->format('M d, Y g:i A') }}
-                                            </p>
-                                            @if($request->difference != 0)
-                                            <p
-                                                class="text-xs mt-1 {{ $request->difference > 0 ? 'text-emerald-600' : 'text-rose-600' }}">
-                                                {{ $request->difference > 0 ? '+' : '' }}₱{{
-                                                number_format($request->difference, 2) }}
-                                            </p>
-                                            @endif
-                                        </div>
-                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-violet-600 transition flex-shrink-0"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </div>
-                                </a>
-                                @endforeach
-
-                                @if($event->changeRequests->count() > 5)
-                                <div class="text-center pt-2 border-t border-gray-100">
-                                    <span class="text-xs text-gray-500">Showing 5 of {{ $event->changeRequests->count()
-                                        }} requests</span>
-                                </div>
-                                @endif
-                            </div>
-                        </div>
-                        @endif
-
-                        {{-- REJECTED Status --}}
-                        @if($event->status === 'rejected')
-                        <div class="text-center py-4 bg-rose-50 rounded-lg border border-rose-200">
-                            <svg class="w-8 h-8 text-rose-500 mx-auto mb-2" fill="none" stroke="currentColor"
+                    {{-- ONGOING Status --}}
+                    @if($event->status === 'ongoing')
+                    <div class="space-y-3">
+                        <div class="text-center py-4 bg-teal-50 rounded-lg border border-teal-200">
+                            <svg class="w-8 h-8 text-teal-500 mx-auto mb-2" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <div class="text-sm font-medium text-rose-900 mb-1">Event Rejected</div>
-                            @if($event->rejection_reason)
-                            <div class="text-xs text-rose-700 mt-2">{{ $event->rejection_reason }}</div>
-                            @endif
+                            <div class="text-sm font-medium text-teal-900 mb-1">Event is Ongoing</div>
+                            <div class="text-xs text-teal-700">Event is currently in progress</div>
                         </div>
-                        @endif
 
+                        {{-- Event Expenses Button --}}
+                        <button @click="showExpenses = true"
+                            class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-rose-600 text-white font-medium hover:bg-rose-700 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            Event Expenses
+                            @if($event->expenses->count() > 0)
+                            <span class="ml-1 px-2 py-0.5 text-xs bg-white/20 rounded-full">
+                                ₱{{ number_format($event->expenses->sum('amount'), 2) }}
+                            </span>
+                            @endif
+                        </button>
+
+                        {{-- Record Payment Button --}}
+                        @if($event->billing && $event->billing->remaining_balance > 0)
+                        <a href="{{ route('admin.billings.create-payment', $event) }}"
+                            class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            Record Payment
+                            <span class="ml-1 px-2 py-0.5 text-xs bg-white/20 rounded-full">
+                                ₱{{ number_format($event->billing->remaining_balance, 2) }}
+                            </span>
+                        </a>
+                        @elseif($event->billing && $event->billing->remaining_balance <= 0) <div
+                            class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-100 text-emerald-700 font-medium border border-emerald-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Fully Paid
                     </div>
+                    @endif
+                </div>
+                @endif
+
+                {{-- COMPLETED Status --}}
+                @if($event->status === 'completed')
+                <div class="space-y-3">
+                    <div class="text-center py-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <svg class="w-8 h-8 text-emerald-500 mx-auto mb-2" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div class="text-sm font-medium text-emerald-900 mb-1">Event Completed</div>
+                        <div class="text-xs text-emerald-700">This event has been completed successfully</div>
+                    </div>
+
+                    {{-- Post-Event Expenses Button --}}
+                    <button @click="showExpenses = true"
+                        class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-rose-600 text-white font-medium hover:bg-rose-700 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        Post-Event Expenses
+                        @if($event->expenses->count() > 0)
+                        <span class="ml-1 px-2 py-0.5 text-xs bg-white/20 rounded-full">
+                            ₱{{ number_format($event->expenses->sum('amount'), 2) }}
+                        </span>
+                        @endif
+                    </button>
+
+                    {{-- Record Payment Button --}}
+                    @if($event->billing && $event->billing->remaining_balance > 0)
+                    <a href="{{ route('admin.billings.create-payment', $event) }}"
+                        class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Record Payment
+                        <span class="ml-1 px-2 py-0.5 text-xs bg-white/20 rounded-full">
+                            ₱{{ number_format($event->billing->remaining_balance, 2) }}
+                        </span>
+                    </a>
+                    @elseif($event->billing && $event->billing->remaining_balance <= 0) <div
+                        class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-100 text-emerald-700 font-medium border border-emerald-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Fully Paid
+                </div>
+                @endif
+            </div>
+            @endif
+
+        </div>
+    </div>
+    {{-- Change Requests Section --}}
+    @if($event->changeRequests->count() > 0 || $event->hasPendingChangeRequest())
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="bg-slate-50 border-b border-gray-200 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <h4 class="text-base font-semibold text-gray-800 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    Change Requests
+                </h4>
+                <div class="flex items-center gap-2">
+                    @if($event->hasPendingChangeRequest())
+                    <span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                        Pending Review
+                    </span>
+                    @endif
+                    <a href="{{ route('admin.change-requests.index', ['event_id' => $event->id]) }}"
+                        class="text-xs text-violet-600 hover:text-violet-800 font-medium">
+                        See All →
+                    </a>
                 </div>
             </div>
         </div>
-        {{-- Approve Event Modal --}}
-        <div x-show="showApprove" x-cloak @click.self="showApprove=false"
-            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-
-            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 transform scale-90"
-                x-transition:enter-end="opacity-100 transform scale-100"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 transform scale-100"
-                x-transition:leave-end="opacity-0 transform scale-90">
-
-                <form method="POST" action="{{ route('admin.events.approve', $event) }}">
-                    @csrf
-
-                    {{-- Modal Header --}}
-                    <div class="bg-emerald-50 border-b border-emerald-100 p-6 rounded-t-2xl">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-semibold text-emerald-900">Approve Event</h3>
-                                    <p class="text-sm text-emerald-700">Customer will be asked to pay ₱5,000
-                                        introductory payment</p>
-                                </div>
-                            </div>
-                            <button type="button" @click="showApprove=false"
-                                class="text-gray-400 hover:text-gray-600 transition">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
+        <div class="p-4 space-y-3">
+            @foreach($event->changeRequests->sortByDesc('created_at')->take(5) as $request)
+            <a href="{{ route('admin.change-requests.show', $request) }}"
+                class="block p-3 rounded-lg border border-gray-200 hover:border-violet-300 hover:bg-violet-50/50 transition group">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium text-gray-900 group-hover:text-violet-700 transition">
+                                Request #{{ $request->id }}
+                            </span>
+                            @php
+                            $statusClasses = [
+                            'pending' => 'bg-yellow-100 text-yellow-800',
+                            'approved' => 'bg-emerald-100 text-emerald-800',
+                            'rejected' => 'bg-rose-100 text-rose-800',
+                            ];
+                            @endphp
+                            <span
+                                class="px-2 py-0.5 text-xs font-medium rounded-full {{ $statusClasses[$request->status] ?? 'bg-gray-100 text-gray-800' }}">
+                                {{ ucfirst($request->status) }}
+                            </span>
                         </div>
+                        <p class="text-xs text-gray-500 mt-1">
+                            {{ $request->created_at->format('M d, Y g:i A') }}
+                        </p>
+                        @if($request->difference != 0)
+                        <p class="text-xs mt-1 {{ $request->difference > 0 ? 'text-emerald-600' : 'text-rose-600' }}">
+                            {{ $request->difference > 0 ? '+' : '' }}₱{{
+                            number_format($request->difference, 2) }}
+                        </p>
+                        @endif
                     </div>
+                    <svg class="w-4 h-4 text-gray-400 group-hover:text-violet-600 transition flex-shrink-0" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+            </a>
+            @endforeach
 
-                    {{-- Modal Body --}}
-                    <div class="p-6 space-y-6">
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <div class="grid grid-cols-2 gap-4 text-center">
-                                <div>
-                                    <div class="text-xs text-gray-500 mb-1">Total Event Cost</div>
-                                    <div class="text-xl font-bold text-gray-900">₱<span x-text="fmt(grandTotal)"></span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="text-xs text-gray-500 mb-1">Intro Payment Required</div>
-                                    <div class="text-xl font-bold text-emerald-600">₱5,000.00</div>
-                                </div>
-                            </div>
-                        </div>
+            @if($event->changeRequests->count() > 5)
+            <div class="text-center pt-2 border-t border-gray-100">
+                <span class="text-xs text-gray-500">Showing 5 of {{ $event->changeRequests->count()
+                    }} requests</span>
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
 
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <div class="flex gap-3">
-                                <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none"
-                                    stroke="currentColor" viewBox="0 0 24 24">
+    {{-- REJECTED Status --}}
+    @if($event->status === 'rejected')
+    <div class="text-center py-4 bg-rose-50 rounded-lg border border-rose-200">
+        <svg class="w-8 h-8 text-rose-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div class="text-sm font-medium text-rose-900 mb-1">Event Rejected</div>
+        @if($event->rejection_reason)
+        <div class="text-xs text-rose-700 mt-2">{{ $event->rejection_reason }}</div>
+        @endif
+    </div>
+    @endif
+
+    </div>
+    </div>
+    </div>
+    </div>
+    {{-- Approve Event Modal --}}
+    <div x-show="showApprove" x-cloak @click.self="showApprove=false"
+        class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform scale-90"
+            x-transition:enter-end="opacity-100 transform scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 transform scale-100"
+            x-transition:leave-end="opacity-0 transform scale-90">
+
+            <form method="POST" action="{{ route('admin.events.approve', $event) }}">
+                @csrf
+
+                {{-- Modal Header --}}
+                <div class="bg-emerald-50 border-b border-emerald-100 p-6 rounded-t-2xl">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        d="M5 13l4 4L19 7" />
                                 </svg>
-                                <div class="text-sm text-blue-900">
-                                    <p class="font-medium mb-1">What happens next?</p>
-                                    <ul class="text-xs text-blue-800 space-y-1">
-                                        <li>• Customer account will be created automatically</li>
-                                        <li>• Customer will receive login credentials via email</li>
-                                        <li>• Customer must pay ₱5,000 introductory payment</li>
-                                        <li>• After payment verification, you can request downpayment</li>
-                                    </ul>
-                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-emerald-900">Approve Event</h3>
+                                <p class="text-sm text-emerald-700">Customer will be asked to pay ₱5,000
+                                    introductory payment</p>
                             </div>
                         </div>
-                    </div>
-
-                    {{-- Modal Footer --}}
-                    <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
                         <button type="button" @click="showApprove=false"
-                            class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition shadow-lg shadow-emerald-200">
-                            Approve & Notify Customer
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        {{-- Reject Event Modal --}}
-        <div x-show="showReject" x-cloak @click.self="showReject=false"
-            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-
-            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 transform scale-90"
-                x-transition:enter-end="opacity-100 transform scale-100"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 transform scale-100"
-                x-transition:leave-end="opacity-0 transform scale-90">
-
-                <form method="POST" action="{{ route('admin.events.reject', $event) }}">
-                    @csrf
-
-                    {{-- Modal Header --}}
-                    <div class="bg-rose-50 border-b border-rose-100 p-6 rounded-t-2xl">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-semibold text-rose-900">Reject Event</h3>
-                                    <p class="text-sm text-rose-700">Provide reason for rejection</p>
-                                </div>
-                            </div>
-                            <button type="button" @click="showReject=false"
-                                class="text-gray-400 hover:text-gray-600 transition">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    {{-- Modal Body --}}
-                    <div class="p-6">
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <label for="rejection_reason" class="block text-sm font-medium text-gray-700 mb-2">
-                                Rejection Reason (Optional)
-                            </label>
-                            <textarea id="rejection_reason" name="rejection_reason" rows="4"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
-                                placeholder="Explain why this event is being rejected..."></textarea>
-                        </div>
-                    </div>
-
-                    {{-- Modal Footer --}}
-                    <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
-                        <button type="button" @click="showReject=false"
-                            class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="px-6 py-2.5 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition shadow-lg shadow-rose-200">
-                            Confirm Rejection
+                            class="text-gray-400 hover:text-gray-600 transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                         </button>
                     </div>
-                </form>
-            </div>
-        </div>
+                </div>
 
-        {{-- Request Downpayment Modal --}}
-        <div x-show="showRequestDownpayment" x-cloak @click.self="showRequestDownpayment=false"
-            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-
-            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 transform scale-90"
-                x-transition:enter-end="opacity-100 transform scale-100"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 transform scale-100"
-                x-transition:leave-end="opacity-0 transform scale-90">
-
-                <form method="POST" action="{{ route('admin.events.requestDownpayment', $event) }}">
-                    @csrf
-
-                    {{-- Modal Header --}}
-                    <div class="bg-blue-50 border-b border-blue-100 p-6 rounded-t-2xl">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-semibold text-blue-900">Request Downpayment</h3>
-                                    <p class="text-sm text-blue-700">Set the downpayment amount for this event</p>
-                                </div>
-                            </div>
-                            <button type="button" @click="showRequestDownpayment=false"
-                                class="text-gray-400 hover:text-gray-600 transition">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    {{-- Modal Body --}}
-                    <div class="p-6 space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                <div class="text-xs text-gray-500 mb-1">Total Cost</div>
+                {{-- Modal Body --}}
+                <div class="p-6 space-y-6">
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">Total Event Cost</div>
                                 <div class="text-xl font-bold text-gray-900">₱<span x-text="fmt(grandTotal)"></span>
                                 </div>
                             </div>
-
-                            <div class="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
-                                <div class="text-xs text-emerald-600 mb-1">Intro Paid</div>
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">Intro Payment Required</div>
                                 <div class="text-xl font-bold text-emerald-600">₱5,000.00</div>
                             </div>
-
-                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                <div class="text-xs text-gray-500 mb-1">Remaining</div>
-                                <div class="text-xl font-bold text-gray-700">₱<span
-                                        x-text="fmt(grandTotal - 5000)"></span></div>
-                            </div>
-                        </div>
-
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <label for="downpayment_amount" class="block text-sm font-medium text-gray-700 mb-2">
-                                Downpayment Amount <span class="text-rose-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <span
-                                    class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₱</span>
-                                <input type="number" step="0.01" min="0" x-model.number="downpaymentAmount"
-                                    name="downpayment_amount" id="downpayment_amount" required
-                                    class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
-                            </div>
-                            <p class="text-xs text-gray-500 mt-2">
-                                Customer will pay: <span class="font-semibold text-gray-700">₱<span
-                                        x-text="fmt(Math.max(downpaymentAmount - 5000, 0))"></span></span>
-                                (₱5,000 already paid as intro payment)
-                            </p>
-                            <p class="text-xs text-gray-500 mt-1">Default: 50% of total (₱<span
-                                    x-text="fmt(grandTotal * 0.5)"></span>)</p>
-                        </div>
-
-                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                            <div class="flex gap-3">
-                                <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none"
-                                    stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div class="text-sm text-amber-900">
-                                    <p class="font-medium mb-1">Important Note:</p>
-                                    <p class="text-xs text-amber-800">
-                                        The downpayment amount you enter should include the ₱5,000 introductory
-                                        payment.
-                                        The customer will only pay the difference.
-                                    </p>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
-                    {{-- Modal Footer --}}
-                    <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex gap-3">
+                            <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div class="text-sm text-blue-900">
+                                <p class="font-medium mb-1">What happens next?</p>
+                                <ul class="text-xs text-blue-800 space-y-1">
+                                    <li>• Customer account will be created automatically</li>
+                                    <li>• Customer will receive login credentials via email</li>
+                                    <li>• Customer must pay ₱5,000 introductory payment</li>
+                                    <li>• After payment verification, you can request downpayment</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Modal Footer --}}
+                <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
+                    <button type="button" @click="showApprove=false"
+                        class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition shadow-lg shadow-emerald-200">
+                        Approve & Notify Customer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Reject Event Modal --}}
+    <div x-show="showReject" x-cloak @click.self="showReject=false"
+        class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform scale-90"
+            x-transition:enter-end="opacity-100 transform scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 transform scale-100"
+            x-transition:leave-end="opacity-0 transform scale-90">
+
+            <form method="POST" action="{{ route('admin.events.reject', $event) }}">
+                @csrf
+
+                {{-- Modal Header --}}
+                <div class="bg-rose-50 border-b border-rose-100 p-6 rounded-t-2xl">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-rose-900">Reject Event</h3>
+                                <p class="text-sm text-rose-700">Provide reason for rejection</p>
+                            </div>
+                        </div>
+                        <button type="button" @click="showReject=false"
+                            class="text-gray-400 hover:text-gray-600 transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Modal Body --}}
+                <div class="p-6">
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <label for="rejection_reason" class="block text-sm font-medium text-gray-700 mb-2">
+                            Rejection Reason (Optional)
+                        </label>
+                        <textarea id="rejection_reason" name="rejection_reason" rows="4"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+                            placeholder="Explain why this event is being rejected..."></textarea>
+                    </div>
+                </div>
+
+                {{-- Modal Footer --}}
+                <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
+                    <button type="button" @click="showReject=false"
+                        class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-6 py-2.5 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition shadow-lg shadow-rose-200">
+                        Confirm Rejection
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Request Downpayment Modal --}}
+    <div x-show="showRequestDownpayment" x-cloak @click.self="showRequestDownpayment=false"
+        class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform scale-90"
+            x-transition:enter-end="opacity-100 transform scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 transform scale-100"
+            x-transition:leave-end="opacity-0 transform scale-90">
+
+            <form method="POST" action="{{ route('admin.events.requestDownpayment', $event) }}">
+                @csrf
+
+                {{-- Modal Header --}}
+                <div class="bg-blue-50 border-b border-blue-100 p-6 rounded-t-2xl">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-900">Request Downpayment</h3>
+                                <p class="text-sm text-blue-700">Set the downpayment amount for this event</p>
+                            </div>
+                        </div>
                         <button type="button" @click="showRequestDownpayment=false"
-                            class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-lg shadow-blue-200">
-                            Request Downpayment
+                            class="text-gray-400 hover:text-gray-600 transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                         </button>
                     </div>
-                </form>
-            </div>
-        </div>
+                </div>
 
-        {{-- Reject Intro Payment Modal --}}
-        <div x-show="showRejectIntro" x-cloak @click.self="showRejectIntro=false"
-            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-
-            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 transform scale-90"
-                x-transition:enter-end="opacity-100 transform scale-100"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 transform scale-100"
-                x-transition:leave-end="opacity-0 transform scale-90">
-
-                <form method="POST" action="{{ route('admin.events.rejectIntroPayment', $event) }}">
-                    @csrf
-
-                    {{-- Modal Header --}}
-                    <div class="bg-rose-50 border-b border-rose-100 p-6 rounded-t-2xl">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-semibold text-rose-900">Reject Introductory Payment</h3>
-                                    <p class="text-sm text-rose-700">Provide reason for rejection</p>
-                                </div>
+                {{-- Modal Body --}}
+                <div class="p-6 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <div class="text-xs text-gray-500 mb-1">Total Cost</div>
+                            <div class="text-xl font-bold text-gray-900">₱<span x-text="fmt(grandTotal)"></span>
                             </div>
-                            <button type="button" @click="showRejectIntro=false"
-                                class="text-gray-400 hover:text-gray-600 transition">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        </div>
+
+                        <div class="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
+                            <div class="text-xs text-emerald-600 mb-1">Intro Paid</div>
+                            <div class="text-xl font-bold text-emerald-600">₱5,000.00</div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <div class="text-xs text-gray-500 mb-1">Remaining</div>
+                            <div class="text-xl font-bold text-gray-700">₱<span x-text="fmt(grandTotal - 5000)"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <label for="downpayment_amount" class="block text-sm font-medium text-gray-700 mb-2">
+                            Downpayment Amount <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₱</span>
+                            <input type="number" step="0.01" min="0" x-model.number="downpaymentAmount"
+                                name="downpayment_amount" id="downpayment_amount" required
+                                class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            Customer will pay: <span class="font-semibold text-gray-700">₱<span
+                                    x-text="fmt(Math.max(downpaymentAmount - 5000, 0))"></span></span>
+                            (₱5,000 already paid as intro payment)
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">Default: 50% of total (₱<span
+                                x-text="fmt(grandTotal * 0.5)"></span>)</p>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <div class="flex gap-3">
+                            <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div class="text-sm text-amber-900">
+                                <p class="font-medium mb-1">Important Note:</p>
+                                <p class="text-xs text-amber-800">
+                                    The downpayment amount you enter should include the ₱5,000 introductory
+                                    payment.
+                                    The customer will only pay the difference.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Modal Footer --}}
+                <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
+                    <button type="button" @click="showRequestDownpayment=false"
+                        class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                        Request Downpayment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Reject Intro Payment Modal --}}
+    <div x-show="showRejectIntro" x-cloak @click.self="showRejectIntro=false"
+        class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform scale-90"
+            x-transition:enter-end="opacity-100 transform scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 transform scale-100"
+            x-transition:leave-end="opacity-0 transform scale-90">
+
+            <form method="POST" action="{{ route('admin.events.rejectIntroPayment', $event) }}">
+                @csrf
+
+                {{-- Modal Header --}}
+                <div class="bg-rose-50 border-b border-rose-100 p-6 rounded-t-2xl">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M6 18L18 6M6 6l12 12" />
                                 </svg>
-                            </button>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-rose-900">Reject Introductory Payment</h3>
+                                <p class="text-sm text-rose-700">Provide reason for rejection</p>
+                            </div>
                         </div>
-                    </div>
-
-                    {{-- Modal Body --}}
-                    <div class="p-6">
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <label for="rejection_reason_intro" class="block text-sm font-medium text-gray-700 mb-2">
-                                Rejection Reason
-                            </label>
-                            <textarea id="rejection_reason_intro" name="rejection_reason" rows="3"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
-                                placeholder="E.g., Proof of payment is unclear, wrong amount, etc."></textarea>
-                        </div>
-                    </div>
-
-                    {{-- Modal Footer --}}
-                    <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
                         <button type="button" @click="showRejectIntro=false"
-                            class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="px-6 py-2.5 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition shadow-lg shadow-rose-200">
-                            Reject Payment
+                            class="text-gray-400 hover:text-gray-600 transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                         </button>
                     </div>
-                </form>
-            </div>
+                </div>
+
+                {{-- Modal Body --}}
+                <div class="p-6">
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <label for="rejection_reason_intro" class="block text-sm font-medium text-gray-700 mb-2">
+                            Rejection Reason
+                        </label>
+                        <textarea id="rejection_reason_intro" name="rejection_reason" rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+                            placeholder="E.g., Proof of payment is unclear, wrong amount, etc."></textarea>
+                    </div>
+                </div>
+
+                {{-- Modal Footer --}}
+                <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
+                    <button type="button" @click="showRejectIntro=false"
+                        class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-6 py-2.5 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition shadow-lg shadow-rose-200">
+                        Reject Payment
+                    </button>
+                </div>
+            </form>
         </div>
+    </div>
 
-        {{-- Reject Downpayment Modal --}}
-        <div x-show="showRejectDown" x-cloak @click.self="showRejectDown=false"
-            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    {{-- Reject Downpayment Modal --}}
+    <div x-show="showRejectDown" x-cloak @click.self="showRejectDown=false"
+        class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 transform scale-90"
-                x-transition:enter-end="opacity-100 transform scale-100"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 transform scale-100"
-                x-transition:leave-end="opacity-0 transform scale-90">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform scale-90"
+            x-transition:enter-end="opacity-100 transform scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 transform scale-100"
+            x-transition:leave-end="opacity-0 transform scale-90">
 
-                <form method="POST" action="{{ route('admin.events.rejectDownpayment', $event) }}">
-                    @csrf
+            <form method="POST" action="{{ route('admin.events.rejectDownpayment', $event) }}">
+                @csrf
 
-                    {{-- Modal Header --}}
-                    <div class="bg-rose-50 border-b border-rose-100 p-6 rounded-t-2xl">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-semibold text-rose-900">Reject Downpayment</h3>
-                                    <p class="text-sm text-rose-700">Provide reason for rejection</p>
-                                </div>
-                            </div>
-                            <button type="button" @click="showRejectDown=false"
-                                class="text-gray-400 hover:text-gray-600 transition">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {{-- Modal Header --}}
+                <div class="bg-rose-50 border-b border-rose-100 p-6 rounded-t-2xl">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M6 18L18 6M6 6l12 12" />
                                 </svg>
-                            </button>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-rose-900">Reject Downpayment</h3>
+                                <p class="text-sm text-rose-700">Provide reason for rejection</p>
+                            </div>
                         </div>
-                    </div>
-
-                    {{-- Modal Body --}}
-                    <div class="p-6">
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <label for="rejection_reason_down" class="block text-sm font-medium text-gray-700 mb-2">
-                                Rejection Reason
-                            </label>
-                            <textarea id="rejection_reason_down" name="rejection_reason" rows="3"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
-                                placeholder="E.g., Proof of payment is unclear, wrong amount, etc."></textarea>
-                        </div>
-                    </div>
-
-                    {{-- Modal Footer --}}
-                    <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
                         <button type="button" @click="showRejectDown=false"
-                            class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="px-6 py-2.5 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition shadow-lg shadow-rose-200">
-                            Reject Payment
+                            class="text-gray-400 hover:text-gray-600 transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                         </button>
                     </div>
-                </form>
-            </div>
-        </div>
+                </div>
 
-        {{-- Proof Modal Script --}}
-        <script>
-            function openProofModal(imageUrl, inclusionName) {
+                {{-- Modal Body --}}
+                <div class="p-6">
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <label for="rejection_reason_down" class="block text-sm font-medium text-gray-700 mb-2">
+                            Rejection Reason
+                        </label>
+                        <textarea id="rejection_reason_down" name="rejection_reason" rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-rose-500 focus:ring-2 focus:ring-rose-200"
+                            placeholder="E.g., Proof of payment is unclear, wrong amount, etc."></textarea>
+                    </div>
+                </div>
+
+                {{-- Modal Footer --}}
+                <div class="bg-gray-50 border-t border-gray-200 p-6 rounded-b-2xl flex justify-end gap-3">
+                    <button type="button" @click="showRejectDown=false"
+                        class="px-5 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-100 transition">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-6 py-2.5 bg-rose-600 text-white font-medium rounded-lg hover:bg-rose-700 transition shadow-lg shadow-rose-200">
+                        Reject Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Proof Modal Script --}}
+    <script>
+        function openProofModal(imageUrl, inclusionName) {
     const modal = document.createElement('div');
     modal.id = 'proofModal';
     modal.className = 'fixed inset-0 z-[60] overflow-y-auto flex items-center justify-center p-4 bg-black/70';
@@ -1780,42 +1844,298 @@
     
     document.body.appendChild(modal);
 }
-        </script>
+    </script>
 
 
-        {{-- Event Progress Modal --}}
-        <div x-show="showProgress" x-cloak @click.self="showProgress = false"
-            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    {{-- Event Progress Modal --}}
+    <div x-show="showProgress" x-cloak @click.self="showProgress = false"
+        class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-            <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full mx-auto max-h-[90vh] flex flex-col"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 transform scale-90"
-                x-transition:enter-end="opacity-100 transform scale-100"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 transform scale-100"
-                x-transition:leave-end="opacity-0 transform scale-90" @click.away="showProgress = false">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full mx-auto max-h-[90vh] flex flex-col"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform scale-90"
+            x-transition:enter-end="opacity-100 transform scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 transform scale-100"
+            x-transition:leave-end="opacity-0 transform scale-90" @click.away="showProgress = false">
 
-                {{-- Modal Header --}}
-                <div class="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4 rounded-t-2xl flex-shrink-0">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                                </svg>
+            {{-- Modal Header --}}
+            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4 rounded-t-2xl flex-shrink-0">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Event Progress</h3>
+                            <p class="text-sm text-white/80">Track milestones and preparation updates</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="showProgress = false"
+                        class="text-white/80 hover:text-white transition p-1">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Modal Body --}}
+            <div class="flex-1 overflow-y-auto p-6">
+                {{-- Add Progress Form --}}
+                <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6">
+                    <h4 class="font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add New Progress
+                    </h4>
+                    <form action="{{ route('admin.events.progress.store', $event) }}" method="POST">
+                        @csrf
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Status/Milestone
+                                    *</label>
+                                <input type="text" name="status" required placeholder="e.g., Venue Confirmed"
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                             </div>
                             <div>
-                                <h3 class="text-lg font-bold text-white">Event Progress</h3>
-                                <p class="text-sm text-white/80">Track milestones and preparation updates</p>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Date *</label>
+                                <input type="date" name="progress_date" required value="{{ date('Y-m-d') }}"
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Details
+                                    (Optional)</label>
+                                <input type="text" name="details" placeholder="Additional notes..."
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                             </div>
                         </div>
-                        <button type="button" @click="showProgress = false"
-                            class="text-white/80 hover:text-white transition p-1">
+                        {{-- Quick Status Buttons --}}
+                        <div class="flex flex-wrap items-center gap-2 mb-3">
+                            <span class="text-xs text-gray-500">Quick:</span>
+                            @foreach(['Initial Planning', 'Venue Booked', 'Suppliers Contacted', 'Decorations
+                            Ordered', 'Menu Finalized', 'Final Meeting', 'Setup Complete', 'Ready'] as $quick)
+                            <button type="button"
+                                onclick="this.closest('form').querySelector('input[name=status]').value = '{{ $quick }}'"
+                                class="px-2 py-1 text-xs bg-white border border-gray-300 rounded-full hover:bg-indigo-100 hover:border-indigo-300 transition">
+                                {{ $quick }}
+                            </button>
+                            @endforeach
+                        </div>
+                        <button type="submit"
+                            class="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+                            Add Progress Update
+                        </button>
+                    </form>
+                </div>
+
+                {{-- Progress Timeline --}}
+                @if($event->progress->count() > 0)
+                <div class="relative">
+                    {{-- Timeline Line --}}
+                    <div
+                        class="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-indigo-500 via-purple-400 to-gray-200">
+                    </div>
+
+                    <div class="space-y-4">
+                        @foreach($event->progress->sortByDesc('progress_date') as $progress)
+                        <div class="relative pl-10 group" x-data="{ editing: false }">
+                            {{-- Timeline Dot --}}
+                            <div
+                                class="absolute left-2 top-2 w-5 h-5 rounded-full border-4 border-white shadow-md transition-all
+                            @if($loop->first) bg-indigo-500 ring-4 ring-indigo-100 @else bg-gray-400 group-hover:bg-indigo-400 @endif">
+                            </div>
+
+                            {{-- Progress Card --}}
+                            <div
+                                class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition group-hover:border-indigo-200">
+                                {{-- View Mode --}}
+                                <div x-show="!editing">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span
+                                                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold
+                                                @if($loop->first) bg-indigo-100 text-indigo-800 @else bg-gray-100 text-gray-700 @endif">
+                                                    {{ $progress->status }}
+                                                </span>
+                                                <span class="text-sm text-gray-500">
+                                                    {{ \Carbon\Carbon::parse($progress->progress_date)->format('M d,
+                                                    Y') }}
+                                                </span>
+                                                @if($loop->first)
+                                                <span
+                                                    class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Latest</span>
+                                                @endif
+                                            </div>
+                                            @if($progress->details)
+                                            <p class="text-gray-600 text-sm mt-2 leading-relaxed">{{
+                                                $progress->details }}</p>
+                                            @endif
+                                            <div class="text-xs text-gray-400 mt-2">
+                                                Added {{ $progress->created_at->diffForHumans() }}
+                                            </div>
+                                        </div>
+
+                                        {{-- Action Buttons --}}
+                                        <div
+                                            class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                                            <button type="button" @click="editing = true"
+                                                class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                                                title="Edit">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
+                                            <form method="POST"
+                                                action="{{ route('admin.events.progress.destroy', [$event, $progress]) }}"
+                                                onsubmit="return confirm('Delete this progress update?');"
+                                                class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit"
+                                                    class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                                                    title="Delete">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Edit Mode --}}
+                                <div x-show="editing" x-cloak>
+                                    <form method="POST"
+                                        action="{{ route('admin.events.progress.update', [$event, $progress]) }}">
+                                        @csrf
+                                        @method('PUT')
+                                        <div class="space-y-3">
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-600 mb-1">Status
+                                                        *</label>
+                                                    <input type="text" name="status" value="{{ $progress->status }}"
+                                                        required
+                                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-600 mb-1">Date
+                                                        *</label>
+                                                    <input type="date" name="progress_date"
+                                                        value="{{ \Carbon\Carbon::parse($progress->progress_date)->format('Y-m-d') }}"
+                                                        required
+                                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label
+                                                    class="block text-xs font-medium text-gray-600 mb-1">Details</label>
+                                                <textarea name="details" rows="2"
+                                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">{{ $progress->details }}</textarea>
+                                            </div>
+                                            <div class="flex items-center gap-2 justify-end">
+                                                <button type="button" @click="editing = false"
+                                                    class="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                                                    Cancel
+                                                </button>
+                                                <button type="submit"
+                                                    class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                                                    Save Changes
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @else
+                {{-- Empty State --}}
+                <div class="text-center py-12">
+                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <p class="text-gray-500 font-medium mb-2">No progress updates yet</p>
+                    <p class="text-gray-400 text-sm">Use the form above to track preparation milestones</p>
+                </div>
+                @endif
+            </div>
+
+            {{-- Modal Footer --}}
+            <div
+                class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between flex-shrink-0 rounded-b-2xl">
+                <div class="text-sm text-gray-500">
+                    <span class="inline-flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                        {{ $event->progress->count() }} update(s) recorded
+                    </span>
+                </div>
+                <button type="button" @click="showProgress = false"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- Event Expenses Modal --}}
+    <div x-show="showExpenses" x-cloak @click.self="showExpenses = false"
+        class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+        <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-auto max-h-[90vh] flex flex-col" @click.stop
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform scale-90"
+            x-transition:enter-end="opacity-100 transform scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 transform scale-100"
+            x-transition:leave-end="opacity-0 transform scale-90">
+
+            {{-- Modal Header --}}
+            <div class="bg-gradient-to-r from-rose-500 to-pink-600 px-6 py-4 rounded-t-2xl flex-shrink-0">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">Event Expenses</h3>
+                            <p class="text-sm text-rose-100">Track additional costs for this event</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <div class="text-xs text-rose-200">Total Expenses</div>
+                            <div class="text-xl font-bold text-white">₱{{
+                                number_format($event->expenses->sum('amount'), 2) }}</div>
+                        </div>
+                        <button type="button" @click="showExpenses = false"
+                            class="text-white/80 hover:text-white transition">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M6 18L18 6M6 6l12 12" />
@@ -1823,111 +2143,212 @@
                         </button>
                     </div>
                 </div>
+            </div>
 
-                {{-- Modal Body --}}
-                <div class="flex-1 overflow-y-auto p-6">
-                    {{-- Add Progress Form --}}
-                    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6">
-                        <h4 class="font-semibold text-indigo-900 mb-3 flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add New Progress
-                        </h4>
-                        <form action="{{ route('admin.events.progress.store', $event) }}" method="POST">
-                            @csrf
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            {{-- Modal Body --}}
+            <div class="flex-1 overflow-y-auto p-6">
+                <div class="grid lg:grid-cols-3 gap-6">
+                    {{-- Left Column: Add Expense Form --}}
+                    <div class="lg:col-span-1">
+                        <div class="bg-gray-50 rounded-xl border border-gray-200 p-5">
+                            <h4 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Add New Expense
+                            </h4>
+
+                            <form method="POST" action="{{ route('admin.events.expenses.store', $event) }}"
+                                enctype="multipart/form-data" class="space-y-4">
+                                @csrf
+
+                                {{-- Description --}}
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">Status/Milestone
-                                        *</label>
-                                    <input type="text" name="status" required placeholder="e.g., Venue Confirmed"
-                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Description <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="text" name="description" required x-model="expenseForm.description"
+                                        placeholder="e.g., Extra flowers"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
                                 </div>
+
+                                {{-- Amount --}}
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">Date *</label>
-                                    <input type="date" name="progress_date" required value="{{ date('Y-m-d') }}"
-                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Amount <span class="text-rose-500">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <span
+                                            class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">₱</span>
+                                        <input type="number" name="amount" required step="0.01" min="0.01"
+                                            x-model="expenseForm.amount" placeholder="0.00"
+                                            class="w-full pl-7 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
+                                    </div>
                                 </div>
+
+                                {{-- Category --}}
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">Details
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                                    <select name="category" x-model="expenseForm.category"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
+                                        <option value="">Select...</option>
+                                        @foreach(\App\Models\EventExpense::getCategories() as $key => $label)
+                                        <option value="{{ $key }}">{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                {{-- Date --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                    <input type="date" name="expense_date" x-model="expenseForm.expense_date"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
+                                </div>
+
+                                {{-- Notes --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                    <textarea name="notes" rows="2" x-model="expenseForm.notes"
+                                        placeholder="Additional details..."
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"></textarea>
+                                </div>
+
+                                {{-- Receipt --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Receipt
                                         (Optional)</label>
-                                    <input type="text" name="details" placeholder="Additional notes..."
-                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                    <input type="file" name="receipt_image" accept="image/*"
+                                        class="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100">
                                 </div>
-                            </div>
-                            {{-- Quick Status Buttons --}}
-                            <div class="flex flex-wrap items-center gap-2 mb-3">
-                                <span class="text-xs text-gray-500">Quick:</span>
-                                @foreach(['Initial Planning', 'Venue Booked', 'Suppliers Contacted', 'Decorations
-                                Ordered', 'Menu Finalized', 'Final Meeting', 'Setup Complete', 'Ready'] as $quick)
-                                <button type="button"
-                                    onclick="this.closest('form').querySelector('input[name=status]').value = '{{ $quick }}'"
-                                    class="px-2 py-1 text-xs bg-white border border-gray-300 rounded-full hover:bg-indigo-100 hover:border-indigo-300 transition">
-                                    {{ $quick }}
+
+                                {{-- Submit --}}
+                                <button type="submit"
+                                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-lg hover:bg-rose-700 transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    Add Expense
                                 </button>
-                                @endforeach
-                            </div>
-                            <button type="submit"
-                                class="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
-                                Add Progress Update
-                            </button>
-                        </form>
+                            </form>
+                        </div>
                     </div>
 
-                    {{-- Progress Timeline --}}
-                    @if($event->progress->count() > 0)
-                    <div class="relative">
-                        {{-- Timeline Line --}}
-                        <div
-                            class="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-indigo-500 via-purple-400 to-gray-200">
+                    {{-- Right Column: Expenses List --}}
+                    <div class="lg:col-span-2 space-y-4">
+                        {{-- Summary Cards --}}
+                        @if($event->expenses->count() > 0)
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div class="bg-white rounded-lg border border-gray-200 p-3 text-center">
+                                <div class="text-xs text-gray-500 mb-1">Total</div>
+                                <div class="text-lg font-bold text-gray-900">₱{{
+                                    number_format($event->expenses->sum('amount'), 2) }}</div>
+                            </div>
+                            <div class="bg-white rounded-lg border border-gray-200 p-3 text-center">
+                                <div class="text-xs text-gray-500 mb-1">Items</div>
+                                <div class="text-lg font-bold text-gray-900">{{ $event->expenses->count() }}</div>
+                            </div>
+                            <div class="bg-white rounded-lg border border-gray-200 p-3 text-center">
+                                <div class="text-xs text-gray-500 mb-1">Highest</div>
+                                <div class="text-lg font-bold text-gray-900">₱{{
+                                    number_format($event->expenses->max('amount'), 2) }}</div>
+                            </div>
+                            <div class="bg-white rounded-lg border border-gray-200 p-3 text-center">
+                                <div class="text-xs text-gray-500 mb-1">Average</div>
+                                <div class="text-lg font-bold text-gray-900">₱{{
+                                    number_format($event->expenses->avg('amount'), 2) }}</div>
+                            </div>
                         </div>
 
-                        <div class="space-y-4">
-                            @foreach($event->progress->sortByDesc('progress_date') as $progress)
-                            <div class="relative pl-10 group" x-data="{ editing: false }">
-                                {{-- Timeline Dot --}}
-                                <div
-                                    class="absolute left-2 top-2 w-5 h-5 rounded-full border-4 border-white shadow-md transition-all
-                            @if($loop->first) bg-indigo-500 ring-4 ring-indigo-100 @else bg-gray-400 group-hover:bg-indigo-400 @endif">
+                        {{-- Category Breakdown --}}
+                        @php
+                        $expensesByCategory = $event->expenses->groupBy('category')->map(fn($items) =>
+                        $items->sum('amount'));
+                        $totalExpenses = $event->expenses->sum('amount');
+                        @endphp
+                        @if($expensesByCategory->count() > 0)
+                        <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <h5 class="font-medium text-gray-800 mb-3 text-sm">Category Breakdown</h5>
+                            <div class="space-y-2">
+                                @foreach($expensesByCategory as $category => $amount)
+                                @php
+                                $percentage = $totalExpenses > 0 ? ($amount / $totalExpenses) * 100 : 0;
+                                $categoryLabel = \App\Models\EventExpense::getCategories()[$category] ??
+                                ucfirst($category ?? 'Uncategorized');
+                                @endphp
+                                <div>
+                                    <div class="flex items-center justify-between text-xs mb-1">
+                                        <span class="text-gray-600">{{ $categoryLabel }}</span>
+                                        <span class="font-medium text-gray-900">₱{{ number_format($amount, 2)
+                                            }}</span>
+                                    </div>
+                                    <div class="w-full bg-gray-100 rounded-full h-1.5">
+                                        <div class="bg-rose-500 h-1.5 rounded-full" style="width: {{ $percentage }}%">
+                                        </div>
+                                    </div>
                                 </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                        @endif
 
-                                {{-- Progress Card --}}
-                                <div
-                                    class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition group-hover:border-indigo-200">
+                        {{-- Expenses List --}}
+                        <div class="bg-white rounded-lg border border-gray-200">
+                            <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                                <h5 class="font-medium text-gray-800 text-sm">Expense Records</h5>
+                            </div>
+
+                            @if($event->expenses->count() > 0)
+                            <div class="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
+                                @foreach($event->expenses->sortByDesc('expense_date') as $expense)
+                                <div class="p-4 hover:bg-gray-50 transition"
+                                    x-data="{ editing: false, showReceipt: false }">
                                     {{-- View Mode --}}
-                                    <div x-show="!editing">
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div class="flex-1">
-                                                <div class="flex items-center gap-2 flex-wrap">
-                                                    <span
-                                                        class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold
-                                                @if($loop->first) bg-indigo-100 text-indigo-800 @else bg-gray-100 text-gray-700 @endif">
-                                                        {{ $progress->status }}
-                                                    </span>
-                                                    <span class="text-sm text-gray-500">
-                                                        {{ \Carbon\Carbon::parse($progress->progress_date)->format('M d,
-                                                        Y') }}
-                                                    </span>
-                                                    @if($loop->first)
-                                                    <span
-                                                        class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Latest</span>
-                                                    @endif
-                                                </div>
-                                                @if($progress->details)
-                                                <p class="text-gray-600 text-sm mt-2 leading-relaxed">{{
-                                                    $progress->details }}</p>
+                                    <div x-show="!editing" class="flex items-start justify-between gap-3">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h6 class="font-medium text-gray-900 text-sm truncate">{{
+                                                    $expense->description }}</h6>
+                                                @if($expense->category)
+                                                <span
+                                                    class="px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
+                                                    {{ $expense->category_label }}
+                                                </span>
                                                 @endif
-                                                <div class="text-xs text-gray-400 mt-2">
-                                                    Added {{ $progress->created_at->diffForHumans() }}
-                                                </div>
                                             </div>
-
-                                            {{-- Action Buttons --}}
-                                            <div
-                                                class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
-                                                <button type="button" @click="editing = true"
-                                                    class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                                            <div class="flex items-center gap-3 text-xs text-gray-500">
+                                                <span>{{ $expense->expense_date?->format('M d, Y') ?? 'No date'
+                                                    }}</span>
+                                                @if($expense->addedBy)
+                                                <span>by {{ $expense->addedBy->name }}</span>
+                                                @endif
+                                            </div>
+                                            @if($expense->notes)
+                                            <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ $expense->notes }}
+                                            </p>
+                                            @endif
+                                        </div>
+                                        <div class="text-right flex-shrink-0">
+                                            <div class="text-base font-bold text-rose-600">₱{{
+                                                number_format($expense->amount, 2) }}</div>
+                                            <div class="flex items-center gap-1 mt-1">
+                                                @if($expense->receipt_image)
+                                                <button @click="showReceipt = true"
+                                                    class="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition"
+                                                    title="View Receipt">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                </button>
+                                                @endif
+                                                <button @click="editing = true"
+                                                    class="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
                                                     title="Edit">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
@@ -1937,13 +2358,12 @@
                                                     </svg>
                                                 </button>
                                                 <form method="POST"
-                                                    action="{{ route('admin.events.progress.destroy', [$event, $progress]) }}"
-                                                    onsubmit="return confirm('Delete this progress update?');"
-                                                    class="inline">
+                                                    action="{{ route('admin.events.expenses.destroy', [$event, $expense]) }}"
+                                                    onsubmit="return confirm('Delete this expense?');" class="inline">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit"
-                                                        class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                                                        class="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition"
                                                         title="Delete">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                             viewBox="0 0 24 24">
@@ -1960,481 +2380,120 @@
                                     {{-- Edit Mode --}}
                                     <div x-show="editing" x-cloak>
                                         <form method="POST"
-                                            action="{{ route('admin.events.progress.update', [$event, $progress]) }}">
+                                            action="{{ route('admin.events.expenses.update', [$event, $expense]) }}"
+                                            enctype="multipart/form-data">
                                             @csrf
                                             @method('PUT')
-                                            <div class="space-y-3">
-                                                <div class="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <label
-                                                            class="block text-xs font-medium text-gray-600 mb-1">Status
-                                                            *</label>
-                                                        <input type="text" name="status" value="{{ $progress->status }}"
-                                                            required
-                                                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                                                    </div>
-                                                    <div>
-                                                        <label class="block text-xs font-medium text-gray-600 mb-1">Date
-                                                            *</label>
-                                                        <input type="date" name="progress_date"
-                                                            value="{{ \Carbon\Carbon::parse($progress->progress_date)->format('Y-m-d') }}"
-                                                            required
-                                                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                                                    </div>
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <input type="text" name="description"
+                                                        value="{{ $expense->description }}" required
+                                                        placeholder="Description"
+                                                        class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-rose-500">
                                                 </div>
                                                 <div>
-                                                    <label
-                                                        class="block text-xs font-medium text-gray-600 mb-1">Details</label>
-                                                    <textarea name="details" rows="2"
-                                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">{{ $progress->details }}</textarea>
+                                                    <input type="number" name="amount" value="{{ $expense->amount }}"
+                                                        required step="0.01" placeholder="Amount"
+                                                        class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-rose-500">
                                                 </div>
-                                                <div class="flex items-center gap-2 justify-end">
-                                                    <button type="button" @click="editing = false"
-                                                        class="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">
-                                                        Cancel
-                                                    </button>
-                                                    <button type="submit"
-                                                        class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-                                                        Save Changes
-                                                    </button>
+                                                <div>
+                                                    <select name="category"
+                                                        class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-rose-500">
+                                                        <option value="">Category...</option>
+                                                        @foreach(\App\Models\EventExpense::getCategories() as $key
+                                                        => $label)
+                                                        <option value="{{ $key }}" {{ $expense->category == $key ?
+                                                            'selected' : '' }}>{{ $label }}</option>
+                                                        @endforeach
+                                                    </select>
                                                 </div>
+                                                <div>
+                                                    <input type="date" name="expense_date"
+                                                        value="{{ $expense->expense_date?->format('Y-m-d') }}"
+                                                        class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-rose-500">
+                                                </div>
+                                                <div class="col-span-2">
+                                                    <textarea name="notes" rows="1" placeholder="Notes..."
+                                                        class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-rose-500">{{ $expense->notes }}</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center justify-end gap-2 mt-3">
+                                                <button type="button" @click="editing = false"
+                                                    class="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded transition">
+                                                    Cancel
+                                                </button>
+                                                <button type="submit"
+                                                    class="px-3 py-1.5 text-sm bg-rose-600 text-white rounded hover:bg-rose-700 transition">
+                                                    Save
+                                                </button>
                                             </div>
                                         </form>
                                     </div>
+
+                                    {{-- Receipt Modal --}}
+                                    @if($expense->receipt_image)
+                                    <div x-show="showReceipt" x-cloak @click.self="showReceipt = false"
+                                        class="fixed inset-0 z-[60] overflow-y-auto flex items-center justify-center p-4 bg-black/70">
+                                        <div class="relative max-w-2xl w-full bg-white rounded-xl shadow-2xl overflow-hidden"
+                                            @click.stop>
+                                            <button @click="showReceipt = false"
+                                                class="absolute top-3 right-3 z-10 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition">
+                                                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                            <div class="bg-gray-100 px-4 py-3 border-b">
+                                                <h6 class="font-medium text-gray-900 text-sm">Receipt: {{
+                                                    $expense->description }}</h6>
+                                                <p class="text-xs text-gray-500">₱{{ number_format($expense->amount,
+                                                    2) }}</p>
+                                            </div>
+                                            <div class="p-3 bg-gray-50">
+                                                <img src="{{ asset('storage/' . $expense->receipt_image) }}"
+                                                    alt="Receipt" class="w-full h-auto rounded"
+                                                    style="max-height: 60vh; object-fit: contain;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endif
                                 </div>
+                                @endforeach
                             </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    @else
-                    {{-- Empty State --}}
-                    <div class="text-center py-12">
-                        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <p class="text-gray-500 font-medium mb-2">No progress updates yet</p>
-                        <p class="text-gray-400 text-sm">Use the form above to track preparation milestones</p>
-                    </div>
-                    @endif
-                </div>
-
-                {{-- Modal Footer --}}
-                <div
-                    class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between flex-shrink-0 rounded-b-2xl">
-                    <div class="text-sm text-gray-500">
-                        <span class="inline-flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                            {{ $event->progress->count() }} update(s) recorded
-                        </span>
-                    </div>
-                    <button type="button" @click="showProgress = false"
-                        class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        {{-- Event Expenses Modal --}}
-        <div x-show="showExpenses" x-cloak @click.self="showExpenses = false"
-            class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-
-            <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-auto max-h-[90vh] flex flex-col" @click.stop
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 transform scale-90"
-                x-transition:enter-end="opacity-100 transform scale-100"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 transform scale-100"
-                x-transition:leave-end="opacity-0 transform scale-90">
-
-                {{-- Modal Header --}}
-                <div class="bg-gradient-to-r from-rose-500 to-pink-600 px-6 py-4 rounded-t-2xl flex-shrink-0">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            @else
+                            {{-- Empty State --}}
+                            <div class="text-center py-10">
+                                <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                 </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-white">Event Expenses</h3>
-                                <p class="text-sm text-rose-100">Track additional costs for this event</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="text-right">
-                                <div class="text-xs text-rose-200">Total Expenses</div>
-                                <div class="text-xl font-bold text-white">₱{{
-                                    number_format($event->expenses->sum('amount'), 2) }}</div>
-                            </div>
-                            <button type="button" @click="showExpenses = false"
-                                class="text-white/80 hover:text-white transition">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Modal Body --}}
-                <div class="flex-1 overflow-y-auto p-6">
-                    <div class="grid lg:grid-cols-3 gap-6">
-                        {{-- Left Column: Add Expense Form --}}
-                        <div class="lg:col-span-1">
-                            <div class="bg-gray-50 rounded-xl border border-gray-200 p-5">
-                                <h4 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
-                                    Add New Expense
-                                </h4>
-
-                                <form method="POST" action="{{ route('admin.events.expenses.store', $event) }}"
-                                    enctype="multipart/form-data" class="space-y-4">
-                                    @csrf
-
-                                    {{-- Description --}}
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                                            Description <span class="text-rose-500">*</span>
-                                        </label>
-                                        <input type="text" name="description" required x-model="expenseForm.description"
-                                            placeholder="e.g., Extra flowers"
-                                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
-                                    </div>
-
-                                    {{-- Amount --}}
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                                            Amount <span class="text-rose-500">*</span>
-                                        </label>
-                                        <div class="relative">
-                                            <span
-                                                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">₱</span>
-                                            <input type="number" name="amount" required step="0.01" min="0.01"
-                                                x-model="expenseForm.amount" placeholder="0.00"
-                                                class="w-full pl-7 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
-                                        </div>
-                                    </div>
-
-                                    {{-- Category --}}
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                                        <select name="category" x-model="expenseForm.category"
-                                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
-                                            <option value="">Select...</option>
-                                            @foreach(\App\Models\EventExpense::getCategories() as $key => $label)
-                                            <option value="{{ $key }}">{{ $label }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    {{-- Date --}}
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                                        <input type="date" name="expense_date" x-model="expenseForm.expense_date"
-                                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
-                                    </div>
-
-                                    {{-- Notes --}}
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                                        <textarea name="notes" rows="2" x-model="expenseForm.notes"
-                                            placeholder="Additional details..."
-                                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"></textarea>
-                                    </div>
-
-                                    {{-- Receipt --}}
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Receipt
-                                            (Optional)</label>
-                                        <input type="file" name="receipt_image" accept="image/*"
-                                            class="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100">
-                                    </div>
-
-                                    {{-- Submit --}}
-                                    <button type="submit"
-                                        class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-600 text-white text-sm font-medium rounded-lg hover:bg-rose-700 transition">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                        </svg>
-                                        Add Expense
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-
-                        {{-- Right Column: Expenses List --}}
-                        <div class="lg:col-span-2 space-y-4">
-                            {{-- Summary Cards --}}
-                            @if($event->expenses->count() > 0)
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                <div class="bg-white rounded-lg border border-gray-200 p-3 text-center">
-                                    <div class="text-xs text-gray-500 mb-1">Total</div>
-                                    <div class="text-lg font-bold text-gray-900">₱{{
-                                        number_format($event->expenses->sum('amount'), 2) }}</div>
-                                </div>
-                                <div class="bg-white rounded-lg border border-gray-200 p-3 text-center">
-                                    <div class="text-xs text-gray-500 mb-1">Items</div>
-                                    <div class="text-lg font-bold text-gray-900">{{ $event->expenses->count() }}</div>
-                                </div>
-                                <div class="bg-white rounded-lg border border-gray-200 p-3 text-center">
-                                    <div class="text-xs text-gray-500 mb-1">Highest</div>
-                                    <div class="text-lg font-bold text-gray-900">₱{{
-                                        number_format($event->expenses->max('amount'), 2) }}</div>
-                                </div>
-                                <div class="bg-white rounded-lg border border-gray-200 p-3 text-center">
-                                    <div class="text-xs text-gray-500 mb-1">Average</div>
-                                    <div class="text-lg font-bold text-gray-900">₱{{
-                                        number_format($event->expenses->avg('amount'), 2) }}</div>
-                                </div>
-                            </div>
-
-                            {{-- Category Breakdown --}}
-                            @php
-                            $expensesByCategory = $event->expenses->groupBy('category')->map(fn($items) =>
-                            $items->sum('amount'));
-                            $totalExpenses = $event->expenses->sum('amount');
-                            @endphp
-                            @if($expensesByCategory->count() > 0)
-                            <div class="bg-white rounded-lg border border-gray-200 p-4">
-                                <h5 class="font-medium text-gray-800 mb-3 text-sm">Category Breakdown</h5>
-                                <div class="space-y-2">
-                                    @foreach($expensesByCategory as $category => $amount)
-                                    @php
-                                    $percentage = $totalExpenses > 0 ? ($amount / $totalExpenses) * 100 : 0;
-                                    $categoryLabel = \App\Models\EventExpense::getCategories()[$category] ??
-                                    ucfirst($category ?? 'Uncategorized');
-                                    @endphp
-                                    <div>
-                                        <div class="flex items-center justify-between text-xs mb-1">
-                                            <span class="text-gray-600">{{ $categoryLabel }}</span>
-                                            <span class="font-medium text-gray-900">₱{{ number_format($amount, 2)
-                                                }}</span>
-                                        </div>
-                                        <div class="w-full bg-gray-100 rounded-full h-1.5">
-                                            <div class="bg-rose-500 h-1.5 rounded-full"
-                                                style="width: {{ $percentage }}%"></div>
-                                        </div>
-                                    </div>
-                                    @endforeach
-                                </div>
+                                <p class="text-gray-500 font-medium text-sm mb-1">No expenses recorded yet</p>
+                                <p class="text-gray-400 text-xs">Use the form to add event expenses</p>
                             </div>
                             @endif
-                            @endif
-
-                            {{-- Expenses List --}}
-                            <div class="bg-white rounded-lg border border-gray-200">
-                                <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
-                                    <h5 class="font-medium text-gray-800 text-sm">Expense Records</h5>
-                                </div>
-
-                                @if($event->expenses->count() > 0)
-                                <div class="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
-                                    @foreach($event->expenses->sortByDesc('expense_date') as $expense)
-                                    <div class="p-4 hover:bg-gray-50 transition"
-                                        x-data="{ editing: false, showReceipt: false }">
-                                        {{-- View Mode --}}
-                                        <div x-show="!editing" class="flex items-start justify-between gap-3">
-                                            <div class="flex-1 min-w-0">
-                                                <div class="flex items-center gap-2 mb-1">
-                                                    <h6 class="font-medium text-gray-900 text-sm truncate">{{
-                                                        $expense->description }}</h6>
-                                                    @if($expense->category)
-                                                    <span
-                                                        class="px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">
-                                                        {{ $expense->category_label }}
-                                                    </span>
-                                                    @endif
-                                                </div>
-                                                <div class="flex items-center gap-3 text-xs text-gray-500">
-                                                    <span>{{ $expense->expense_date?->format('M d, Y') ?? 'No date'
-                                                        }}</span>
-                                                    @if($expense->addedBy)
-                                                    <span>by {{ $expense->addedBy->name }}</span>
-                                                    @endif
-                                                </div>
-                                                @if($expense->notes)
-                                                <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ $expense->notes }}
-                                                </p>
-                                                @endif
-                                            </div>
-                                            <div class="text-right flex-shrink-0">
-                                                <div class="text-base font-bold text-rose-600">₱{{
-                                                    number_format($expense->amount, 2) }}</div>
-                                                <div class="flex items-center gap-1 mt-1">
-                                                    @if($expense->receipt_image)
-                                                    <button @click="showReceipt = true"
-                                                        class="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition"
-                                                        title="View Receipt">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                            viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                        </svg>
-                                                    </button>
-                                                    @endif
-                                                    <button @click="editing = true"
-                                                        class="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
-                                                        title="Edit">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                            viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                        </svg>
-                                                    </button>
-                                                    <form method="POST"
-                                                        action="{{ route('admin.events.expenses.destroy', [$event, $expense]) }}"
-                                                        onsubmit="return confirm('Delete this expense?');"
-                                                        class="inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit"
-                                                            class="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition"
-                                                            title="Delete">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                                viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                    stroke-width="2"
-                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {{-- Edit Mode --}}
-                                        <div x-show="editing" x-cloak>
-                                            <form method="POST"
-                                                action="{{ route('admin.events.expenses.update', [$event, $expense]) }}"
-                                                enctype="multipart/form-data">
-                                                @csrf
-                                                @method('PUT')
-                                                <div class="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <input type="text" name="description"
-                                                            value="{{ $expense->description }}" required
-                                                            placeholder="Description"
-                                                            class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-rose-500">
-                                                    </div>
-                                                    <div>
-                                                        <input type="number" name="amount"
-                                                            value="{{ $expense->amount }}" required step="0.01"
-                                                            placeholder="Amount"
-                                                            class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-rose-500">
-                                                    </div>
-                                                    <div>
-                                                        <select name="category"
-                                                            class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-rose-500">
-                                                            <option value="">Category...</option>
-                                                            @foreach(\App\Models\EventExpense::getCategories() as $key
-                                                            => $label)
-                                                            <option value="{{ $key }}" {{ $expense->category == $key ?
-                                                                'selected' : '' }}>{{ $label }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                    <div>
-                                                        <input type="date" name="expense_date"
-                                                            value="{{ $expense->expense_date?->format('Y-m-d') }}"
-                                                            class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-rose-500">
-                                                    </div>
-                                                    <div class="col-span-2">
-                                                        <textarea name="notes" rows="1" placeholder="Notes..."
-                                                            class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-rose-500">{{ $expense->notes }}</textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="flex items-center justify-end gap-2 mt-3">
-                                                    <button type="button" @click="editing = false"
-                                                        class="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded transition">
-                                                        Cancel
-                                                    </button>
-                                                    <button type="submit"
-                                                        class="px-3 py-1.5 text-sm bg-rose-600 text-white rounded hover:bg-rose-700 transition">
-                                                        Save
-                                                    </button>
-                                                </div>
-                                            </form>
-                                        </div>
-
-                                        {{-- Receipt Modal --}}
-                                        @if($expense->receipt_image)
-                                        <div x-show="showReceipt" x-cloak @click.self="showReceipt = false"
-                                            class="fixed inset-0 z-[60] overflow-y-auto flex items-center justify-center p-4 bg-black/70">
-                                            <div class="relative max-w-2xl w-full bg-white rounded-xl shadow-2xl overflow-hidden"
-                                                @click.stop>
-                                                <button @click="showReceipt = false"
-                                                    class="absolute top-3 right-3 z-10 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition">
-                                                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
-                                                <div class="bg-gray-100 px-4 py-3 border-b">
-                                                    <h6 class="font-medium text-gray-900 text-sm">Receipt: {{
-                                                        $expense->description }}</h6>
-                                                    <p class="text-xs text-gray-500">₱{{ number_format($expense->amount,
-                                                        2) }}</p>
-                                                </div>
-                                                <div class="p-3 bg-gray-50">
-                                                    <img src="{{ asset('storage/' . $expense->receipt_image) }}"
-                                                        alt="Receipt" class="w-full h-auto rounded"
-                                                        style="max-height: 60vh; object-fit: contain;">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        @endif
-                                    </div>
-                                    @endforeach
-                                </div>
-                                @else
-                                {{-- Empty State --}}
-                                <div class="text-center py-10">
-                                    <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                    </svg>
-                                    <p class="text-gray-500 font-medium text-sm mb-1">No expenses recorded yet</p>
-                                    <p class="text-gray-400 text-xs">Use the form to add event expenses</p>
-                                </div>
-                                @endif
-                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {{-- Modal Footer --}}
-                <div
-                    class="bg-gray-50 border-t border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-b-2xl">
-                    <div class="text-sm text-gray-500">
-                        <span class="inline-flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                            {{ $event->expenses->count() }} expense(s) recorded
-                        </span>
-                    </div>
-                    <button type="button" @click="showExpenses = false"
-                        class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">
-                        Close
-                    </button>
+            {{-- Modal Footer --}}
+            <div
+                class="bg-gray-50 border-t border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-b-2xl">
+                <div class="text-sm text-gray-500">
+                    <span class="inline-flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        {{ $event->expenses->count() }} expense(s) recorded
+                    </span>
                 </div>
+                <button type="button" @click="showExpenses = false"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">
+                    Close
+                </button>
             </div>
         </div>
+    </div>
 
     </div>
 
