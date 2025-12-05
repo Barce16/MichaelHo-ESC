@@ -67,7 +67,7 @@ class AdminEventController extends Controller
             ->when($dateFrom, fn($s) => $s->whereDate('event_date', '>=', $dateFrom))
             ->when($dateTo,   fn($s) => $s->whereDate('event_date', '<=', $dateTo))
             ->orderByDesc('updated_at')
-            ->paginate(15)
+            ->paginate(10)
             ->withQueryString();
 
         // All schedules for admin calendar

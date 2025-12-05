@@ -36,7 +36,7 @@ class CustomerPaymentController extends Controller
             ->when($status, fn($q) => $q->where('status', $status))
             ->when($paymentType, fn($q) => $q->where('payment_type', $paymentType))
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(10);
 
         return view('admin.payments.index', compact('payments'));
     }

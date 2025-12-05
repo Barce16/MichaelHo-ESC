@@ -71,7 +71,7 @@ class AdminBillingController extends Controller
                 });
             })
             ->orderBy('event_date', 'desc')
-            ->paginate(15)
+            ->paginate(10)
             ->withQueryString();
 
         // Calculate totals
