@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Models\Event;
 use App\Models\Payment;
+use App\Models\EventExpense;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -21,10 +22,11 @@ class PaymentController extends Controller
             return redirect()->route('home')->with('error', 'Customer not found.');
         }
 
+        // Load expense relationship for expense payments
         $payments = Payment::whereHas('billing.event', function ($query) use ($customer) {
             $query->where('customer_id', $customer->id);
         })
-            ->with('billing.event')
+            ->with(['billing.event', 'expense'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
@@ -151,7 +153,6 @@ class PaymentController extends Controller
         $amount = $event->billing->downpayment_amount - $event->billing->introductory_payment_amount;
         $paymentType = 'downpayment';
 
-
         $hasApprovedDownpayment = $event->billing->payments()
             ->where('payment_type', Payment::TYPE_DOWNPAYMENT)
             ->where('status', Payment::STATUS_APPROVED)
@@ -183,12 +184,18 @@ class PaymentController extends Controller
                 ->with('error', 'You must complete your downpayment before making balance payments.');
         }
 
-        $remainingBalance = $event->billing->remaining_balance;
+        // Calculate package remaining balance (excluding expense payments)
+        $packageTotal = $event->billing->total_amount ?? 0;
+        $packagePaid = $event->billing->payments()
+            ->where('status', Payment::STATUS_APPROVED)
+            ->whereIn('payment_type', [Payment::TYPE_INTRODUCTORY, Payment::TYPE_DOWNPAYMENT, Payment::TYPE_BALANCE])
+            ->sum('amount');
+        $remainingBalance = max(0, $packageTotal - $packagePaid);
 
         if ($remainingBalance <= 0) {
             return redirect()
                 ->route('customer.events.show', $event)
-                ->with('info', 'Your event is fully paid! No remaining balance.');
+                ->with('info', 'Your package is fully paid! No remaining balance.');
         }
 
         $amount = $remainingBalance;
@@ -199,8 +206,53 @@ class PaymentController extends Controller
             ->where('status', Payment::STATUS_APPROVED)
             ->exists();
 
-
         return view('customers.payments.create', compact('event', 'amount', 'paymentType', 'hasApprovedDownpayment'));
+    }
+
+    /**
+     * Show expense payment form
+     */
+    public function createExpensePayment(Event $event, EventExpense $expense)
+    {
+        $customer = Auth::user()->customer;
+
+        if (!$customer || $event->customer_id !== $customer->id) {
+            abort(403);
+        }
+
+        // Verify expense belongs to this event
+        if ($expense->event_id !== $event->id) {
+            return redirect()
+                ->route('customer.events.show', $event)
+                ->with('error', 'Invalid expense.');
+        }
+
+        // Check if expense is already paid
+        if ($expense->isPaid()) {
+            return redirect()
+                ->route('customer.events.show', $event)
+                ->with('info', 'This expense has already been paid.');
+        }
+
+        // Check if there's already a pending payment for this expense
+        if ($event->billing) {
+            $hasPending = $event->billing->payments()
+                ->where('payment_type', 'expense')
+                ->where('expense_id', $expense->id)
+                ->where('status', Payment::STATUS_PENDING)
+                ->exists();
+
+            if ($hasPending) {
+                return redirect()
+                    ->route('customer.events.show', $event)
+                    ->with('info', 'You already have a pending payment for this expense.');
+            }
+        }
+
+        $amount = $expense->amount;
+        $paymentType = 'expense';
+
+        return view('customers.payments.create', compact('event', 'amount', 'paymentType', 'expense'));
     }
 
     /**
@@ -215,12 +267,13 @@ class PaymentController extends Controller
         }
 
         $data = $request->validate([
-            'payment_type' => ['required', 'in:introductory,downpayment,balance'],
+            'payment_type' => ['required', 'in:introductory,downpayment,balance,expense'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'payment_method' => ['required', 'in:gcash,bank_transfer,bpi,cash'],
             'reference_number' => ['nullable', 'string', 'max:100'],
             'payment_receipt' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'],
             'pay_in_full' => ['nullable', 'boolean'],
+            'expense_id' => ['nullable', 'integer', 'exists:event_expenses,id'],
         ]);
 
         $payInFull = $request->boolean('pay_in_full');
@@ -259,23 +312,30 @@ class PaymentController extends Controller
                 return back()->with('error', 'Downpayment has not been requested yet.');
             }
 
+            // Calculate package remaining balance for validation
+            $packageTotal = $event->billing->total_amount ?? 0;
+            $packagePaid = $event->billing->payments()
+                ->where('status', Payment::STATUS_APPROVED)
+                ->whereIn('payment_type', [Payment::TYPE_INTRODUCTORY, Payment::TYPE_DOWNPAYMENT, Payment::TYPE_BALANCE])
+                ->sum('amount');
+            $packageBalance = max(0, $packageTotal - $packagePaid);
+
             if ($payInFull) {
-                // Paying full remaining balance
-                $expectedAmount = $event->billing->remaining_balance;
-                if (abs((float)$data['amount'] - $expectedAmount) > 0.01) {
-                    return back()->with('error', 'Full payment amount must be exactly ₱' . number_format($expectedAmount, 2));
+                // Paying full remaining package balance
+                if (abs((float)$data['amount'] - $packageBalance) > 0.01) {
+                    return back()->with('error', 'Full payment amount must be exactly ₱' . number_format($packageBalance, 2));
                 }
             } else {
                 // Paying downpayment only (minus intro already paid)
                 $minAmount = $event->billing->downpayment_amount - $event->billing->introductory_payment_amount;
-                $maxAmount = $event->billing->remaining_balance;
+                $maxAmount = $packageBalance;
 
                 if ((float)$data['amount'] < $minAmount) {
                     return back()->with('error', 'Payment must be at least ₱' . number_format($minAmount, 2) . ' (downpayment amount)');
                 }
 
                 if ((float)$data['amount'] > $maxAmount) {
-                    return back()->with('error', 'Payment cannot exceed ₱' . number_format($maxAmount, 2) . ' (remaining balance)');
+                    return back()->with('error', 'Payment cannot exceed ₱' . number_format($maxAmount, 2) . ' (remaining package balance)');
                 }
             }
 
@@ -302,12 +362,55 @@ class PaymentController extends Controller
                 return back()->with('error', 'No billing information found.');
             }
 
-            if ((float)$data['amount'] > $event->billing->remaining_balance) {
-                return back()->with('error', 'Payment amount cannot exceed remaining balance of ₱' . number_format($event->billing->remaining_balance, 2));
+            // Calculate package remaining balance
+            $packageTotal = $event->billing->total_amount ?? 0;
+            $packagePaid = $event->billing->payments()
+                ->where('status', Payment::STATUS_APPROVED)
+                ->whereIn('payment_type', [Payment::TYPE_INTRODUCTORY, Payment::TYPE_DOWNPAYMENT, Payment::TYPE_BALANCE])
+                ->sum('amount');
+            $packageBalance = max(0, $packageTotal - $packagePaid);
+
+            if ((float)$data['amount'] > $packageBalance) {
+                return back()->with('error', 'Payment amount cannot exceed remaining package balance of ₱' . number_format($packageBalance, 2));
             }
 
             if ((float)$data['amount'] < 100) {
                 return back()->with('error', 'Minimum payment amount is ₱100.00');
+            }
+        }
+
+        // Validate expense payment
+        elseif ($data['payment_type'] === 'expense') {
+            if (!isset($data['expense_id'])) {
+                return back()->with('error', 'Expense ID is required for expense payments.');
+            }
+
+            $expense = EventExpense::find($data['expense_id']);
+
+            if (!$expense || $expense->event_id !== $event->id) {
+                return back()->with('error', 'Invalid expense.');
+            }
+
+            if ($expense->isPaid()) {
+                return back()->with('error', 'This expense has already been paid.');
+            }
+
+            // Amount must match expense amount exactly
+            if (abs((float)$data['amount'] - (float)$expense->amount) > 0.01) {
+                return back()->with('error', 'Expense payment must be exactly ₱' . number_format($expense->amount, 2));
+            }
+
+            // Check for existing pending payment for this expense
+            if ($event->billing) {
+                $hasPending = $event->billing->payments()
+                    ->where('payment_type', 'expense')
+                    ->where('expense_id', $expense->id)
+                    ->where('status', Payment::STATUS_PENDING)
+                    ->exists();
+
+                if ($hasPending) {
+                    return back()->with('error', 'You already have a pending payment for this expense.');
+                }
             }
         }
 
@@ -324,7 +427,7 @@ class PaymentController extends Controller
         }
 
         // Create payment record
-        $payment = Payment::create([
+        $paymentData = [
             'billing_id' => $billing->id,
             'payment_type' => $data['payment_type'],
             'payment_image' => $filePath,
@@ -333,7 +436,14 @@ class PaymentController extends Controller
             'reference_number' => $data['reference_number'],
             'status' => Payment::STATUS_PENDING,
             'payment_date' => now(),
-        ]);
+        ];
+
+        // Add expense_id for expense payments
+        if ($data['payment_type'] === 'expense' && isset($data['expense_id'])) {
+            $paymentData['expense_id'] = $data['expense_id'];
+        }
+
+        $payment = Payment::create($paymentData);
 
         // Set success message
         if ($payInFull && $data['payment_type'] === 'downpayment') {
@@ -343,6 +453,7 @@ class PaymentController extends Controller
                 'introductory' => 'Introductory payment proof submitted. Please wait for admin verification.',
                 'downpayment' => 'Downpayment proof submitted. Please wait for admin verification.',
                 'balance' => 'Balance payment proof submitted. Please wait for admin verification.',
+                'expense' => 'Expense payment proof submitted. Please wait for admin verification.',
                 default => 'Payment proof submitted. Please wait for admin verification.',
             };
         }
@@ -366,7 +477,7 @@ class PaymentController extends Controller
             abort(403);
         }
 
-        $payment->load('billing.event');
+        $payment->load(['billing.event', 'expense']);
 
         return view('customers.payments.show', compact('payment'));
     }
@@ -389,6 +500,9 @@ class PaymentController extends Controller
         }
 
         $event = $payment->billing->event;
+
+        // Load expense if it's an expense payment
+        $payment->load('expense');
 
         // Get admin user for signature (prefer one with signature, or get first admin)
         $admin = \App\Models\User::where('user_type', 'admin')

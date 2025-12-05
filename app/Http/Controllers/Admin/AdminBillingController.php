@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\Payment;
 use App\Models\Billing;
+use App\Models\EventExpense;
 use App\Services\NotificationService;
 use App\Services\SmsNotifier;
 use App\Notifications\IntroPaymentApprovedNotification;
@@ -38,7 +39,8 @@ class AdminBillingController extends Controller
                 'customer',
                 'billing.payments' => function ($query) {
                     $query->orderBy('created_at', 'desc');
-                }
+                },
+                'expenses' // Load expenses for totals
             ])
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
@@ -49,49 +51,57 @@ class AdminBillingController extends Controller
                 });
             })
             ->when($status === 'paid', function ($query) {
-                // Filter for fully paid: sum of approved payments >= total_amount
+                // Filter for fully paid: package paid AND no unpaid expenses
                 $query->whereHas('billing', function ($q) {
                     $q->whereRaw('(
                         SELECT COALESCE(SUM(amount), 0) 
                         FROM payments 
                         WHERE payments.billing_id = billings.id 
                         AND payments.status = ?
-                    ) >= billings.total_amount', [Payment::STATUS_APPROVED]);
+                        AND payments.payment_type != ?
+                    ) >= billings.total_amount', [Payment::STATUS_APPROVED, Payment::TYPE_EXPENSE]);
+                })->whereDoesntHave('expenses', function ($q) {
+                    $q->where('payment_status', 'unpaid');
                 });
             })
             ->when($status === 'pending', function ($query) {
-                // Filter for pending: sum of approved payments < total_amount
-                $query->whereHas('billing', function ($q) {
-                    $q->whereRaw('(
-                        SELECT COALESCE(SUM(amount), 0) 
-                        FROM payments 
-                        WHERE payments.billing_id = billings.id 
-                        AND payments.status = ?
-                    ) < billings.total_amount', [Payment::STATUS_APPROVED]);
+                // Filter for pending: package not paid OR has unpaid expenses
+                $query->where(function ($q) {
+                    $q->whereHas('billing', function ($bq) {
+                        $bq->whereRaw('(
+                            SELECT COALESCE(SUM(amount), 0) 
+                            FROM payments 
+                            WHERE payments.billing_id = billings.id 
+                            AND payments.status = ?
+                            AND payments.payment_type != ?
+                        ) < billings.total_amount', [Payment::STATUS_APPROVED, Payment::TYPE_EXPENSE]);
+                    })->orWhereHas('expenses', function ($eq) {
+                        $eq->where('payment_status', 'unpaid');
+                    });
                 });
             })
             ->orderBy('event_date', 'desc')
             ->paginate(10)
             ->withQueryString();
 
-        // Calculate totals
+        // Calculate totals (including expenses)
         $totalOutstanding = Event::whereHas('billing')
-            ->with('billing')
+            ->with(['billing', 'expenses'])
             ->get()
-            ->sum(fn($e) => $e->billing->remaining_balance ?? 0);
+            ->sum(fn($e) => $e->billing->overall_remaining_balance ?? 0);
 
         $totalPaid = Event::whereHas('billing')
             ->with('billing')
             ->get()
-            ->sum(fn($e) => $e->billing->total_paid ?? 0);
+            ->sum(fn($e) => $e->billing->grand_total_paid ?? 0);
 
         return view('admin.billings.index', compact('eventsWithBillings', 'totalOutstanding', 'totalPaid', 'status', 'search'));
     }
 
     /**
-     * Show payment form for an event
+     * Show billing details for an event
      */
-    public function createPayment(Event $event)
+    public function show(Event $event)
     {
         if (!$event->billing) {
             return redirect()
@@ -99,11 +109,61 @@ class AdminBillingController extends Controller
                 ->with('error', 'No billing found for this event.');
         }
 
-        $event->load(['customer', 'billing.payments']);
+        $event->load([
+            'customer',
+            'package',
+            'inclusions',
+            'billing.payments' => function ($query) {
+                $query->orderBy('created_at', 'desc');
+            },
+            'expenses' => function ($query) {
+                $query->orderBy('expense_date', 'desc');
+            },
+            'expenses.payment'
+        ]);
 
-        // Determine payment type based on event status and payment history
-        $paymentType = $this->determinePaymentType($event);
-        $amount = $this->calculatePaymentAmount($event, $paymentType);
+        return view('admin.billings.show', compact('event'));
+    }
+
+    /**
+     * Show payment form for an event
+     */
+    public function createPayment(Request $request, Event $event)
+    {
+        if (!$event->billing) {
+            return redirect()
+                ->route('admin.billings.index')
+                ->with('error', 'No billing found for this event.');
+        }
+
+        $event->load(['customer', 'billing.payments', 'expenses']);
+
+        // Check if this is an expense payment
+        $expenseId = $request->query('expense_id');
+        $expense = null;
+
+        if ($expenseId) {
+            $expense = EventExpense::find($expenseId);
+
+            if (!$expense || $expense->event_id !== $event->id) {
+                return redirect()
+                    ->route('admin.billings.show', $event)
+                    ->with('error', 'Expense not found or does not belong to this event.');
+            }
+
+            if ($expense->isPaid()) {
+                return redirect()
+                    ->route('admin.billings.show', $event)
+                    ->with('error', 'This expense has already been paid.');
+            }
+
+            $paymentType = Payment::TYPE_EXPENSE;
+            $amount = $expense->amount;
+        } else {
+            // Determine payment type based on event status and payment history
+            $paymentType = $this->determinePaymentType($event);
+            $amount = $this->calculatePaymentAmount($event, $paymentType);
+        }
 
         // Check for pending payments
         $hasPendingPayment = $event->billing->payments()
@@ -116,12 +176,17 @@ class AdminBillingController extends Controller
             ->where('status', Payment::STATUS_APPROVED)
             ->exists();
 
+        // Get unpaid expenses for the expenses section
+        $unpaidExpenses = $event->expenses()->unpaid()->orderBy('expense_date', 'desc')->get();
+
         return view('admin.billings.create-payment', compact(
             'event',
             'paymentType',
             'amount',
             'hasPendingPayment',
-            'hasApprovedDownpayment'
+            'hasApprovedDownpayment',
+            'expense',
+            'unpaidExpenses'
         ));
     }
 
@@ -135,17 +200,78 @@ class AdminBillingController extends Controller
         }
 
         $data = $request->validate([
-            'payment_type' => ['required', 'in:introductory,downpayment,balance'],
+            'payment_type' => ['required', 'in:introductory,downpayment,balance,expense'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'payment_method' => ['required', 'in:gcash,bank_transfer,bpi,cash'],
             'reference_number' => ['nullable', 'string', 'max:100'],
             'payment_receipt' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'],
             'auto_approve' => ['nullable', 'boolean'],
+            'expense_id' => ['nullable', 'exists:event_expenses,id'],
         ]);
 
         $billing = $event->billing;
         $autoApprove = $request->boolean('auto_approve');
 
+        // Handle expense payment
+        if ($data['payment_type'] === 'expense') {
+            if (empty($data['expense_id'])) {
+                return back()->with('error', 'Expense ID is required for expense payments.');
+            }
+
+            $expense = EventExpense::find($data['expense_id']);
+
+            if (!$expense || $expense->event_id !== $event->id) {
+                return back()->with('error', 'Expense not found or does not belong to this event.');
+            }
+
+            if ($expense->isPaid()) {
+                return back()->with('error', 'This expense has already been paid.');
+            }
+
+            DB::beginTransaction();
+
+            try {
+                // Store payment receipt if provided
+                $filePath = null;
+                if ($request->hasFile('payment_receipt')) {
+                    $filePath = $request->file('payment_receipt')->store('payment_receipts', 'public');
+                }
+
+                // Create expense payment record
+                $payment = Payment::create([
+                    'billing_id' => $billing->id,
+                    'expense_id' => $expense->id,
+                    'payment_type' => Payment::TYPE_EXPENSE,
+                    'payment_image' => $filePath,
+                    'amount' => $expense->amount,
+                    'payment_method' => $data['payment_method'],
+                    'reference_number' => $data['reference_number'] ?? null,
+                    'status' => $autoApprove ? Payment::STATUS_APPROVED : Payment::STATUS_PENDING,
+                    'payment_date' => now(),
+                ]);
+
+                // If auto-approve, mark expense as paid
+                if ($autoApprove) {
+                    $expense->markAsPaid();
+                }
+
+                DB::commit();
+
+                $message = $autoApprove
+                    ? 'Expense payment recorded and approved successfully.'
+                    : 'Expense payment recorded. Awaiting approval.';
+
+                return redirect()
+                    ->route('admin.billings.show', $event)
+                    ->with('success', $message);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Error storing expense payment', ['error' => $e->getMessage()]);
+                return back()->with('error', 'Failed to record expense payment. Please try again.');
+            }
+        }
+
+        // Regular payment (introductory, downpayment, balance)
         // Validation based on payment type
         $validationResult = $this->validatePayment($event, $data);
         if ($validationResult !== true) {
@@ -191,69 +317,141 @@ class AdminBillingController extends Controller
                 ->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to store admin payment', [
-                'event_id' => $event->id,
-                'error' => $e->getMessage()
-            ]);
-            return back()->with('error', 'Failed to process payment: ' . $e->getMessage());
+            Log::error('Error storing payment', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Failed to record payment. Please try again.');
         }
     }
 
     /**
-     * Show billing details with payment history
+     * Store expense payment (full form submission)
      */
-    public function show(Event $event)
+    public function storeExpensePayment(Request $request, Event $event, EventExpense $expense)
     {
         if (!$event->billing) {
-            return redirect()
-                ->route('admin.billings.index')
-                ->with('error', 'No billing found for this event.');
+            return back()->with('error', 'No billing found for this event.');
         }
 
-        $event->load([
-            'customer',
-            'package',
-            'inclusions',
-            'billing.payments' => function ($query) {
-                $query->orderBy('created_at', 'desc');
-            }
+        if ($expense->event_id !== $event->id) {
+            return back()->with('error', 'Expense does not belong to this event.');
+        }
+
+        if ($expense->isPaid()) {
+            return back()->with('error', 'This expense has already been paid.');
+        }
+
+        $data = $request->validate([
+            'payment_method' => ['required', 'in:gcash,bank_transfer,bpi,cash'],
+            'reference_number' => ['nullable', 'string', 'max:100'],
+            'payment_receipt' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'],
+            'auto_approve' => ['nullable', 'boolean'],
         ]);
 
-        return view('admin.billings.show', compact('event'));
+        $autoApprove = $request->boolean('auto_approve');
+
+        DB::beginTransaction();
+
+        try {
+            // Store payment receipt if provided
+            $filePath = null;
+            if ($request->hasFile('payment_receipt')) {
+                $filePath = $request->file('payment_receipt')->store('payment_receipts', 'public');
+            }
+
+            // Create expense payment record
+            $payment = Payment::create([
+                'billing_id' => $event->billing->id,
+                'expense_id' => $expense->id,
+                'payment_type' => Payment::TYPE_EXPENSE,
+                'payment_image' => $filePath,
+                'amount' => $expense->amount,
+                'payment_method' => $data['payment_method'],
+                'reference_number' => $data['reference_number'] ?? null,
+                'status' => $autoApprove ? Payment::STATUS_APPROVED : Payment::STATUS_PENDING,
+                'payment_date' => now(),
+            ]);
+
+            // If auto-approve, mark expense as paid
+            if ($autoApprove) {
+                $expense->markAsPaid();
+            }
+
+            DB::commit();
+
+            $message = $autoApprove
+                ? 'Expense payment recorded and approved successfully.'
+                : 'Expense payment recorded. Awaiting approval.';
+
+            return redirect()
+                ->route('admin.billings.show', $event)
+                ->with('success', $message);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error storing expense payment', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Failed to record expense payment. Please try again.');
+        }
     }
 
     /**
-     * Determine what type of payment is needed
+     * Mark expense as unpaid (reverse payment)
+     */
+    public function markExpenseUnpaid(Event $event, EventExpense $expense)
+    {
+        if ($expense->event_id !== $event->id) {
+            return back()->with('error', 'Expense does not belong to this event.');
+        }
+
+        if ($expense->isUnpaid()) {
+            return back()->with('error', 'This expense is already unpaid.');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            // Delete the expense payment record
+            Payment::where('expense_id', $expense->id)->delete();
+
+            // Mark expense as unpaid
+            $expense->markAsUnpaid();
+
+            DB::commit();
+
+            return back()->with('success', 'Expense marked as unpaid.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error marking expense as unpaid', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Failed to mark expense as unpaid.');
+        }
+    }
+
+    /**
+     * Determine the next payment type for an event
      */
     private function determinePaymentType(Event $event): string
     {
         $billing = $event->billing;
 
-        // Check if intro is paid
-        $hasApprovedIntro = $billing->payments()
-            ->where('payment_type', Payment::TYPE_INTRODUCTORY)
-            ->where('status', Payment::STATUS_APPROVED)
-            ->exists();
-
-        if (!$hasApprovedIntro && $event->status === Event::STATUS_REQUEST_MEETING) {
-            return 'introductory';
+        // If intro payment not paid, that's next
+        if (!$billing->hasIntroPaid()) {
+            return Payment::TYPE_INTRODUCTORY;
         }
 
-        // Check if downpayment is paid
-        $hasApprovedDownpayment = $billing->payments()
+        // Check for approved downpayment
+        $hasDownpayment = $billing->payments()
             ->where('payment_type', Payment::TYPE_DOWNPAYMENT)
             ->where('status', Payment::STATUS_APPROVED)
             ->exists();
 
-        if (!$hasApprovedDownpayment) {
-            return 'downpayment';
+        // If no downpayment yet, that's next
+        if (!$hasDownpayment) {
+            return Payment::TYPE_DOWNPAYMENT;
         }
 
-        return 'balance';
+        // Otherwise, it's balance payment
+        return Payment::TYPE_BALANCE;
     }
 
     /**
-     * Calculate payment amount based on type
+     * Calculate the expected payment amount
      */
     private function calculatePaymentAmount(Event $event, string $paymentType): float
     {

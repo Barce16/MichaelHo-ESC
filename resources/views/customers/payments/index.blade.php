@@ -7,14 +7,20 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             {{-- Stats Cards --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            @php
+            $totalApproved = $payments->where('status', 'approved')->sum('amount');
+            $pendingCount = $payments->where('status', 'pending')->count();
+            $expensePayments = $payments->where('payment_type', 'expense');
+            $expenseCount = $expensePayments->count();
+            $expenseTotal = $expensePayments->where('status', 'approved')->sum('amount');
+            @endphp
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="bg-gradient-to-br from-slate-500 to-gray-600 rounded-xl shadow-lg p-6 text-white">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-xs font-semibold text-slate-100 uppercase tracking-wide">Total Paid</p>
-                            <p class="text-3xl font-bold mt-1">
-                                ₱{{ number_format($payments->where('status', 'approved')->sum('amount'), 2) }}
-                            </p>
+                            <p class="text-3xl font-bold mt-1">₱{{ number_format($totalApproved, 2) }}</p>
                         </div>
                         <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -29,9 +35,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pending</p>
-                            <p class="text-3xl font-bold text-amber-600 mt-1">
-                                {{ $payments->where('status', 'pending')->count() }}
-                            </p>
+                            <p class="text-3xl font-bold text-amber-600 mt-1">{{ $pendingCount }}</p>
                         </div>
                         <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
                             <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,10 +49,26 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div class="flex items-center justify-between">
                         <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Expense Payments</p>
+                            <p class="text-3xl font-bold text-orange-600 mt-1">{{ $expenseCount }}</p>
+                            @if($expenseTotal > 0)
+                            <p class="text-xs text-gray-500 mt-1">₱{{ number_format($expenseTotal, 2) }} paid</p>
+                            @endif
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
                             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Payments</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-1">
-                                {{ $payments->count() }}
-                            </p>
+                            <p class="text-3xl font-bold text-gray-900 mt-1">{{ $payments->count() }}</p>
                         </div>
                         <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
                             <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,6 +100,9 @@
                                     Event</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Type</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                     Amount</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -107,14 +130,39 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-bold text-gray-900">₱{{ number_format($payment->amount, 2)
-                                        }}</div>
+                                    @if($payment->payment_type === 'expense')
+                                    <span
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+                                        </svg>
+                                        Expense
+                                    </span>
+                                    @if($payment->expense)
+                                    <div class="text-xs text-gray-500 mt-1 max-w-[150px] truncate"
+                                        title="{{ $payment->expense->description }}">
+                                        {{ $payment->expense->description }}
+                                    </div>
+                                    @endif
+                                    @else
+                                    <span class="text-sm text-gray-700 capitalize">{{ str_replace('_', ' ',
+                                        $payment->payment_type) }}</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div
+                                        class="text-sm font-bold {{ $payment->payment_type === 'expense' ? 'text-amber-700' : 'text-gray-900' }}">
+                                        ₱{{ number_format($payment->amount, 2) }}
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center gap-2 text-sm text-gray-700">
                                         @if($payment->payment_method === 'gcash')
                                         <span>💳</span>
                                         @elseif($payment->payment_method === 'bank_transfer')
+                                        <span>🏦</span>
+                                        @elseif($payment->payment_method === 'bpi')
                                         <span>🏦</span>
                                         @else
                                         <span>💵</span>
@@ -131,16 +179,18 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @php
                                     $statusConfig = match($payment->status) {
-                                    'approved' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-700', 'border' =>
-                                    'border-emerald-200', 'dot' => 'bg-emerald-500'],
-                                    'rejected' => ['bg' => 'bg-rose-100', 'text' => 'text-rose-700', 'border' =>
-                                    'border-rose-200', 'dot' => 'bg-rose-500'],
-                                    default => ['bg' => 'bg-amber-100', 'text' => 'text-amber-700', 'border' =>
-                                    'border-amber-200', 'dot' => 'bg-amber-500'],
+                                    'approved' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-800', 'dot' =>
+                                    'bg-emerald-500'],
+                                    'pending' => ['bg' => 'bg-amber-100', 'text' => 'text-amber-800', 'dot' =>
+                                    'bg-amber-500'],
+                                    'rejected' => ['bg' => 'bg-rose-100', 'text' => 'text-rose-800', 'dot' =>
+                                    'bg-rose-500'],
+                                    default => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'dot' =>
+                                    'bg-gray-500'],
                                     };
                                     @endphp
                                     <span
-                                        class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full {{ $statusConfig['bg'] }} {{ $statusConfig['text'] }} {{ $statusConfig['border'] }} border">
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusConfig['bg'] }} {{ $statusConfig['text'] }}">
                                         <span class="w-1.5 h-1.5 rounded-full {{ $statusConfig['dot'] }}"></span>
                                         {{ ucfirst($payment->status) }}
                                     </span>
@@ -184,7 +234,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-16 text-center">
+                                <td colspan="8" class="px-6 py-16 text-center">
                                     <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

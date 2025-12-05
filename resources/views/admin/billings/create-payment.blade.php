@@ -4,7 +4,9 @@
             <div>
                 <h2 class="font-semibold text-xl text-gray-800">
                     Process
-                    @if($paymentType === 'introductory')
+                    @if(isset($expense))
+                    Expense Payment
+                    @elseif($paymentType === 'introductory')
                     Introductory Payment
                     @elseif($paymentType === 'downpayment')
                     Downpayment
@@ -30,19 +32,25 @@
 
             {{-- Customer & Event Summary Card --}}
             @php
+            if (isset($expense)) {
+            $headerColor = 'from-amber-500 to-orange-600';
+            $paymentLabel = 'Expense Payment';
+            $displayAmount = $expense->amount;
+            } else {
             $headerColor = match($paymentType) {
             'introductory' => 'from-orange-500 to-red-600',
             'downpayment' => 'from-violet-500 to-purple-600',
             'balance' => 'from-emerald-500 to-teal-600',
             default => 'from-gray-500 to-slate-600',
             };
-
             $paymentLabel = match($paymentType) {
             'introductory' => 'Introductory Payment',
             'downpayment' => 'Downpayment',
             'balance' => 'Balance Payment',
             default => 'Payment',
             };
+            $displayAmount = $amount;
+            }
             @endphp
 
             <div class="bg-gradient-to-r {{ $headerColor }} rounded-xl shadow-lg p-8 text-white">
@@ -64,8 +72,13 @@
 
                         <div class="flex items-center gap-2 mb-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                @if(isset($expense))
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                @else
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                @endif
                             </svg>
                             <span class="text-sm font-semibold opacity-90 uppercase tracking-wide">
                                 {{ $paymentLabel }}
@@ -73,11 +86,33 @@
                         </div>
                         <h3 class="text-2xl font-bold mb-1">{{ $event->name }}</h3>
                         <p class="opacity-90">{{ \Carbon\Carbon::parse($event->event_date)->format('F d, Y') }}</p>
+
+                        {{-- Expense Details --}}
+                        @if(isset($expense))
+                        <div class="mt-4 pt-4 border-t border-white/20">
+                            <p class="text-sm opacity-80">Expense</p>
+                            <p class="font-bold text-lg">{{ $expense->description }}</p>
+                            <div class="flex items-center gap-3 mt-1">
+                                <span class="px-2 py-0.5 bg-white/20 rounded text-xs">{{ $expense->category_label
+                                    }}</span>
+                                @if($expense->expense_date)
+                                <span class="text-sm opacity-80">{{ $expense->expense_date->format('M d, Y') }}</span>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
                     </div>
                     <div class="text-right">
-                        <p class="text-sm opacity-90 mb-1">{{ $paymentType === 'balance' ? 'Remaining Balance' : 'Amount
-                            Due' }}</p>
-                        <p class="text-4xl font-bold">₱{{ number_format($amount, 2) }}</p>
+                        <p class="text-sm opacity-90 mb-1">
+                            @if(isset($expense))
+                            Expense Amount
+                            @elseif($paymentType === 'balance')
+                            Remaining Balance
+                            @else
+                            Amount Due
+                            @endif
+                        </p>
+                        <p class="text-4xl font-bold">₱{{ number_format($displayAmount, 2) }}</p>
                     </div>
                 </div>
             </div>
@@ -101,7 +136,21 @@
             @endif
 
             {{-- Payment Instructions --}}
-            @if($paymentType === 'introductory')
+            @if(isset($expense))
+            <div class="bg-amber-50 border-l-4 border-amber-500 rounded-lg p-4">
+                <div class="flex gap-3">
+                    <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div class="text-sm text-amber-900">
+                        <p class="font-semibold mb-1">Expense Payment</p>
+                        <p>This payment covers an additional expense incurred during event preparation or execution.</p>
+                    </div>
+                </div>
+            </div>
+            @elseif($paymentType === 'introductory')
             <div class="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4">
                 <div class="flex gap-3">
                     <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
@@ -150,6 +199,61 @@
             </div>
             @endif
 
+            {{-- Unpaid Expenses Section (only show when NOT paying an expense) --}}
+            @if(!isset($expense) && isset($unpaidExpenses) && $unpaidExpenses->count() > 0)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-orange-50 border-b border-orange-200 px-6 py-4">
+                    <h3 class="text-lg font-bold text-orange-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Unpaid Expenses
+                    </h3>
+                    <p class="text-sm text-orange-700 mt-1">Additional expenses that need to be collected from the
+                        customer</p>
+                </div>
+                <div class="p-4">
+                    <div class="space-y-2">
+                        @foreach($unpaidExpenses as $unpaidExpense)
+                        <a href="{{ route('admin.billings.create-payment', ['event' => $event, 'expense_id' => $unpaidExpense->id]) }}"
+                            class="flex items-center justify-between p-3 bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200 transition group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-orange-200 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-orange-700" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-gray-900">{{ $unpaidExpense->description }}</div>
+                                    <div class="text-xs text-gray-500 flex items-center gap-2">
+                                        <span class="px-1.5 py-0.5 bg-gray-200 rounded text-xs">{{
+                                            $unpaidExpense->category_label }}</span>
+                                        @if($unpaidExpense->expense_date)
+                                        <span>{{ $unpaidExpense->expense_date->format('M d, Y') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-lg font-bold text-orange-700">₱{{
+                                    number_format($unpaidExpense->amount, 2) }}</span>
+                                <svg class="w-5 h-5 text-orange-400 group-hover:text-orange-600 transition" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5l7 7-7 7" />
+                                </svg>
+                            </div>
+                        </a>
+                        @endforeach
+                    </div>
+                    <p class="text-xs text-gray-500 mt-3 text-center">Click an expense to process payment for it</p>
+                </div>
+            </div>
+            @endif
+
             {{-- Payment Form --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
                 x-data="{ paymentMethod: 'cash' }">
@@ -193,7 +297,14 @@
                 <form method="POST" action="{{ route('admin.billings.store-payment', $event) }}"
                     enctype="multipart/form-data" class="p-6">
                     @csrf
+
+                    {{-- Payment Type & Expense ID --}}
+                    @if(isset($expense))
+                    <input type="hidden" name="payment_type" value="expense">
+                    <input type="hidden" name="expense_id" value="{{ $expense->id }}">
+                    @else
                     <input type="hidden" name="payment_type" value="{{ $paymentType }}">
+                    @endif
 
                     <div class="space-y-6">
                         {{-- Payment Amount --}}
@@ -202,8 +313,33 @@
                         $minCustomAmount = $hasApprovedDown ? 100 : $amount;
                         @endphp
 
+                        {{-- EXPENSE: Fixed Amount --}}
+                        @if(isset($expense))
+                        <div>
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 36 36">
+                                    <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z">
+                                    </path>
+                                    <path d="M14.18,19.7h5.19a4.28,4.28,0,0,0,3.5-1.9H14.18Z"></path>
+                                    <path d="M19.37,10.51H14.18V12h8.37A4.21,4.21,0,0,0,19.37,10.51Z"></path>
+                                    <path
+                                        d="M17.67,2a16,16,0,1,0,16,16A16,16,0,0,0,17.67,2Zm10.5,15.8H25.7a6.87,6.87,0,0,1-6.33,4.4H14.18v6.54a1.25,1.25,0,1,1-2.5,0V17.8H8.76a.9.9,0,1,1,0-1.8h2.92V13.8H8.76a.9.9,0,1,1,0-1.8h2.92V9.26A1.25,1.25,0,0,1,12.93,8h6.44a6.84,6.84,0,0,1,6.15,4h2.65a.9.9,0,0,1,0,1.8H26.09a6.91,6.91,0,0,1,.12,1.3,6.8,6.8,0,0,1-.06.9h2a.9.9,0,0,1,0,1.8Z">
+                                    </path>
+                                </svg>
+                                Payment Amount <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
+                                <input name="amount" type="number" step="0.01" value="{{ $expense->amount }}" readonly
+                                    class="block w-full pl-10 pr-4 py-3 rounded-lg border-gray-300 bg-gray-50 cursor-not-allowed text-lg font-semibold transition"
+                                    required />
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Expense payment amount is fixed</p>
+                        </div>
+
                         {{-- INTRODUCTORY: Fixed Amount --}}
-                        @if($paymentType === 'introductory')
+                        @elseif($paymentType === 'introductory')
                         <div>
                             <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                 <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 36 36">
@@ -412,8 +548,12 @@
                                 <div>
                                     <span class="font-semibold text-blue-900">Auto-approve this payment</span>
                                     <p class="text-sm text-blue-700 mt-0.5">
+                                        @if(isset($expense))
+                                        Check this to immediately approve the payment and mark the expense as paid.
+                                        @else
                                         Check this to immediately approve the payment and update event status. Uncheck
                                         to leave as pending for later review.
+                                        @endif
                                     </p>
                                 </div>
                             </label>
@@ -431,7 +571,7 @@
                             Cancel
                         </a>
                         <button type="submit"
-                            class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-lg hover:from-emerald-600 hover:to-teal-700 transition shadow-md hover:shadow-lg">
+                            class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r {{ isset($expense) ? 'from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700' : 'from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700' }} text-white font-semibold rounded-lg transition shadow-md hover:shadow-lg">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

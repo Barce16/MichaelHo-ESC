@@ -187,11 +187,20 @@ class EventController extends Controller
         // load relations (added expenses)
         $event->load(['package', 'inclusions', 'customer', 'billing.payments', 'expenses.addedBy']);
 
-        // pricing
+        // pricing - Package calculations
         $incSubtotal = $event->inclusions->sum(fn($i) => (float) ($i->pivot->price_snapshot ?? 0));
         $coord = (float) ($event->package?->coordination_price ?? 25000);
         $styl  = (float) ($event->package?->event_styling_price ?? 55000);
-        $grandTotal = $incSubtotal + $coord + $styl;
+        $packageTotal = $incSubtotal + $coord + $styl; // Package total (without expenses)
+
+        // Expense calculations
+        $expensesTotal = $event->expenses->sum('amount');
+        $unpaidExpenses = $event->expenses->where('payment_status', 'unpaid')->sum('amount');
+        $paidExpenses = $event->expenses->where('payment_status', 'paid')->sum('amount');
+        $unpaidExpensesCount = $event->expenses->where('payment_status', 'unpaid')->count();
+
+        // Grand total (package + expenses)
+        $grandTotal = $packageTotal + $expensesTotal;
 
         // payments collection
         $payments = $event->billing ? $event->billing->payments : collect();
@@ -207,7 +216,7 @@ class EventController extends Controller
             ->sortByDesc('created_at')
             ->first();
 
-        // approved sums
+        // approved sums - Package payments (excluding expense type)
         $approvedIntroPayments = $payments->where('payment_type', Payment::TYPE_INTRODUCTORY)
             ->where('status', Payment::STATUS_APPROVED)
             ->sum('amount');
@@ -220,11 +229,22 @@ class EventController extends Controller
             ->where('status', Payment::STATUS_APPROVED)
             ->sum('amount');
 
-        $totalPaid = $approvedIntroPayments + $approvedDownpayments + $approvedBalancePayments;
+        // Package paid (intro + downpayment + balance, excluding expense payments)
+        $packagePaid = $approvedIntroPayments + $approvedDownpayments + $approvedBalancePayments;
+
+        // Total paid (all approved payments including expense payments)
+        $approvedExpensePayments = $payments->where('payment_type', 'expense')
+            ->where('status', Payment::STATUS_APPROVED)
+            ->sum('amount');
+        $totalPaid = $packagePaid + $approvedExpensePayments;
 
         $introAmount = 5000.00;
-        // balance calculation
-        $remainingBalance = $grandTotal - $totalPaid;
+
+        // Package remaining balance
+        $packageRemainingBalance = $packageTotal - $packagePaid;
+
+        // Overall remaining balance (package balance + unpaid expenses)
+        $remainingBalance = $packageRemainingBalance + $unpaidExpenses;
 
         // Required downpayment calculation
         if ($event->billing && $event->billing->downpayment_amount > 0) {
@@ -242,7 +262,7 @@ class EventController extends Controller
         $isIntroPaid = ($approvedIntroPayments > 0);
         $canPayDownpayment = $event->isReadyForDownpayment() && $isIntroPaid;
         $isDownpaymentPaid = ($approvedDownpayments > 0);
-        $canPayBalance = $isIntroPaid && $isDownpaymentPaid && $remainingBalance > 0;
+        $canPayBalance = $isIntroPaid && $isDownpaymentPaid && $packageRemainingBalance > 0;
 
         // progress
         $progress = $event->progress()->orderBy('progress_date', 'desc')->get();
@@ -263,11 +283,19 @@ class EventController extends Controller
             'incSubtotal',
             'coord',
             'styl',
+            'packageTotal',
             'grandTotal',
             'totalPaid',
+            'packagePaid',
             'remainingBalance',
+            'packageRemainingBalance',
             'introAmount',
             'requiredDownpayment',
+            // Expense variables
+            'expensesTotal',
+            'unpaidExpenses',
+            'paidExpenses',
+            'unpaidExpensesCount',
         ));
     }
 

@@ -13,6 +13,7 @@ class Payment extends Model
     const TYPE_INTRODUCTORY = 'introductory';
     const TYPE_DOWNPAYMENT = 'downpayment';
     const TYPE_BALANCE = 'balance';
+    const TYPE_EXPENSE = 'expense';
 
     // Payment Method Constants
     const METHOD_BANK_TRANSFER = 'bank_transfer';
@@ -28,6 +29,7 @@ class Payment extends Model
     protected $fillable = [
         'event_id',
         'billing_id',
+        'expense_id',
         'payment_type',
         'amount',
         'payment_method',
@@ -53,6 +55,14 @@ class Payment extends Model
         return $this->belongsTo(Billing::class);
     }
 
+    /**
+     * Get the expense this payment is for (if expense payment)
+     */
+    public function expense()
+    {
+        return $this->belongsTo(EventExpense::class, 'expense_id');
+    }
+
     // Type Check Methods
     public function isIntroductory(): bool
     {
@@ -67,6 +77,11 @@ class Payment extends Model
     public function isBalance(): bool
     {
         return $this->payment_type === self::TYPE_BALANCE;
+    }
+
+    public function isExpense(): bool
+    {
+        return $this->payment_type === self::TYPE_EXPENSE;
     }
 
     // Payment Method Check Methods
@@ -113,6 +128,7 @@ class Payment extends Model
             self::TYPE_INTRODUCTORY => 'Introductory Payment',
             self::TYPE_DOWNPAYMENT => 'Downpayment',
             self::TYPE_BALANCE => 'Balance Payment',
+            self::TYPE_EXPENSE => 'Expense Payment',
             default => ucfirst($this->payment_type),
         };
     }
@@ -151,6 +167,11 @@ class Payment extends Model
         return $query->where('payment_type', self::TYPE_BALANCE);
     }
 
+    public function scopeExpense($query)
+    {
+        return $query->where('payment_type', self::TYPE_EXPENSE);
+    }
+
     public function scopePending($query)
     {
         return $query->where('status', self::STATUS_PENDING);
@@ -169,6 +190,14 @@ class Payment extends Model
     public function scopeByPaymentMethod($query, string $method)
     {
         return $query->where('payment_method', $method);
+    }
+
+    /**
+     * Scope for non-expense payments (package payments only)
+     */
+    public function scopePackagePayments($query)
+    {
+        return $query->where('payment_type', '!=', self::TYPE_EXPENSE);
     }
 
     /**

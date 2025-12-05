@@ -37,10 +37,15 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
-                    Post-Event Expenses
+                    Event Expenses
                     <span class="px-2 py-0.5 text-xs bg-white/20 rounded-full">
-                        ₱{{ number_format($event->expenses->sum('amount'), 2) }}
+                        ₱{{ number_format($expensesTotal, 2) }}
                     </span>
+                    @if($unpaidExpensesCount > 0)
+                    <span class="px-2 py-0.5 text-xs bg-amber-400 text-amber-900 rounded-full font-semibold">
+                        {{ $unpaidExpensesCount }} unpaid
+                    </span>
+                    @endif
                 </button>
             </div>
             @endif
@@ -901,8 +906,7 @@
                     <div class="flex items-center gap-4">
                         <div class="text-right">
                             <div class="text-xs text-rose-200">Total</div>
-                            <div class="text-xl font-bold text-white">₱{{ number_format($event->expenses->sum('amount'),
-                                2) }}</div>
+                            <div class="text-xl font-bold text-white">₱{{ number_format($expensesTotal, 2) }}</div>
                         </div>
                         <button type="button" @click="showExpenses = false"
                             class="text-white/80 hover:text-white transition">
@@ -921,29 +925,26 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                     <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 text-center">
                         <div class="text-xs text-gray-500 mb-1">Total</div>
-                        <div class="text-lg font-bold text-rose-600">₱{{ number_format($event->expenses->sum('amount'),
-                            2) }}</div>
+                        <div class="text-lg font-bold text-rose-600">₱{{ number_format($expensesTotal, 2) }}</div>
                     </div>
                     <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 text-center">
                         <div class="text-xs text-gray-500 mb-1">Items</div>
                         <div class="text-lg font-bold text-gray-900">{{ $event->expenses->count() }}</div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 text-center">
-                        <div class="text-xs text-gray-500 mb-1">Highest</div>
-                        <div class="text-lg font-bold text-gray-900">₱{{ number_format($event->expenses->max('amount'),
-                            2) }}</div>
+                    <div class="bg-green-50 rounded-lg border border-green-200 p-3 text-center">
+                        <div class="text-xs text-green-600 mb-1">Paid</div>
+                        <div class="text-lg font-bold text-green-700">₱{{ number_format($paidExpenses, 2) }}</div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 text-center">
-                        <div class="text-xs text-gray-500 mb-1">Average</div>
-                        <div class="text-lg font-bold text-gray-900">₱{{ number_format($event->expenses->avg('amount'),
-                            2) }}</div>
+                    <div class="bg-amber-50 rounded-lg border border-amber-200 p-3 text-center">
+                        <div class="text-xs text-amber-600 mb-1">Unpaid</div>
+                        <div class="text-lg font-bold text-amber-700">₱{{ number_format($unpaidExpenses, 2) }}</div>
                     </div>
                 </div>
 
                 {{-- Category Breakdown --}}
                 @php
                 $expensesByCategory = $event->expenses->groupBy('category')->map(fn($items) => $items->sum('amount'));
-                $totalExpenses = $event->expenses->sum('amount');
+                $totalExpensesCalc = $event->expenses->sum('amount');
                 @endphp
                 @if($expensesByCategory->count() > 1)
                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-6">
@@ -951,7 +952,7 @@
                     <div class="space-y-2">
                         @foreach($expensesByCategory as $category => $amount)
                         @php
-                        $percentage = $totalExpenses > 0 ? ($amount / $totalExpenses) * 100 : 0;
+                        $percentage = $totalExpensesCalc > 0 ? ($amount / $totalExpensesCalc) * 100 : 0;
                         $categoryLabel = \App\Models\EventExpense::getCategories()[$category] ?? ucfirst($category ??
                         'Uncategorized');
                         @endphp
@@ -979,12 +980,29 @@
                         <div class="p-4 hover:bg-gray-50 transition" x-data="{ showReceipt: false }">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 mb-1">
+                                    <div class="flex items-center gap-2 mb-1 flex-wrap">
                                         <h6 class="font-medium text-gray-900 text-sm">{{ $expense->description }}</h6>
                                         @if($expense->category)
                                         <span
                                             class="px-1.5 py-0.5 text-xs font-medium bg-rose-100 text-rose-700 rounded">
                                             {{ $expense->category_label }}
+                                        </span>
+                                        @endif
+                                        {{-- Payment Status Badge --}}
+                                        @if($expense->isPaid())
+                                        <span
+                                            class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
+                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd"
+                                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                            Paid
+                                        </span>
+                                        @else
+                                        <span
+                                            class="px-1.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded">
+                                            Unpaid
                                         </span>
                                         @endif
                                     </div>
@@ -997,6 +1015,16 @@
                                             </svg>
                                             {{ $expense->expense_date?->format('M d, Y') ?? 'No date' }}
                                         </span>
+                                        @if($expense->isPaid() && $expense->paid_at)
+                                        <span class="flex items-center gap-1 text-green-600">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Paid {{ $expense->paid_at->format('M d, Y') }}
+                                        </span>
+                                        @endif
                                     </div>
                                     @if($expense->notes)
                                     <p class="text-xs text-gray-600 mt-2 bg-gray-50 rounded p-2">{{ $expense->notes }}
@@ -1004,18 +1032,39 @@
                                     @endif
                                 </div>
                                 <div class="text-right flex-shrink-0">
-                                    <div class="text-base font-bold text-rose-600">₱{{ number_format($expense->amount,
-                                        2) }}</div>
-                                    @if($expense->receipt_image)
-                                    <button @click="showReceipt = true"
-                                        class="mt-1 inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                        Receipt
-                                    </button>
-                                    @endif
+                                    <div
+                                        class="text-base font-bold {{ $expense->isPaid() ? 'text-green-600' : 'text-rose-600' }}">
+                                        ₱{{ number_format($expense->amount, 2) }}
+                                    </div>
+
+                                    {{-- Action Buttons --}}
+                                    <div class="flex flex-col items-end gap-1 mt-1">
+                                        {{-- Pay Button (for unpaid expenses) --}}
+                                        @if($expense->isUnpaid())
+                                        <a href="{{ route('customer.payments.createExpense', ['event' => $event->id, 'expense' => $expense->id]) }}"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition shadow-sm">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            Pay Now
+                                        </a>
+                                        @endif
+
+                                        {{-- Receipt Button --}}
+                                        @if($expense->receipt_image)
+                                        <button @click="showReceipt = true"
+                                            class="inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            Receipt
+                                        </button>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
 
@@ -1063,7 +1112,8 @@
                             <p class="font-medium mb-1">About Event Expenses</p>
                             <p class="text-xs text-blue-700">These are additional costs incurred during your event
                                 preparation and execution. They may include transportation, extra materials, and other
-                                miscellaneous expenses. For questions, please contact your event coordinator.</p>
+                                miscellaneous expenses. Click "Pay Now" on unpaid expenses to submit payment. For
+                                questions, please contact your event coordinator.</p>
                         </div>
                     </div>
                 </div>
@@ -1075,9 +1125,14 @@
                 <div class="text-sm text-gray-500">
                     <span class="inline-flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                        {{ $event->expenses->count() }} expense(s) totaling ₱{{
-                        number_format($event->expenses->sum('amount'), 2) }}
+                        {{ $event->expenses->count() }} expense(s) totaling ₱{{ number_format($expensesTotal, 2) }}
                     </span>
+                    @if($unpaidExpensesCount > 0)
+                    <span class="ml-3 inline-flex items-center gap-1.5 text-amber-600">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        {{ $unpaidExpensesCount }} unpaid (₱{{ number_format($unpaidExpenses, 2) }})
+                    </span>
+                    @endif
                 </div>
                 <button type="button" @click="showExpenses = false"
                     class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">

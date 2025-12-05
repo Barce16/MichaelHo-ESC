@@ -37,60 +37,50 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 print-container">
 
             {{-- Filters --}}
-            <div class="bg-white rounded-lg shadow-sm p-6 mb-6 flex justify-between items-end no-print">
-                <form method="GET" class="flex gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">From</label>
-                        <input type="date" name="from" value="{{ $dateFrom->format('Y-m-d') }}"
-                            class="rounded-lg border-gray-300">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">To</label>
-                        <input type="date" name="to" value="{{ $dateTo->format('Y-m-d') }}"
-                            class="rounded-lg border-gray-300">
-                    </div>
-                    <div class="flex items-end">
-                        <button type="submit" class="px-6 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700">
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6 no-print">
+                <form method="GET" class="flex items-end justify-between">
+                    <div class="flex gap-4 items-end">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">From</label>
+                            <input type="date" name="from" value="{{ $dateFrom->format('Y-m-d') }}"
+                                class="rounded-lg border-gray-300">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">To</label>
+                            <input type="date" name="to" value="{{ $dateTo->format('Y-m-d') }}"
+                                class="rounded-lg border-gray-300">
+                        </div>
+                        <button type="submit" class="px-6 py-2.5 bg-slate-600 text-white rounded-lg hover:bg-slate-700">
                             Generate Report
                         </button>
                     </div>
-                </form>
-                <div class="flex gap-2">
-                    <button onclick="window.print()"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                        </svg>
-                        Print
-                    </button>
-                    <form method="GET" class="inline">
-                        <input type="hidden" name="from" value="{{ $dateFrom->format('Y-m-d') }}">
-                        <input type="hidden" name="to" value="{{ $dateTo->format('Y-m-d') }}">
-                        <input type="hidden" name="export" value="pdf">
-                        <button type="submit"
-                            class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    <div class="flex gap-2">
+                        <button type="button" onclick="window.print()"
+                            class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                            Print
+                        </button>
+                        <a href="{{ route('admin.reports.customers', array_merge(request()->only(['from', 'to']), ['export' => 'pdf'])) }}"
+                            class="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
                             Export PDF
-                        </button>
-                    </form>
-                    <form method="GET" class="inline">
-                        <input type="hidden" name="from" value="{{ $dateFrom->format('Y-m-d') }}">
-                        <input type="hidden" name="to" value="{{ $dateTo->format('Y-m-d') }}">
-                        <input type="hidden" name="export" value="csv">
-                        <button type="submit"
-                            class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        </a>
+                        <a href="{{ route('admin.reports.customers', array_merge(request()->only(['from', 'to']), ['export' => 'csv'])) }}"
+                            class="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                             Export CSV
-                        </button>
-                    </form>
-                </div>
+                        </a>
+                    </div>
+                </form>
             </div>
 
             {{-- Report Content --}}
@@ -163,7 +153,7 @@
                             @php
                             $totalSpent = $customer->events->sum(fn($e) => $e->billing?->total_amount ?? 0);
                             @endphp
-                            <tr class="border-b border-gray-200">
+                            <tr class="border-b border-gray-200 hover:bg-gray-50">
                                 <td class="py-3 font-medium">{{ $customer->customer_name }}</td>
                                 <td class="py-3">{{ $customer->email }}</td>
                                 <td class="py-3">{{ $customer->phone ?? '-' }}</td>
@@ -192,6 +182,21 @@
                         </tfoot>
                     </table>
                 </div>
+
+                {{-- Pagination --}}
+                @if($customers->hasPages())
+                <div class="mt-6 no-print">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-600">
+                            Showing {{ $customers->firstItem() }} to {{ $customers->lastItem() }} of {{
+                            $customers->total() }} customers
+                        </div>
+                        <div>
+                            {{ $customers->links() }}
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 {{-- Footer --}}
                 <div class="mt-8 pt-6 border-t border-gray-300 text-center text-sm text-gray-600">

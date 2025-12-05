@@ -36,40 +36,98 @@
 
         .stat-box {
             display: table-cell;
-            padding: 15px;
+            padding: 10px;
             background: #f3f4f6;
             border: 1px solid #ddd;
             text-align: center;
+            width: 25%;
         }
 
         .stat-box strong {
             display: block;
             margin-bottom: 5px;
+            font-size: 10px;
+            color: #666;
+        }
+
+        .stat-box .value {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .stat-box.red .value {
+            color: #DC2626;
+        }
+
+        .stat-box.orange .value {
+            color: #EA580C;
+        }
+
+        .stat-box.blue .value {
+            color: #2563EB;
+        }
+
+        .stat-box.purple .value {
+            color: #7C3AED;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            font-size: 11px;
+            font-size: 10px;
         }
 
         th {
             background: #DC2626;
             color: white;
-            padding: 10px;
+            padding: 8px 5px;
             text-align: left;
         }
 
+        th.right {
+            text-align: right;
+        }
+
         td {
-            padding: 8px;
+            padding: 6px 5px;
             border-bottom: 1px solid #ddd;
+        }
+
+        td.right {
+            text-align: right;
+        }
+
+        .text-green {
+            color: #15803D;
+        }
+
+        .text-red {
+            color: #DC2626;
+        }
+
+        .text-orange {
+            color: #EA580C;
+        }
+
+        .text-gray {
+            color: #9CA3AF;
+        }
+
+        .small {
+            font-size: 9px;
+            color: #666;
         }
 
         .total-row {
             font-weight: bold;
             background: #FEE2E2;
-            font-size: 14px;
+            font-size: 12px;
+        }
+
+        .subtotal-row {
+            background: #F9FAFB;
+            font-size: 10px;
         }
 
         .footer {
@@ -91,21 +149,22 @@
     </div>
 
     <div class="stats">
-        <div class="stat-box">
+        <div class="stat-box red">
             <strong>Events with Balance</strong>
-            {{ $stats['total_events'] }}
+            <div class="value">{{ $stats['total_events'] }}</div>
         </div>
-        <div class="stat-box">
+        <div class="stat-box orange">
             <strong>Total Outstanding</strong>
-            Php {{ number_format($stats['total_balance'], 2) }}
+            <div class="value">Php {{ number_format($stats['total_outstanding'], 2) }}</div>
         </div>
-        @if($stats['largest_balance'])
-        <div class="stat-box">
-            <strong>Largest Balance</strong>
-            {{ $stats['largest_balance']->event_name }}<br>
-            Php {{ number_format($stats['largest_balance']->balance, 2) }}
+        <div class="stat-box blue">
+            <strong>Package Balance</strong>
+            <div class="value">Php {{ number_format($stats['package_outstanding'], 2) }}</div>
         </div>
-        @endif
+        <div class="stat-box purple">
+            <strong>Unpaid Expenses</strong>
+            <div class="value">Php {{ number_format($stats['expenses_outstanding'], 2) }}</div>
+        </div>
     </div>
 
     <table>
@@ -114,28 +173,58 @@
                 <th>Event</th>
                 <th>Date</th>
                 <th>Customer</th>
-                <th>Email</th>
-                <th style="text-align: right;">Total</th>
-                <th style="text-align: right;">Paid</th>
-                <th style="text-align: right;">Balance</th>
+                <th class="right">Package</th>
+                <th class="right">Expenses</th>
+                <th class="right">Paid</th>
+                <th class="right">Balance</th>
             </tr>
         </thead>
         <tbody>
             @foreach($events as $event)
             <tr>
-                <td>{{ $event->event_name }}</td>
-                <td>{{ \Carbon\Carbon::parse($event->event_date)->format('M d, Y') }}</td>
-                <td>{{ $event->customer_name }}</td>
-                <td>{{ $event->email }}</td>
-                <td style="text-align: right;">Php {{ number_format($event->total_amount, 2) }}</td>
-                <td style="text-align: right;">Php {{ number_format($event->paid_amount, 2) }}</td>
-                <td style="text-align: right;">Php {{ number_format($event->balance, 2) }}</td>
+                <td>
+                    {{ $event->name }}
+                    @if($event->unpaid_expenses_count > 0)
+                    <br><span class="small text-orange">{{ $event->unpaid_expenses_count }} unpaid expense(s)</span>
+                    @endif
+                </td>
+                <td>{{ $event->event_date->format('M d, Y') }}</td>
+                <td>
+                    {{ $event->customer->customer_name }}
+                    <br><span class="small">{{ $event->customer->phone ?? $event->customer->email }}</span>
+                </td>
+                <td class="right">Php {{ number_format($event->package_total, 2) }}</td>
+                <td class="right">
+                    @if($event->expenses_total > 0)
+                    <span class="text-orange">Php {{ number_format($event->expenses_total, 2) }}</span>
+                    @else
+                    <span class="text-gray">-</span>
+                    @endif
+                </td>
+                <td class="right text-green">Php {{ number_format($event->total_paid, 2) }}</td>
+                <td class="right text-red" style="font-weight: bold;">
+                    Php {{ number_format($event->remaining_balance, 2) }}
+                    @if($event->package_balance > 0 && $event->unpaid_expenses > 0)
+                    <br><span class="small">Pkg: {{ number_format($event->package_balance, 2) }} | Exp: {{
+                        number_format($event->unpaid_expenses, 2) }}</span>
+                    @endif
+                </td>
             </tr>
             @endforeach
             <tr class="total-row">
                 <td colspan="6" style="text-align: right;">TOTAL OUTSTANDING BALANCE:</td>
-                <td style="text-align: right;">Php {{ number_format($stats['total_balance'], 2) }}</td>
+                <td class="right">Php {{ number_format($stats['total_outstanding'], 2) }}</td>
             </tr>
+            @if($stats['expenses_outstanding'] > 0)
+            <tr class="subtotal-row">
+                <td colspan="6" style="text-align: right;">Package Balance:</td>
+                <td class="right">Php {{ number_format($stats['package_outstanding'], 2) }}</td>
+            </tr>
+            <tr class="subtotal-row">
+                <td colspan="6" style="text-align: right;">Unpaid Expenses:</td>
+                <td class="right text-orange">Php {{ number_format($stats['expenses_outstanding'], 2) }}</td>
+            </tr>
+            @endif
         </tbody>
     </table>
 

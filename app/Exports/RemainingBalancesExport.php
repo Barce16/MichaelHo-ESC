@@ -5,20 +5,19 @@ namespace App\Exports;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithTitle;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Events\AfterSheet;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class RemainingBalancesExport implements FromCollection, WithHeadings, WithMapping, WithTitle, ShouldAutoSize, WithEvents
+class RemainingBalancesExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths
 {
     protected $events;
-    protected $totalBalance;
+    protected $stats;
 
-    public function __construct($events, $totalBalance)
+    public function __construct($events, $stats)
     {
         $this->events = $events;
-        $this->totalBalance = $totalBalance;
+        $this->stats = $stats;
     }
 
     public function collection()
@@ -29,78 +28,76 @@ class RemainingBalancesExport implements FromCollection, WithHeadings, WithMappi
     public function headings(): array
     {
         return [
-            ['MichaelHo Events'],
-            ['Event Management System - Events with Remaining Balances'],
-            ['Generated: ' . now()->format('M d, Y g:i A')],
-            [],
-            ['Event Name', 'Event Date', 'Customer Name', 'Email', 'Phone', 'Total Amount', 'Paid Amount', 'Balance'],
+            'Event Name',
+            'Event Date',
+            'Customer Name',
+            'Email',
+            'Phone',
+            'Package Total',
+            'Expenses Total',
+            'Total Paid',
+            'Package Balance',
+            'Unpaid Expenses',
+            'Total Balance',
         ];
     }
 
     public function map($event): array
     {
         return [
-            $event->event_name,
-            \Carbon\Carbon::parse($event->event_date)->format('M d, Y'),
-            $event->customer_name,
-            $event->email,
-            $event->phone ?? '-',
-            number_format($event->total_amount, 2),
-            number_format($event->paid_amount, 2),
-            number_format($event->balance, 2),
+            $event->name,
+            $event->event_date->format('M d, Y'),
+            $event->customer->customer_name,
+            $event->customer->email,
+            $event->customer->phone ?? '',
+            $event->package_total,
+            $event->expenses_total,
+            $event->total_paid,
+            $event->package_balance,
+            $event->unpaid_expenses,
+            $event->remaining_balance,
         ];
     }
 
-    public function title(): string
+    public function styles(Worksheet $sheet)
     {
-        return 'Remaining Balances';
+        // Get last row
+        $lastRow = $this->events->count() + 1;
+
+        // Add summary rows
+        $summaryRow = $lastRow + 2;
+        $sheet->setCellValue('J' . $summaryRow, 'TOTAL OUTSTANDING:');
+        $sheet->setCellValue('K' . $summaryRow, $this->stats['total_outstanding']);
+
+        $sheet->setCellValue('J' . ($summaryRow + 1), 'Package Balance:');
+        $sheet->setCellValue('K' . ($summaryRow + 1), $this->stats['package_outstanding']);
+
+        $sheet->setCellValue('J' . ($summaryRow + 2), 'Unpaid Expenses:');
+        $sheet->setCellValue('K' . ($summaryRow + 2), $this->stats['expenses_outstanding']);
+
+        return [
+            1 => ['font' => ['bold' => true], 'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'DC2626']
+            ], 'font' => ['color' => ['rgb' => 'FFFFFF'], 'bold' => true]],
+            $summaryRow => ['font' => ['bold' => true]],
+        ];
     }
 
-    public function registerEvents(): array
+    public function columnWidths(): array
     {
         return [
-            AfterSheet::class => function (AfterSheet $event) {
-                // Style the header rows
-                $event->sheet->getStyle('A1:H1')->applyFromArray([
-                    'font' => [
-                        'bold' => true,
-                        'size' => 16,
-                    ],
-                ]);
-
-                $event->sheet->getStyle('A2:H2')->applyFromArray([
-                    'font' => [
-                        'size' => 12,
-                    ],
-                ]);
-
-                // Style the column headers
-                $event->sheet->getStyle('A5:H5')->applyFromArray([
-                    'font' => [
-                        'bold' => true,
-                        'color' => ['rgb' => 'FFFFFF'],
-                    ],
-                    'fill' => [
-                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'DC2626'],
-                    ],
-                ]);
-
-                // Add total row
-                $lastRow = $event->sheet->getHighestRow() + 1;
-                $event->sheet->setCellValue('G' . $lastRow, 'TOTAL BALANCE:');
-                $event->sheet->setCellValue('H' . $lastRow, number_format($this->totalBalance, 2));
-
-                $event->sheet->getStyle('G' . $lastRow . ':H' . $lastRow)->applyFromArray([
-                    'font' => [
-                        'bold' => true,
-                    ],
-                    'fill' => [
-                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'FEE2E2'],
-                    ],
-                ]);
-            },
+            'A' => 30,
+            'B' => 15,
+            'C' => 25,
+            'D' => 25,
+            'E' => 15,
+            'F' => 15,
+            'G' => 15,
+            'H' => 15,
+            'I' => 15,
+            'J' => 15,
+            'K' => 15,
         ];
     }
 }

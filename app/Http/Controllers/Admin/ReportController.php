@@ -137,23 +137,34 @@ class ReportController extends Controller
             ->withCount(['events' => function ($q) use ($dateFrom, $dateTo) {
                 $q->whereBetween('event_date', [$dateFrom, $dateTo]);
             }])
+            ->orderBy('customer_name')
+            ->paginate(10)
+            ->withQueryString();
+
+        // Get all customers for stats (not paginated)
+        $allCustomers = Customer::with(['events' => function ($q) use ($dateFrom, $dateTo) {
+            $q->whereBetween('event_date', [$dateFrom, $dateTo]);
+        }, 'events.billing'])
+            ->withCount(['events' => function ($q) use ($dateFrom, $dateTo) {
+                $q->whereBetween('event_date', [$dateFrom, $dateTo]);
+            }])
             ->get();
 
         $stats = [
-            'total_customers' => $customers->count(),
-            'active_customers' => $customers->filter(fn($c) => $c->events_count > 0)->count(),
-            'total_events' => $customers->sum('events_count'),
-            'total_revenue' => $customers->sum(fn($c) => $c->events->sum(fn($e) => $e->billing?->total_amount ?? 0)),
+            'total_customers' => $allCustomers->count(),
+            'active_customers' => $allCustomers->filter(fn($c) => $c->events_count > 0)->count(),
+            'total_events' => $allCustomers->sum('events_count'),
+            'total_revenue' => $allCustomers->sum(fn($c) => $c->events->sum(fn($e) => $e->billing?->total_amount ?? 0)),
         ];
 
-        // Handle export requests
+        // Handle export requests (use all customers, not paginated)
         if ($request->has('export')) {
             if ($request->export === 'pdf') {
-                return $this->exportCustomersPdf($customers, $stats, $dateFrom, $dateTo);
+                return $this->exportCustomersPdf($allCustomers, $stats, $dateFrom, $dateTo);
             }
             if ($request->export === 'csv') {
                 return Excel::download(
-                    new CustomersReportExport($customers, $dateFrom, $dateTo, $stats['total_revenue']),
+                    new CustomersReportExport($allCustomers, $dateFrom, $dateTo, $stats['total_revenue']),
                     'customers-report-' . now()->format('Y-m-d') . '.csv'
                 );
             }
@@ -393,16 +404,44 @@ class ReportController extends Controller
     // ========== REMAINING BALANCES REPORT ==========
     public function remainingBalances(Request $request)
     {
-        $dateFrom = $request->date('from') ?? now()->startOfYear();
-        $dateTo = $request->date('to') ?? now()->endOfYear();
-
-        $events = Event::with(['customer', 'billing.payments'])
+        $events = Event::with(['customer', 'billing.payments', 'expenses'])
             ->whereHas('billing')
             ->get()
             ->map(function ($event) {
-                $paid = $event->billing->payments->where('status', 'approved')->sum('amount');
-                $event->total_paid = $paid;
-                $event->remaining_balance = $event->billing->total_amount - $paid;
+                // Package payments (excluding expense payments)
+                $packagePaid = $event->billing->payments
+                    ->where('status', 'approved')
+                    ->where('payment_type', '!=', 'expense')
+                    ->sum('amount');
+
+                // Expense payments
+                $expensesPaid = $event->billing->payments
+                    ->where('status', 'approved')
+                    ->where('payment_type', 'expense')
+                    ->sum('amount');
+
+                // Totals
+                $packageTotal = $event->billing->total_amount;
+                $expensesTotal = $event->expenses->sum('amount');
+                $unpaidExpenses = $event->expenses->where('payment_status', 'unpaid')->sum('amount');
+                $unpaidExpensesCount = $event->expenses->where('payment_status', 'unpaid')->count();
+
+                // Balances
+                $packageBalance = max(0, $packageTotal - $packagePaid);
+                $overallBalance = $packageBalance + $unpaidExpenses;
+
+                // Set calculated values
+                $event->package_total = $packageTotal;
+                $event->package_paid = $packagePaid;
+                $event->package_balance = $packageBalance;
+                $event->expenses_total = $expensesTotal;
+                $event->expenses_paid = $expensesPaid;
+                $event->unpaid_expenses = $unpaidExpenses;
+                $event->unpaid_expenses_count = $unpaidExpensesCount;
+                $event->grand_total = $packageTotal + $expensesTotal;
+                $event->total_paid = $packagePaid + $expensesPaid;
+                $event->remaining_balance = $overallBalance;
+
                 return $event;
             })
             ->filter(fn($event) => $event->remaining_balance > 0)
@@ -411,7 +450,9 @@ class ReportController extends Controller
         $stats = [
             'total_events' => $events->count(),
             'total_outstanding' => $events->sum('remaining_balance'),
-            'total_billed' => $events->sum(fn($e) => $e->billing->total_amount),
+            'package_outstanding' => $events->sum('package_balance'),
+            'expenses_outstanding' => $events->sum('unpaid_expenses'),
+            'total_billed' => $events->sum('grand_total'),
             'total_paid' => $events->sum('total_paid'),
         ];
 
@@ -422,13 +463,13 @@ class ReportController extends Controller
             }
             if ($request->export === 'csv') {
                 return Excel::download(
-                    new RemainingBalancesExport($events, $dateFrom, $dateTo, $stats),
+                    new RemainingBalancesExport($events, $stats),
                     'remaining-balances-' . now()->format('Y-m-d') . '.csv'
                 );
             }
         }
 
-        return view('admin.reports.remaining-balances', compact('events', 'stats', 'dateFrom', 'dateTo'));
+        return view('admin.reports.remaining-balances', compact('events', 'stats'));
     }
 
     private function exportRemainingBalancesPdf($events, $stats)
@@ -602,7 +643,8 @@ class ReportController extends Controller
             'inclusions',
             'feedback',
             'staffs.user',
-            'progress'    // Event progress updates
+            'progress',
+            'expenses'  // Load expenses
         ])->findOrFail($request->event_id);
 
         // Get payments separately for more control
@@ -616,14 +658,41 @@ class ReportController extends Controller
         // Get staff assignments
         $staffAssignments = $event->staffs ?? collect();
 
-        // Calculate statistics
-        $totalAmount = $event->billing->total_amount ?? 0;
-        $totalPaid = $payments->where('status', 'approved')->sum('amount');
-        $remainingBalance = $totalAmount - $totalPaid;
-        $paymentPercentage = $totalAmount > 0 ? round(($totalPaid / $totalAmount) * 100) : 0;
+        // Get expenses
+        $expenses = $event->expenses ?? collect();
+
+        // Calculate package statistics (excluding expense payments)
+        $packageTotal = $event->billing->total_amount ?? 0;
+        $packagePaid = $payments
+            ->where('status', 'approved')
+            ->where('payment_type', '!=', 'expense')
+            ->sum('amount');
+        $packageBalance = max(0, $packageTotal - $packagePaid);
+
+        // Calculate expense statistics
+        $expensesTotal = $expenses->sum('amount');
+        $expensesPaid = $expenses->where('payment_status', 'paid')->sum('amount');
+        $unpaidExpenses = $expenses->where('payment_status', 'unpaid')->sum('amount');
+        $unpaidExpensesCount = $expenses->where('payment_status', 'unpaid')->count();
+
+        // Calculate grand totals
+        $grandTotal = $packageTotal + $expensesTotal;
+        $totalPaid = $packagePaid + $expensesPaid;
+        $remainingBalance = $packageBalance + $unpaidExpenses;
+        $paymentPercentage = $grandTotal > 0 ? round(($totalPaid / $grandTotal) * 100) : 0;
 
         $stats = [
-            'total_amount' => $totalAmount,
+            // Package
+            'package_total' => $packageTotal,
+            'package_paid' => $packagePaid,
+            'package_balance' => $packageBalance,
+            // Expenses
+            'expenses_total' => $expensesTotal,
+            'expenses_paid' => $expensesPaid,
+            'unpaid_expenses' => $unpaidExpenses,
+            'unpaid_expenses_count' => $unpaidExpensesCount,
+            // Grand totals
+            'total_amount' => $grandTotal,
             'total_paid' => $totalPaid,
             'remaining_balance' => $remainingBalance,
             'payment_percentage' => $paymentPercentage,
@@ -632,7 +701,7 @@ class ReportController extends Controller
         // Handle export requests
         if ($request->has('export')) {
             if ($request->export === 'pdf') {
-                return $this->exportEventDetailPdf($event, $payments, $progressUpdates, $staffAssignments, $stats);
+                return $this->exportEventDetailPdf($event, $payments, $progressUpdates, $staffAssignments, $expenses, $stats);
             }
         }
 
@@ -642,6 +711,7 @@ class ReportController extends Controller
             'payments',
             'progressUpdates',
             'staffAssignments',
+            'expenses',
             'stats',
             'totalEvents',
             'completedEvents',
@@ -649,13 +719,14 @@ class ReportController extends Controller
         ));
     }
 
-    private function exportEventDetailPdf($event, $payments, $progressUpdates, $staffAssignments, $stats)
+    private function exportEventDetailPdf($event, $payments, $progressUpdates, $staffAssignments, $expenses, $stats)
     {
         $pdf = Pdf::loadView('admin.reports.event-detail-pdf', [
             'event' => $event,
             'payments' => $payments,
             'progressUpdates' => $progressUpdates,
             'staffAssignments' => $staffAssignments,
+            'expenses' => $expenses,
             'stats' => $stats,
         ])
             ->setOption('isHtml5ParserEnabled', true)

@@ -7,6 +7,8 @@
                 Introductory Payment
                 @elseif($paymentType === 'downpayment')
                 Downpayment
+                @elseif($paymentType === 'expense')
+                Expense Payment
                 @else
                 Balance Payment
                 @endif
@@ -31,6 +33,7 @@
             'introductory' => 'from-orange-500 to-red-600',
             'downpayment' => 'from-violet-500 to-purple-600',
             'balance' => 'from-emerald-500 to-teal-600',
+            'expense' => 'from-amber-500 to-orange-600',
             default => 'from-gray-500 to-slate-600',
             };
 
@@ -38,6 +41,7 @@
             'introductory' => 'Introductory Payment',
             'downpayment' => 'Downpayment',
             'balance' => 'Balance Payment',
+            'expense' => 'Expense Payment',
             default => 'Payment',
             };
             @endphp
@@ -46,10 +50,17 @@
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
                         <div class="flex items-center gap-2 mb-2">
+                            @if($paymentType === 'expense')
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+                            </svg>
+                            @else
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
+                            @endif
                             <span class="text-sm font-semibold opacity-90 uppercase tracking-wide">
                                 {{ $paymentLabel }}
                             </span>
@@ -58,8 +69,15 @@
                         <p class="opacity-90">{{ \Carbon\Carbon::parse($event->event_date)->format('F d, Y') }}</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm opacity-90 mb-1">{{ $paymentType === 'balance' ? 'Remaining Balance' : 'Amount
-                            Due' }}</p>
+                        <p class="text-sm opacity-90 mb-1">
+                            @if($paymentType === 'expense')
+                            Expense Amount
+                            @elseif($paymentType === 'balance')
+                            Remaining Balance
+                            @else
+                            Amount Due
+                            @endif
+                        </p>
                         <p class="text-4xl font-bold">₱{{ number_format($amount, 2) }}</p>
                     </div>
                 </div>
@@ -99,7 +117,6 @@
                 </div>
             </div>
             @endif
-
             @elseif($paymentType === 'balance')
             <div class="bg-emerald-50 border-l-4 border-emerald-500 rounded-lg p-4">
                 <div class="flex gap-3">
@@ -112,6 +129,47 @@
                         <p class="font-semibold mb-1">Balance Payment</p>
                         <p>You can pay any amount towards your remaining balance of ₱{{ number_format($amount, 2) }}.
                             Enter the amount you wish to pay.</p>
+                    </div>
+                </div>
+            </div>
+            @elseif($paymentType === 'expense' && isset($expense))
+            {{-- Expense Details Card --}}
+            <div class="bg-amber-50 border-l-4 border-amber-500 rounded-lg p-4">
+                <div class="flex gap-3">
+                    <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+                    </svg>
+                    <div class="text-sm text-amber-900 flex-1">
+                        <p class="font-semibold mb-2">Expense Details</p>
+                        <div class="bg-white rounded-lg p-3 border border-amber-200">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <h4 class="font-medium text-gray-900">{{ $expense->description }}</h4>
+                                    <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                        @if($expense->category)
+                                        <span
+                                            class="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded">
+                                            {{ $expense->category_label }}
+                                        </span>
+                                        @endif
+                                        @if($expense->expense_date)
+                                        <span class="text-xs text-gray-500">
+                                            {{ $expense->expense_date->format('M d, Y') }}
+                                        </span>
+                                        @endif
+                                    </div>
+                                    @if($expense->notes)
+                                    <p class="text-xs text-gray-600 mt-2">{{ $expense->notes }}</p>
+                                    @endif
+                                </div>
+                                <div class="text-right flex-shrink-0">
+                                    <div class="text-lg font-bold text-amber-700">₱{{ number_format($expense->amount, 2)
+                                        }}</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -148,7 +206,8 @@
 
                 <div class="bg-slate-50 border-b border-gray-200 px-6 py-4">
                     <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 {{ $paymentType === 'expense' ? 'text-amber-500' : 'text-emerald-500' }}"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -162,6 +221,9 @@
                     enctype="multipart/form-data" class="p-6">
                     @csrf
                     <input type="hidden" name="payment_type" value="{{ $paymentType }}">
+                    @if($paymentType === 'expense' && isset($expense))
+                    <input type="hidden" name="expense_id" value="{{ $expense->id }}">
+                    @endif
 
                     <div class="space-y-6">
                         {{-- Payment Amount --}}
@@ -171,8 +233,33 @@
                         $minCustomAmount = $hasApprovedDown ? 100 : $amount;
                         @endphp
 
+                        {{-- EXPENSE PAYMENT: Fixed Amount --}}
+                        @if($paymentType === 'expense')
+                        <div>
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 36 36">
+                                    <path d="M14.18,13.8V16h9.45a5.26,5.26,0,0,0,.08-.89,4.72,4.72,0,0,0-.2-1.31Z">
+                                    </path>
+                                    <path d="M14.18,19.7h5.19a4.28,4.28,0,0,0,3.5-1.9H14.18Z"></path>
+                                    <path d="M19.37,10.51H14.18V12h8.37A4.21,4.21,0,0,0,19.37,10.51Z"></path>
+                                    <path
+                                        d="M17.67,2a16,16,0,1,0,16,16A16,16,0,0,0,17.67,2Zm10.5,15.8H25.7a6.87,6.87,0,0,1-6.33,4.4H14.18v6.54a1.25,1.25,0,1,1-2.5,0V17.8H8.76a.9.9,0,1,1,0-1.8h2.92V13.8H8.76a.9.9,0,1,1,0-1.8h2.92V9.26A1.25,1.25,0,0,1,12.93,8h6.44a6.84,6.84,0,0,1,6.15,4h2.65a.9.9,0,0,1,0,1.8H26.09a6.91,6.91,0,0,1,.12,1.3,6.8,6.8,0,0,1-.06.9h2a.9.9,0,0,1,0,1.8Z">
+                                    </path>
+                                </svg>
+                                Payment Amount <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
+                                <input name="amount" type="number" step="0.01" value="{{ $amount }}" readonly
+                                    class="block w-full pl-10 pr-4 py-3 rounded-lg border-gray-300 bg-amber-50 cursor-not-allowed text-lg font-semibold transition"
+                                    required />
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Fixed amount for this expense</p>
+                        </div>
+
                         {{-- INTRODUCTORY: Fixed Amount Only (No Pay in Full option) --}}
-                        @if($paymentType === 'introductory')
+                        @elseif($paymentType === 'introductory')
                         <div>
                             <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                 <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 36 36">
@@ -265,9 +352,8 @@
                                                 class="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Save
                                                 Time</span>
                                         </div>
-                                        <div class="text-2xl font-bold text-green-600 my-1">
-                                            ₱{{ number_format($event->billing->remaining_balance, 2) }}
-                                        </div>
+                                        <div class="text-2xl font-bold text-green-600 my-1">₱{{
+                                            number_format($event->billing->remaining_balance, 2) }}</div>
                                         <p class="text-sm text-gray-600">Complete all remaining payments now</p>
                                     </div>
                                 </label>
@@ -357,8 +443,7 @@
 
                         {{-- Payment Method --}}
                         <div>
-                            <label for="payment_method"
-                                class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -366,48 +451,77 @@
                                 </svg>
                                 Payment Method <span class="text-rose-500">*</span>
                             </label>
-                            <select id="payment_method" name="payment_method"
-                                class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition"
-                                required x-model="paymentMethod">
-                                <option value="">Select payment method</option>
-                                <option value="bank_transfer" {{ old('payment_method')=='bank_transfer' ? 'selected'
-                                    : '' }}>🏦 Bank Transfer</option>
-                                <option value="bpi" {{ old('payment_method')=='bpi' ? 'selected' : '' }}>🏦 BPI</option>
-                                <option value="gcash" {{ old('payment_method')=='gcash' ? 'selected' : '' }}>💳 GCash
-                                </option>
-                                <option value="cash" {{ old('payment_method')=='cash' ? 'selected' : '' }}>💵 Cash
-                                </option>
-                            </select>
+
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                {{-- GCash --}}
+                                <label class="relative cursor-pointer">
+                                    <input type="radio" name="payment_method" value="gcash" x-model="paymentMethod"
+                                        class="peer sr-only" required>
+                                    <div
+                                        class="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-xl transition-all peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:border-gray-300">
+                                        <div
+                                            class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                                            <span class="text-white font-bold text-sm">G</span>
+                                        </div>
+                                        <span class="text-sm font-semibold text-gray-700">GCash</span>
+                                    </div>
+                                </label>
+
+                                {{-- Bank Transfer --}}
+                                <label class="relative cursor-pointer">
+                                    <input type="radio" name="payment_method" value="bank_transfer"
+                                        x-model="paymentMethod" class="peer sr-only">
+                                    <div
+                                        class="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-xl transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-50 hover:border-gray-300">
+                                        <div
+                                            class="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center">
+                                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                                            </svg>
+                                        </div>
+                                        <span class="text-sm font-semibold text-gray-700">Bank</span>
+                                    </div>
+                                </label>
+
+                                {{-- BPI --}}
+                                <label class="relative cursor-pointer">
+                                    <input type="radio" name="payment_method" value="bpi" x-model="paymentMethod"
+                                        class="peer sr-only">
+                                    <div
+                                        class="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-xl transition-all peer-checked:border-red-500 peer-checked:bg-red-50 hover:border-gray-300">
+                                        <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
+                                            <span class="text-white font-bold text-xs">BPI</span>
+                                        </div>
+                                        <span class="text-sm font-semibold text-gray-700">BPI</span>
+                                    </div>
+                                </label>
+
+                                {{-- Cash --}}
+                                <label class="relative cursor-pointer">
+                                    <input type="radio" name="payment_method" value="cash" x-model="paymentMethod"
+                                        class="peer sr-only">
+                                    <div
+                                        class="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-xl transition-all peer-checked:border-amber-500 peer-checked:bg-amber-50 hover:border-gray-300">
+                                        <div
+                                            class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center">
+                                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                        </div>
+                                        <span class="text-sm font-semibold text-gray-700">Cash</span>
+                                    </div>
+                                </label>
+                            </div>
                             @error('payment_method')
-                            <p class="mt-2 text-sm text-rose-600 flex items-center gap-1">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                                {{ $message }}
-                            </p>
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        {{-- Cash Payment Info --}}
-                        <div x-show="paymentMethod === 'cash'" x-transition
-                            class="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4">
-                            <div class="flex gap-3">
-                                <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none"
-                                    stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div class="text-sm text-blue-900">
-                                    <p class="font-semibold mb-1">Cash Payment</p>
-                                    <p>For cash payments, you don't need to provide payment proof or reference number.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Reference Number (Hidden for Cash) --}}
+                        {{-- Reference Number --}}
                         <div x-show="paymentMethod !== 'cash'" x-transition>
                             <label for="reference_number"
                                 class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -421,36 +535,27 @@
                             <input id="reference_number" name="reference_number" type="text"
                                 value="{{ old('reference_number') }}"
                                 class="block w-full px-4 py-3 rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition"
-                                placeholder="e.g., TXN123456789, REF-2024-001" />
-                            <p class="mt-1 text-xs text-gray-500">Enter transaction or reference number if available
-                                (GCash Ref No., Bank Ref, etc.)</p>
+                                placeholder="Enter transaction reference number">
                             @error('reference_number')
-                            <p class="mt-2 text-sm text-rose-600 flex items-center gap-1">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                                {{ $message }}
-                            </p>
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        {{-- File Upload / Preview (Hidden for Cash) --}}
-                        <div x-show="paymentMethod !== 'cash'" x-transition>
-                            <label for="payment_receipt"
-                                class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                        {{-- Payment Receipt Upload --}}
+                        <div>
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
-                                Payment Proof / Receipt <span class="text-rose-500">*</span>
+                                Payment Receipt
+                                <span x-show="paymentMethod !== 'cash'" class="text-rose-500">*</span>
                             </label>
 
-                            {{-- Upload Area (shown when no image) --}}
+                            {{-- Upload Area --}}
                             <div id="upload-area"
-                                class="mt-2 flex justify-center px-6 py-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-emerald-400 transition-colors cursor-pointer bg-gray-50 hover:bg-gray-100"
+                                class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-emerald-400 transition cursor-pointer"
                                 onclick="document.getElementById('payment_receipt').click()">
                                 <div class="space-y-2 text-center">
                                     <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none"
@@ -470,7 +575,7 @@
                                 </div>
                             </div>
 
-                            {{-- Preview Area (shown when image uploaded) --}}
+                            {{-- Preview Area --}}
                             <div id="preview-area"
                                 class="hidden mt-2 relative rounded-lg overflow-hidden border-2 border-emerald-200 bg-emerald-50">
                                 <img id="image-preview" class="w-full h-48 object-contain rounded-lg" />
@@ -523,7 +628,7 @@
                             Cancel
                         </a>
                         <button type="submit"
-                            class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-lg hover:from-emerald-600 hover:to-teal-700 transition shadow-md hover:shadow-lg">
+                            class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r {{ $paymentType === 'expense' ? 'from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700' : 'from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700' }} text-white font-semibold rounded-lg transition shadow-md hover:shadow-lg">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -550,7 +655,6 @@
                 return;
             }
 
-            // Validate file type
             const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
             if (!validTypes.includes(file.type)) {
                 alert('Please upload a valid image file (PNG, JPG, or JPEG)');
@@ -558,8 +662,7 @@
                 return;
             }
 
-            // Validate file size (10MB)
-            const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+            const maxSize = 10 * 1024 * 1024;
             if (file.size > maxSize) {
                 alert('File size must be less than 10MB');
                 event.target.value = '';
@@ -581,13 +684,8 @@
             const previewArea = document.getElementById('preview-area');
             const imagePreview = document.getElementById('image-preview');
             
-            // Clear the file input
             fileInput.value = '';
-            
-            // Clear the preview image source
             imagePreview.src = '';
-            
-            // Toggle visibility
             uploadArea.classList.remove('hidden');
             previewArea.classList.add('hidden');
         }

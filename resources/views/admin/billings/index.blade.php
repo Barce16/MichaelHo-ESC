@@ -20,6 +20,7 @@
                             </div>
                             <div class="text-2xl font-bold text-rose-600 mt-1">₱{{ number_format($totalOutstanding, 2)
                                 }}</div>
+                            <div class="text-xs text-gray-400 mt-1">Package + Unpaid Expenses</div>
                         </div>
                         <div class="w-12 h-12 bg-rose-100 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,6 +37,7 @@
                             <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Collected</div>
                             <div class="text-2xl font-bold text-emerald-600 mt-1">₱{{ number_format($totalPaid, 2) }}
                             </div>
+                            <div class="text-xs text-gray-400 mt-1">All approved payments</div>
                         </div>
                         <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,9 +78,10 @@
                         <select name="status"
                             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500">
                             <option value="">All Status</option>
-                            <option value="pending" {{ ($status ?? '' )==='pending' ? 'selected' : '' }}>Pending Balance
+                            <option value="pending" {{ ($status ?? '' )==='pending' ? 'selected' : '' }}>Has Balance
                             </option>
-                            <option value="paid" {{ ($status ?? '' )==='paid' ? 'selected' : '' }}>Fully Paid</option>
+                            <option value="paid" {{ ($status ?? '' )==='paid' ? 'selected' : '' }}>Fully Settled
+                            </option>
                         </select>
                     </div>
                     <button type="submit"
@@ -112,7 +115,8 @@
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Customer
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Event</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Total</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Grand
+                                    Total</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Paid</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Balance
                                 </th>
@@ -126,11 +130,13 @@
                             @foreach($eventsWithBillings as $event)
                             @php
                             $billing = $event->billing;
-                            $totalAmount = $billing->total_amount ?? 0;
-                            $totalPaidAmount = $billing->total_paid ?? 0;
-                            $balance = $billing->remaining_balance ?? 0;
-                            $isPaid = $billing && $billing->isFullyPaid();
+                            $grandTotal = $billing->grand_total ?? 0;
+                            $grandTotalPaid = $billing->grand_total_paid ?? 0;
+                            $overallBalance = $billing->overall_remaining_balance ?? 0;
+                            $isEverythingPaid = $billing && $billing->isEverythingPaid();
                             $hasPending = $billing->payments()->where('status', 'pending')->exists();
+                            $hasUnpaidExpenses = $event->expenses()->where('payment_status', 'unpaid')->exists();
+                            $unpaidExpensesCount = $event->expenses()->where('payment_status', 'unpaid')->count();
                             @endphp
                             <tr class="hover:bg-gray-50 transition">
                                 {{-- Customer --}}
@@ -149,39 +155,55 @@
                                     </div>
                                 </td>
 
-                                {{-- Total Amount --}}
+                                {{-- Grand Total (Package + Expenses) --}}
                                 <td class="px-6 py-4">
-                                    <div class="text-sm font-bold text-gray-900">₱{{ number_format($totalAmount, 2) }}
+                                    <div class="text-sm font-bold text-gray-900">₱{{ number_format($grandTotal, 2) }}
                                     </div>
+                                    @if($billing->expenses_total > 0)
+                                    <div class="text-xs text-orange-600">
+                                        +₱{{ number_format($billing->expenses_total, 2) }} expenses
+                                    </div>
+                                    @endif
                                 </td>
 
                                 {{-- Paid --}}
                                 <td class="px-6 py-4">
-                                    <div class="text-sm font-bold text-emerald-600">₱{{ number_format($totalPaidAmount,
+                                    <div class="text-sm font-bold text-emerald-600">₱{{ number_format($grandTotalPaid,
                                         2) }}</div>
                                 </td>
 
                                 {{-- Balance --}}
                                 <td class="px-6 py-4">
                                     <div
-                                        class="text-sm font-bold {{ $balance > 0 ? 'text-rose-600' : 'text-gray-400' }}">
-                                        ₱{{ number_format($balance, 2) }}
+                                        class="text-sm font-bold {{ $overallBalance > 0 ? 'text-rose-600' : 'text-gray-400' }}">
+                                        ₱{{ number_format($overallBalance, 2) }}
                                     </div>
+                                    @if($hasUnpaidExpenses)
+                                    <div class="text-xs text-orange-600">
+                                        {{ $unpaidExpensesCount }} unpaid expense(s)
+                                    </div>
+                                    @endif
                                 </td>
 
                                 {{-- Status --}}
                                 <td class="px-6 py-4">
-                                    @if($isPaid)
+                                    @if($isEverythingPaid)
                                     <span
                                         class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                        Paid
+                                        Settled
                                     </span>
                                     @elseif($hasPending)
                                     <span
                                         class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
                                         <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                                         Pending Approval
+                                    </span>
+                                    @elseif($hasUnpaidExpenses && $billing->isFullyPaid())
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                                        Expenses Due
                                     </span>
                                     @else
                                     <span
@@ -195,7 +217,7 @@
                                 {{-- Actions --}}
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center justify-center gap-2">
-                                        @if(!$isPaid && $balance > 0)
+                                        @if(!$billing->isFullyPaid())
                                         <a href="{{ route('admin.billings.create-payment', $event) }}"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

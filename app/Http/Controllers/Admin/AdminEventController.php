@@ -92,18 +92,29 @@ class AdminEventController extends Controller
             'schedules',
             'schedules.inclusion',
             'changeRequests',
+            'expenses', // Load expenses
         ]);
 
         $inclusionsSubtotal = $event->inclusions->sum(fn($i) => (float) ($i->pivot->price_snapshot ?? 0));
         $coord  = (float) ($event->package?->coordination_price ?? 25000);
         $styling = (float) ($event->package?->event_styling_price ?? 55000);
-        $grandTotal = $inclusionsSubtotal + $coord + $styling;
+        $packageTotal = $inclusionsSubtotal + $coord + $styling;
+
+        // Expense calculations
+        $expensesTotal = (float) $event->expenses->sum('amount');
+        $unpaidExpensesTotal = (float) $event->expenses->where('payment_status', 'unpaid')->sum('amount');
+        $paidExpensesTotal = (float) $event->expenses->where('payment_status', 'paid')->sum('amount');
+        $unpaidExpensesCount = $event->expenses->where('payment_status', 'unpaid')->count();
+
+        // Grand total now includes expenses
+        $grandTotal = $packageTotal + $expensesTotal;
 
         $pendingIntroPayment = null;
         $pendingDownpayment = null;
         $hasDownpaymentPaid = false;
 
         $totalPaid = 0.0;
+        $packagePaid = 0.0;
         $remainingBalance = $grandTotal;
 
         if ($event->billing) {
@@ -127,17 +138,27 @@ class AdminEventController extends Controller
                 ->where('status', Payment::STATUS_APPROVED)
                 ->isNotEmpty();
 
-            // sum approved payments (collection)
+            // sum all approved payments (including expense payments)
             $totalPaid = (float) $payments
                 ->where('status', Payment::STATUS_APPROVED)
+                ->sum('amount');
+
+            // sum package payments only (excluding expense)
+            $packagePaid = (float) $payments
+                ->where('status', Payment::STATUS_APPROVED)
+                ->where('payment_type', '!=', Payment::TYPE_EXPENSE)
                 ->sum('amount');
 
             $remainingBalance = max(0, $grandTotal - $totalPaid);
         }
 
+        // Package remaining balance (without expenses)
+        $packageRemainingBalance = max(0, $packageTotal - $packagePaid);
+
         return view('admin.events.show', [
             'event' => $event,
             'grandTotal' => $grandTotal,
+            'packageTotal' => $packageTotal,
             'pendingIntroPayment' => $pendingIntroPayment,
             'pendingDownpayment' => $pendingDownpayment,
             'hasDownpaymentPaid' => $hasDownpaymentPaid,
@@ -145,10 +166,16 @@ class AdminEventController extends Controller
             'coord' => $coord,
             'styl' => $styling,
             'totalPaid' => $totalPaid,
+            'packagePaid' => $packagePaid,
             'remainingBalance' => $remainingBalance,
+            'packageRemainingBalance' => $packageRemainingBalance,
+            // Expense data
+            'expensesTotal' => $expensesTotal,
+            'unpaidExpensesTotal' => $unpaidExpensesTotal,
+            'paidExpensesTotal' => $paidExpensesTotal,
+            'unpaidExpensesCount' => $unpaidExpensesCount,
         ]);
     }
-
     /**
      * Approve event - Create billing and set status to request_meeting
      */

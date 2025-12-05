@@ -155,6 +155,9 @@ Route::middleware('auth')->group(function () {
             Route::post('/events/{event}/payments', [PaymentController::class, 'store'])
                 ->name('payments.store');
 
+            Route::get('/events/{event}/payments/expense/{expense}', [PaymentController::class, 'createExpensePayment'])
+                ->name('payments.createExpense');
+
             // Payment history
             Route::get('/payments', [PaymentController::class, 'index'])
                 ->name('payments.index');
@@ -198,11 +201,21 @@ Route::middleware('auth')->group(function () {
         ->name('admin.')
         ->group(function () {
 
+            // Billings
             Route::get('billings', [AdminBillingController::class, 'index'])->name('billings.index');
             Route::get('billings/{event}', [AdminBillingController::class, 'show'])->name('billings.show');
+
+            // Billings
+            Route::get('billings', [AdminBillingController::class, 'index'])->name('billings.index');
+            Route::get('billings/{event}', [AdminBillingController::class, 'show'])->name('billings.show');
+
+            // Payments (handles intro, downpayment, balance, AND expense)
             Route::get('billings/{event}/pay', [AdminBillingController::class, 'createPayment'])->name('billings.create-payment');
             Route::post('billings/{event}/pay', [AdminBillingController::class, 'storePayment'])->name('billings.store-payment');
 
+            // Undo expense payment
+            Route::delete('billings/{event}/expenses/{expense}/mark-unpaid', [AdminBillingController::class, 'markExpenseUnpaid'])
+                ->name('billings.expense.mark-unpaid');
 
             // Users (admin/staff management)
             Route::get('/create-user', [AdminController::class, 'createUserForm'])->name('create-user');

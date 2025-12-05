@@ -30,7 +30,11 @@
     $coord = (float) optional($event->package)->coordination_price ?? 25000;
     $styl = (float) optional($event->package)->event_styling_price ?? 55000;
     $incSubtotal = (float) $event->inclusions->sum(fn($i) => (float) ($i->pivot->price_snapshot ?? 0));
-    $grandTotal = $coord + $styl + $incSubtotal;
+    $packageTotal = $coord + $styl + $incSubtotal;
+
+    // Include expenses in grand total
+    $expensesTotalCalc = (float) ($event->expenses ?? collect())->sum('amount');
+    $grandTotal = $packageTotal + $expensesTotalCalc;
     @endphp
 
     <div class="py-8" x-data="{
@@ -937,6 +941,7 @@
                     </header>
 
                     <div class="p-6 space-y-3">
+                        {{-- Package Breakdown --}}
                         @foreach($pricingLines as $line)
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-gray-600">{{ $line['label'] }}</span>
@@ -945,18 +950,67 @@
                         </div>
                         @endforeach
 
+                        {{-- Package Subtotal --}}
                         <div class="border-t border-gray-200 pt-3 mt-3">
+                            <div class="flex justify-between items-center">
+                                <span class="font-semibold text-gray-900">Package Total</span>
+                                <span class="text-lg font-bold text-gray-800">₱{{ number_format($packageTotal ??
+                                    ($grandTotal ?? 0), 2) }}</span>
+                            </div>
+                        </div>
+
+                        {{-- Expenses Section --}}
+                        @if(($expensesTotal ?? 0) > 0)
+                        <div class="border-t border-gray-200 pt-3 mt-3">
+                            <div class="flex justify-between items-center text-sm mb-2">
+                                <span class="text-gray-600 flex items-center gap-1">
+                                    <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                    </svg>
+                                    Additional Expenses
+                                </span>
+                                <span class="font-medium text-orange-600">₱{{ number_format($expensesTotal ?? 0, 2)
+                                    }}</span>
+                            </div>
+
+                            {{-- Expense Payment Status --}}
+                            @if(($unpaidExpensesTotal ?? 0) > 0)
+                            <div class="flex justify-between items-center text-xs pl-5">
+                                <span class="text-gray-500">
+                                    {{ $unpaidExpensesCount ?? 0 }} unpaid expense(s)
+                                </span>
+                                <span class="text-rose-600 font-medium">₱{{ number_format($unpaidExpensesTotal ?? 0, 2)
+                                    }} due</span>
+                            </div>
+                            @endif
+                            @if(($paidExpensesTotal ?? 0) > 0)
+                            <div class="flex justify-between items-center text-xs pl-5">
+                                <span class="text-gray-500">Expenses paid</span>
+                                <span class="text-emerald-600 font-medium">₱{{ number_format($paidExpensesTotal ?? 0, 2)
+                                    }}</span>
+                            </div>
+                            @endif
+                        </div>
+                        @endif
+
+                        {{-- Grand Total (Package + Expenses) --}}
+                        <div class="border-t-2 border-gray-300 pt-3 mt-3">
                             <div class="flex justify-between items-center">
                                 <span class="font-semibold text-gray-900">Grand Total</span>
                                 <span class="text-xl font-bold text-emerald-600">₱{{ number_format($grandTotal ?? 0, 2)
                                     }}</span>
                             </div>
+                            @if(($expensesTotal ?? 0) > 0)
+                            <p class="text-xs text-gray-500 mt-1">Package + Expenses</p>
+                            @endif
                         </div>
 
                         @if($event->billing ?? false)
                         <div class="border-t border-gray-200 pt-3 mt-3 space-y-2">
                             <div class="flex justify-between items-center text-sm">
-                                <span class="text-gray-600">Amount Paid</span>
+                                <span class="text-gray-600">Total Paid</span>
                                 <span
                                     class="font-medium {{ (float)($totalPaid ?? 0) > 0 ? 'text-emerald-600' : 'text-gray-500' }}">
                                     ₱{{ number_format((float)($totalPaid ?? 0), 2) }}
@@ -974,10 +1028,38 @@
                                 @endif
                             </div>
 
-                            {{-- Optional progress indicator --}}
+                            {{-- Balance Breakdown (if has expenses) --}}
+                            @if(($expensesTotal ?? 0) > 0 && $remaining > 0)
+                            <div class="bg-gray-50 rounded-lg p-3 mt-2 space-y-1">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-gray-500">Package Balance</span>
+                                    <span
+                                        class="font-medium {{ ($packageRemainingBalance ?? 0) > 0 ? 'text-gray-700' : 'text-emerald-600' }}">
+                                        @if(($packageRemainingBalance ?? 0) > 0)
+                                        ₱{{ number_format($packageRemainingBalance ?? 0, 2) }}
+                                        @else
+                                        ✓ Paid
+                                        @endif
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-gray-500">Unpaid Expenses</span>
+                                    <span
+                                        class="font-medium {{ ($unpaidExpensesTotal ?? 0) > 0 ? 'text-orange-600' : 'text-emerald-600' }}">
+                                        @if(($unpaidExpensesTotal ?? 0) > 0)
+                                        ₱{{ number_format($unpaidExpensesTotal ?? 0, 2) }}
+                                        @else
+                                        ✓ Paid
+                                        @endif
+                                    </span>
+                                </div>
+                            </div>
+                            @endif
+
+                            {{-- Progress Bar --}}
                             @php
                             $paid = (float)($totalPaid ?? 0);
-                            $total = max(1, (float)($grandTotal ?? 0)); // avoid division by zero
+                            $total = max(1, (float)($grandTotal ?? 0));
                             $percent = min(100, round(($paid / $total) * 100));
                             @endphp
                             <div class="w-full pt-2">
@@ -1006,6 +1088,20 @@
                                         class="font-medium {{ $event->hasDownpaymentPaid() ? 'text-emerald-600' : 'text-gray-500' }}">
                                         {{ $event->hasDownpaymentPaid() ? '✓ Paid' : 'Pending' }}
                                     </span>
+                                </div>
+                                @endif
+
+                                {{-- Expenses Status --}}
+                                @if(($expensesTotal ?? 0) > 0)
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-gray-600">Expenses ({{ $event->expenses->count() }})</span>
+                                    @if(($unpaidExpensesTotal ?? 0) > 0)
+                                    <span class="font-medium text-orange-600">
+                                        {{ $unpaidExpensesCount }} unpaid
+                                    </span>
+                                    @else
+                                    <span class="font-medium text-emerald-600">✓ All Paid</span>
+                                    @endif
                                 </div>
                                 @endif
                             </div>

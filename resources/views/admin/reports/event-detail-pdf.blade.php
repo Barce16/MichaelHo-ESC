@@ -45,6 +45,10 @@
             border-bottom: 2px solid #7c3aed;
         }
 
+        .section-title.purple {
+            border-bottom-color: #9333ea;
+        }
+
         .info-box {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -125,6 +129,10 @@
             color: #2563eb;
         }
 
+        .stat-box.purple .value {
+            color: #9333ea;
+        }
+
         table.data-table {
             width: 100%;
             border-collapse: collapse;
@@ -139,6 +147,10 @@
             text-align: left;
             font-size: 9px;
             text-transform: uppercase;
+        }
+
+        table.data-table.purple th {
+            background: #9333ea;
         }
 
         table.data-table td {
@@ -173,6 +185,16 @@
 
         table.simple-table tr.total td {
             padding: 8px 0;
+        }
+
+        table.simple-table tr.purple-total {
+            background: #f3e8ff;
+            font-weight: bold;
+        }
+
+        table.simple-table tr.purple-total td {
+            padding: 8px 0;
+            color: #7c3aed;
         }
 
         .status-badge {
@@ -214,6 +236,21 @@
             color: #3730a3;
         }
 
+        .status-unpaid {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-paid {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-expense {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
         .two-column {
             display: table;
             width: 100%;
@@ -232,80 +269,59 @@
         }
 
         .timeline {
-            margin-left: 20px;
+            margin-top: 10px;
         }
 
         .timeline-item {
-            position: relative;
-            padding-left: 25px;
-            padding-bottom: 15px;
-            border-left: 2px solid #e5e7eb;
-        }
-
-        .timeline-item:last-child {
-            border-left: 2px solid transparent;
-        }
-
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -6px;
-            top: 0;
-            width: 10px;
-            height: 10px;
-            background: #7c3aed;
-            border-radius: 50%;
+            padding: 10px 15px;
+            border-left: 3px solid #7c3aed;
+            margin-bottom: 10px;
+            background: #f8fafc;
         }
 
         .timeline-date {
             font-size: 9px;
             color: #6b7280;
-            margin-bottom: 3px;
         }
 
         .timeline-title {
             font-weight: bold;
             color: #1f2937;
-            margin-bottom: 3px;
+            margin: 3px 0;
         }
 
         .timeline-content {
-            color: #4b5563;
             font-size: 10px;
+            color: #4b5563;
         }
 
         .feedback-box {
-            background: #fef3c7;
-            border: 1px solid #fcd34d;
+            background: #fefce8;
+            border: 1px solid #fde047;
             border-radius: 6px;
             padding: 15px;
         }
 
         .stars {
-            color: #f59e0b;
-            font-size: 14px;
-            margin-bottom: 8px;
+            color: #fbbf24;
+            font-size: 16px;
         }
 
         .footer {
             margin-top: 30px;
+            padding-top: 15px;
+            border-top: 2px solid #333;
             text-align: center;
-            font-size: 9px;
-            color: #6b7280;
-            border-top: 1px solid #e5e7eb;
-            padding-top: 10px;
+            font-size: 10px;
+            color: #666;
         }
 
-        .text-right {
-            text-align: right;
+        .page-break {
+            page-break-before: always;
         }
 
-        .text-center {
-            text-align: center;
-        }
-
-        .font-bold {
-            font-weight: bold;
+        .total-row {
+            background: #d1fae5 !important;
         }
 
         .text-green {
@@ -316,13 +332,59 @@
             color: #dc2626;
         }
 
-        .page-break {
-            page-break-before: always;
+        .text-purple {
+            color: #9333ea;
         }
 
-        .total-row {
-            font-weight: bold;
-            background: #d1fae5;
+        .expense-row-total {
+            background: #f3e8ff !important;
+        }
+
+        .expense-row-unpaid {
+            background: #fef3c7 !important;
+        }
+
+        .expense-row-paid {
+            background: #d1fae5 !important;
+        }
+
+        .progress-bar-container {
+            background: #e5e7eb;
+            border-radius: 4px;
+            height: 12px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(to right, #10b981, #059669);
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .progress-info {
+            display: table;
+            width: 100%;
+            font-size: 10px;
+            color: #6b7280;
+        }
+
+        .progress-info span {
+            display: table-cell;
+        }
+
+        .progress-info span:last-child {
+            text-align: right;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            background: #f3e8ff;
+            color: #7c3aed;
+            text-transform: capitalize;
         }
     </style>
 </head>
@@ -330,82 +392,70 @@
 <body>
     {{-- Header --}}
     <div class="header">
-        <h1>MichaelHo Events</h1>
-        <p>Event Management System</p>
-        <p style="font-size: 14px; font-weight: bold; margin-top: 10px;">Event Detail Report</p>
-        <p>Generated: {{ now()->format('M d, Y g:i A') }}</p>
+        <h1>{{ $event->name }}</h1>
+        <p>Event ID: #{{ str_pad($event->id, 6, '0', STR_PAD_LEFT) }}</p>
+        <p>Generated: {{ now()->format('F d, Y h:i A') }}</p>
+        @php
+        $statusColors = [
+        'requested' => '#f59e0b',
+        'approved' => '#10b981',
+        'request_meeting' => '#f97316',
+        'meeting' => '#3b82f6',
+        'scheduled' => '#6366f1',
+        'ongoing' => '#14b8a6',
+        'completed' => '#22c55e',
+        'rejected' => '#f43f5e',
+        'cancelled' => '#6b7280',
+        ];
+        @endphp
+        <p style="margin-top: 8px;">
+            <span
+                style="background: {{ $statusColors[$event->status] ?? '#6b7280' }}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: bold;">
+                {{ strtoupper(str_replace('_', ' ', $event->status)) }}
+            </span>
+        </p>
     </div>
 
-    {{-- Event Overview --}}
+    {{-- Event & Customer Info --}}
     <div class="section">
-        <div class="section-title">Event Overview</div>
+        <div class="section-title">Event & Customer Information</div>
         <div class="info-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span class="event-title">{{ $event->name }}</span>
-                <span
-                    class="status-badge status-{{ $event->status === 'completed' ? 'completed' : ($event->status === 'scheduled' ? 'scheduled' : (in_array($event->status, ['rejected', 'cancelled']) ? 'rejected' : ($event->status === 'ongoing' ? 'ongoing' : 'pending'))) }}">
-                    {{ ucwords(str_replace('_', ' ', $event->status)) }}
-                </span>
-            </div>
             <table>
                 <tr>
-                    <td style="width: 33%;">
+                    <td width="50%">
                         <div class="label">Event Date</div>
-                        <div class="value">{{ \Carbon\Carbon::parse($event->event_date)->format('F d, Y') }}</div>
+                        <div class="value">{{ $event->event_date->format('F d, Y') }}</div>
                     </td>
-                    <td style="width: 33%;">
+                    <td width="50%">
+                        <div class="label">Customer Name</div>
+                        <div class="value">{{ $event->customer->customer_name ?? 'N/A' }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
                         <div class="label">Venue</div>
                         <div class="value">{{ $event->venue ?? 'TBD' }}</div>
                     </td>
-                    <td style="width: 33%;">
+                    <td>
+                        <div class="label">Email</div>
+                        <div class="value">{{ $event->customer->email ?? 'N/A' }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
                         <div class="label">Theme</div>
                         <div class="value">{{ $event->theme ?? 'N/A' }}</div>
+                    </td>
+                    <td>
+                        <div class="label">Phone Number</div>
+                        <div class="value">{{ $event->customer->phone ?? $event->customer->contact_number ?? 'N/A' }}
+                        </div>
                     </td>
                 </tr>
                 <tr>
                     <td>
                         <div class="label">Package</div>
                         <div class="value">{{ $event->package->name ?? 'N/A' }}</div>
-                    </td>
-                    <td>
-                        <div class="label">Expected Guests</div>
-                        <div class="value">{{ $event->guests ?? 'N/A' }}</div>
-                    </td>
-                    <td>
-                        <div class="label">Booked On</div>
-                        <div class="value">{{ $event->created_at->format('M d, Y') }}</div>
-                    </td>
-                </tr>
-            </table>
-            @if($event->notes)
-            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e7eb;">
-                <div class="label">Notes</div>
-                <div style="color: #4b5563;">{{ $event->notes }}</div>
-            </div>
-            @endif
-        </div>
-    </div>
-
-    {{-- Customer Information --}}
-    <div class="section">
-        <div class="section-title">Customer Information</div>
-        <div class="info-box">
-            <table>
-                <tr>
-                    <td style="width: 50%;">
-                        <div class="label">Customer Name</div>
-                        <div class="value">{{ $event->customer->customer_name ?? 'N/A' }}</div>
-                    </td>
-                    <td style="width: 50%;">
-                        <div class="label">Email Address</div>
-                        <div class="value">{{ $event->customer->email ?? 'N/A' }}</div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="label">Phone Number</div>
-                        <div class="value">{{ $event->customer->phone ?? $event->customer->contact_number ?? 'N/A' }}
-                        </div>
                     </td>
                     <td>
                         <div class="label">Address</div>
@@ -421,20 +471,35 @@
         <div class="section-title">Financial Summary</div>
         <div class="stats-grid">
             <div class="stat-box amber">
-                <div class="label">Total Amount</div>
-                <div class="value">Php {{ number_format($stats['total_amount'], 2) }}</div>
+                <div class="label">Package Total</div>
+                <div class="value">Php {{ number_format($stats['package_total'] ?? $stats['total_amount'], 2) }}</div>
+            </div>
+            <div class="stat-box purple">
+                <div class="label">Expenses</div>
+                <div class="value">Php {{ number_format($stats['expenses_total'] ?? 0, 2) }}</div>
+                @if(($stats['unpaid_expenses_count'] ?? 0) > 0)
+                <div style="font-size: 8px; color: #9333ea;">{{ $stats['unpaid_expenses_count'] }} unpaid</div>
+                @endif
             </div>
             <div class="stat-box green">
                 <div class="label">Total Paid</div>
                 <div class="value">Php {{ number_format($stats['total_paid'], 2) }}</div>
             </div>
             <div class="stat-box red">
-                <div class="label">Remaining Balance</div>
+                <div class="label">Balance Due</div>
                 <div class="value">Php {{ number_format($stats['remaining_balance'], 2) }}</div>
             </div>
-            <div class="stat-box blue">
-                <div class="label">Payment Progress</div>
-                <div class="value">{{ $stats['payment_percentage'] }}%</div>
+        </div>
+
+        {{-- Payment Progress Bar --}}
+        <div style="margin-bottom: 15px;">
+            <div class="progress-info">
+                <span>Payment Progress: {{ $stats['payment_percentage'] }}%</span>
+                <span>Php {{ number_format($stats['total_paid'], 2) }} / Php {{ number_format($stats['grand_total'] ??
+                    ($stats['package_total'] + ($stats['expenses_total'] ?? 0)), 2) }}</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: {{ min($stats['payment_percentage'], 100) }}%;"></div>
             </div>
         </div>
     </div>
@@ -465,6 +530,8 @@
                 $inclTotal = $event->inclusions->sum(fn($i) => $i->pivot->price_snapshot ?? $i->price);
                 $coordPrice = $event->package->coordination_price ?? 25000;
                 $stylingPrice = $event->package->event_styling_price ?? 55000;
+                $packageTotal = $coordPrice + $stylingPrice + $inclTotal;
+                $expensesTotal = $stats['expenses_total'] ?? 0;
                 @endphp
                 <table class="simple-table">
                     <tr>
@@ -480,9 +547,19 @@
                         <td>Php {{ number_format($inclTotal, 2) }}</td>
                     </tr>
                     <tr class="total">
-                        <td><strong>Grand Total</strong></td>
-                        <td><strong>Php {{ number_format($event->billing->total_amount, 2) }}</strong></td>
+                        <td><strong>Package Total</strong></td>
+                        <td><strong>Php {{ number_format($packageTotal, 2) }}</strong></td>
                     </tr>
+                    @if($expensesTotal > 0)
+                    <tr class="purple-total">
+                        <td><strong>+ Additional Expenses</strong></td>
+                        <td><strong>Php {{ number_format($expensesTotal, 2) }}</strong></td>
+                    </tr>
+                    <tr style="background: #e5e7eb;">
+                        <td><strong>Grand Total</strong></td>
+                        <td><strong>Php {{ number_format($packageTotal + $expensesTotal, 2) }}</strong></td>
+                    </tr>
+                    @endif
                 </table>
                 <div style="margin-top: 10px; font-size: 10px;">
                     <div>
@@ -521,7 +598,14 @@
                 @foreach($payments as $payment)
                 <tr>
                     <td>{{ $payment->created_at->format('M d, Y') }}</td>
-                    <td style="text-transform: capitalize;">{{ str_replace('_', ' ', $payment->payment_type) }}</td>
+                    <td>
+                        @if($payment->payment_type === 'expense')
+                        <span class="status-badge status-expense">Expense</span>
+                        @else
+                        <span style="text-transform: capitalize;">{{ str_replace('_', ' ', $payment->payment_type)
+                            }}</span>
+                        @endif
+                    </td>
                     <td style="text-transform: capitalize;">{{ str_replace('_', ' ', $payment->payment_method) }}</td>
                     <td style="font-family: monospace; font-size: 9px;">{{ $payment->reference_number ?? '-' }}</td>
                     <td style="text-align: right;">Php {{ number_format($payment->amount, 2) }}</td>
@@ -543,6 +627,70 @@
         <p style="text-align: center; color: #9ca3af; padding: 20px;">No payments recorded yet.</p>
         @endif
     </div>
+
+    {{-- Additional Expenses Section --}}
+    @if($expenses->count() > 0)
+    <div class="section">
+        <div class="section-title purple">Additional Expenses ({{ $expenses->count() }})</div>
+        <table class="data-table purple">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Date</th>
+                    <th style="text-align: right;">Amount</th>
+                    <th style="text-align: center;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($expenses as $expense)
+                <tr>
+                    <td>
+                        {{ $expense->description }}
+                        @if($expense->notes)
+                        <div style="font-size: 8px; color: #6b7280;">{{ Str::limit($expense->notes, 40) }}</div>
+                        @endif
+                    </td>
+                    <td>
+                        <span class="category-badge">{{ str_replace('_', ' ', $expense->category) }}</span>
+                    </td>
+                    <td>{{ $expense->expense_date->format('M d, Y') }}</td>
+                    <td style="text-align: right;">Php {{ number_format($expense->amount, 2) }}</td>
+                    <td style="text-align: center;">
+                        @if($expense->isPaid())
+                        <span class="status-badge status-paid">Paid</span>
+                        @else
+                        <span class="status-badge status-unpaid">Unpaid</span>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+                <tr class="expense-row-total">
+                    <td colspan="3" style="text-align: right; padding: 8px;"><strong>Total Expenses:</strong></td>
+                    <td style="text-align: right; padding: 8px; color: #7c3aed;"><strong>Php {{
+                            number_format($stats['expenses_total'] ?? $expenses->sum('amount'), 2) }}</strong></td>
+                    <td></td>
+                </tr>
+                @if(($stats['unpaid_expenses'] ?? 0) > 0)
+                <tr class="expense-row-unpaid">
+                    <td colspan="3" style="text-align: right; padding: 6px; font-size: 10px;">Unpaid:</td>
+                    <td style="text-align: right; padding: 6px; font-size: 10px; color: #d97706;">Php {{
+                        number_format($stats['unpaid_expenses'], 2) }}</td>
+                    <td></td>
+                </tr>
+                @endif
+                @if(($stats['expenses_paid'] ?? 0) > 0)
+                <tr class="expense-row-paid">
+                    <td colspan="3" style="text-align: right; padding: 6px; font-size: 10px;">Paid:</td>
+                    <td style="text-align: right; padding: 6px; font-size: 10px; color: #059669;">Php {{
+                        number_format($stats['expenses_paid'], 2) }}</td>
+                    <td></td>
+                </tr>
+                @endif
+            </tbody>
+        </table>
+    </div>
+    @endif
 
     {{-- Event Progress --}}
     @if($progressUpdates->count() > 0)

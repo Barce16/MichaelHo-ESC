@@ -325,33 +325,61 @@
                 {{-- Report Body --}}
                 <div class="p-6">
 
-                    {{-- Stats Cards --}}
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    {{-- Stats Cards - Updated with Package/Expenses Split --}}
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        {{-- Package Total --}}
                         <div
-                            class="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-4 border border-violet-200">
-                            <div class="text-xs text-violet-600 font-medium uppercase tracking-wider">Total Amount</div>
-                            <div class="text-2xl font-bold text-violet-900 mt-1">₱{{
-                                number_format($stats['total_amount'], 2) }}</div>
+                            class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200">
+                            <div class="text-xs text-amber-600 font-medium uppercase tracking-wider">Package Total</div>
+                            <div class="text-2xl font-bold text-amber-900 mt-1">₱{{
+                                number_format($stats['package_total'] ?? $stats['total_amount'], 2) }}</div>
                         </div>
+                        {{-- Expenses --}}
+                        <div
+                            class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-4 border border-purple-200">
+                            <div class="text-xs text-purple-600 font-medium uppercase tracking-wider">Add'l Expenses
+                            </div>
+                            <div class="text-2xl font-bold text-purple-900 mt-1">₱{{
+                                number_format($stats['expenses_total'] ?? 0, 2) }}</div>
+                            @if(($stats['unpaid_expenses_count'] ?? 0) > 0)
+                            <div class="text-xs text-purple-600 mt-1">{{ $stats['unpaid_expenses_count'] }} unpaid</div>
+                            @endif
+                        </div>
+                        {{-- Total Paid --}}
                         <div
                             class="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-4 border border-emerald-200">
                             <div class="text-xs text-emerald-600 font-medium uppercase tracking-wider">Total Paid</div>
                             <div class="text-2xl font-bold text-emerald-900 mt-1">₱{{
                                 number_format($stats['total_paid'], 2) }}</div>
                         </div>
+                        {{-- Balance Due --}}
                         <div class="bg-gradient-to-br from-rose-50 to-red-50 rounded-xl p-4 border border-rose-200">
-                            <div class="text-xs text-rose-600 font-medium uppercase tracking-wider">Balance</div>
+                            <div class="text-xs text-rose-600 font-medium uppercase tracking-wider">Balance Due</div>
                             <div class="text-2xl font-bold text-rose-900 mt-1">₱{{
                                 number_format($stats['remaining_balance'], 2) }}</div>
+                            @if(($stats['package_balance'] ?? 0) > 0 && ($stats['unpaid_expenses'] ?? 0) > 0)
+                            <div class="text-xs text-rose-600 mt-1">
+                                Pkg: ₱{{ number_format($stats['package_balance'], 2) }} | Exp: ₱{{
+                                number_format($stats['unpaid_expenses'], 2) }}
+                            </div>
+                            @endif
                         </div>
-                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-                            <div class="text-xs text-blue-600 font-medium uppercase tracking-wider">Payment Progress
-                            </div>
-                            <div class="text-2xl font-bold text-blue-900 mt-1">{{ $stats['payment_percentage'] }}%</div>
-                            <div class="w-full bg-blue-200 rounded-full h-1.5 mt-2">
-                                <div class="bg-blue-600 h-1.5 rounded-full"
-                                    style="width: {{ $stats['payment_percentage'] }}%"></div>
-                            </div>
+                    </div>
+
+                    {{-- Payment Progress Bar --}}
+                    <div class="mb-8 bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-700">Payment Progress</span>
+                            <span class="text-sm font-bold text-gray-900">{{ $stats['payment_percentage'] }}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="bg-gradient-to-r from-emerald-500 to-green-500 h-3 rounded-full transition-all duration-500"
+                                style="width: {{ min($stats['payment_percentage'], 100) }}%"></div>
+                        </div>
+                        <div class="flex justify-between mt-2 text-xs text-gray-500">
+                            <span>₱{{ number_format($stats['total_paid'], 2) }} paid</span>
+                            <span>₱{{ number_format($stats['grand_total'] ?? ($stats['package_total'] +
+                                ($stats['expenses_total'] ?? 0)), 2) }} total</span>
                         </div>
                     </div>
 
@@ -492,8 +520,23 @@
                                     @foreach($payments as $payment)
                                     <tr class="border-b border-gray-200 hover:bg-white">
                                         <td class="py-3 px-4">{{ $payment->created_at->format('M d, Y') }}</td>
-                                        <td class="py-3 px-4 capitalize">{{ str_replace('_', ' ',
-                                            $payment->payment_type) }}</td>
+                                        <td class="py-3 px-4">
+                                            @if($payment->payment_type === 'expense')
+                                            <span
+                                                class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+                                                </svg>
+                                                Expense
+                                            </span>
+                                            @else
+                                            <span class="capitalize">{{ str_replace('_', ' ', $payment->payment_type)
+                                                }}</span>
+                                            @endif
+                                        </td>
                                         <td class="py-3 px-4 capitalize">{{ str_replace('_', ' ',
                                             $payment->payment_method) }}</td>
                                         <td class="py-3 px-4 font-mono text-xs">{{ $payment->reference_number ?? '—' }}
@@ -534,6 +577,105 @@
                         </div>
                         @endif
                     </div>
+
+                    {{-- Additional Expenses Section --}}
+                    @if($expenses->count() > 0)
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+                            </svg>
+                            Additional Expenses
+                            <span
+                                class="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                                {{ $expenses->count() }} {{ Str::plural('item', $expenses->count()) }}
+                            </span>
+                        </h3>
+                        <div class="overflow-x-auto bg-gray-50 rounded-xl p-4">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b-2 border-gray-300">
+                                        <th class="py-3 px-4 text-left font-semibold text-gray-700">Description</th>
+                                        <th class="py-3 px-4 text-left font-semibold text-gray-700">Category</th>
+                                        <th class="py-3 px-4 text-center font-semibold text-gray-700">Date</th>
+                                        <th class="py-3 px-4 text-right font-semibold text-gray-700">Amount</th>
+                                        <th class="py-3 px-4 text-center font-semibold text-gray-700">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($expenses as $expense)
+                                    <tr class="border-b border-gray-200 hover:bg-white">
+                                        <td class="py-3 px-4">
+                                            <div class="font-medium text-gray-900">{{ $expense->description }}</div>
+                                            @if($expense->notes)
+                                            <div class="text-xs text-gray-500 mt-0.5">{{ Str::limit($expense->notes, 50)
+                                                }}</div>
+                                            @endif
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <span
+                                                class="inline-flex px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full capitalize">
+                                                {{ str_replace('_', ' ', $expense->category) }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center text-gray-600">
+                                            {{ $expense->expense_date->format('M d, Y') }}
+                                        </td>
+                                        <td class="py-3 px-4 text-right font-semibold text-gray-900">
+                                            ₱{{ number_format($expense->amount, 2) }}
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            @if($expense->isPaid())
+                                            <span
+                                                class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                                Paid
+                                            </span>
+                                            @else
+                                            <span
+                                                class="inline-flex px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
+                                                Unpaid
+                                            </span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr class="border-t-2 border-gray-300 bg-purple-50">
+                                        <td colspan="3" class="py-3 px-4 text-right font-bold text-gray-900">Total
+                                            Expenses:</td>
+                                        <td class="py-3 px-4 text-right font-bold text-purple-700 text-lg">₱{{
+                                            number_format($stats['expenses_total'] ?? $expenses->sum('amount'), 2) }}
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                    @if(($stats['unpaid_expenses'] ?? 0) > 0)
+                                    <tr class="bg-yellow-50">
+                                        <td colspan="3" class="py-2 px-4 text-right text-sm text-gray-600">Unpaid:</td>
+                                        <td class="py-2 px-4 text-right text-sm font-medium text-yellow-700">₱{{
+                                            number_format($stats['unpaid_expenses'], 2) }}</td>
+                                        <td></td>
+                                    </tr>
+                                    @endif
+                                    @if(($stats['expenses_paid'] ?? 0) > 0)
+                                    <tr class="bg-green-50">
+                                        <td colspan="3" class="py-2 px-4 text-right text-sm text-gray-600">Paid:</td>
+                                        <td class="py-2 px-4 text-right text-sm font-medium text-green-700">₱{{
+                                            number_format($stats['expenses_paid'], 2) }}</td>
+                                        <td></td>
+                                    </tr>
+                                    @endif
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    @endif
 
                     {{-- Progress Updates --}}
                     <div class="mb-8">

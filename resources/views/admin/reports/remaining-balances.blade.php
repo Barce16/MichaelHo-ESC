@@ -46,28 +46,22 @@
                     </svg>
                     Print
                 </button>
-                <form method="GET" class="inline">
-                    <input type="hidden" name="export" value="pdf">
-                    <button type="submit"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                        </svg>
-                        Export PDF
-                    </button>
-                </form>
-                <form method="GET" class="inline">
-                    <input type="hidden" name="export" value="csv">
-                    <button type="submit"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Export CSV
-                    </button>
-                </form>
+                <a href="{{ route('admin.reports.remaining-balances', ['export' => 'pdf']) }}"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    Export PDF
+                </a>
+                <a href="{{ route('admin.reports.remaining-balances', ['export' => 'csv']) }}"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export CSV
+                </a>
             </div>
 
             {{-- Report Content --}}
@@ -97,7 +91,7 @@
                 </div>
 
                 {{-- Summary Statistics --}}
-                <div class="grid md:grid-cols-3 gap-6 mb-8">
+                <div class="grid md:grid-cols-4 gap-6 mb-8">
                     <div class="bg-gradient-to-br from-red-50 to-rose-50 rounded-lg p-6 border-2 border-red-200">
                         <div class="text-sm text-red-700 font-medium mb-1">Events with Balance</div>
                         <div class="text-4xl font-bold text-red-900">{{ $stats['total_events'] }}</div>
@@ -106,19 +100,20 @@
                     <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-6 border-2 border-orange-200">
                         <div class="text-sm text-orange-700 font-medium mb-1">Total Outstanding</div>
                         <div class="text-3xl font-bold text-orange-900">₱{{ number_format($stats['total_outstanding'],
-                            2) }}
-                        </div>
+                            2) }}</div>
                     </div>
 
-                    @if($events->first())
-                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 border-2 border-purple-200">
-                        <div class="text-sm text-purple-700 font-medium mb-1">Largest Balance</div>
-                        <div class="text-lg font-bold text-purple-900 truncate">{{ $events->first()->name }}</div>
-                        <div class="text-sm text-purple-700">₱{{ number_format($events->first()->remaining_balance, 2)
-                            }}
-                        </div>
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border-2 border-blue-200">
+                        <div class="text-sm text-blue-700 font-medium mb-1">Package Balance</div>
+                        <div class="text-3xl font-bold text-blue-900">₱{{ number_format($stats['package_outstanding'],
+                            2) }}</div>
                     </div>
-                    @endif
+
+                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 border-2 border-purple-200">
+                        <div class="text-sm text-purple-700 font-medium mb-1">Unpaid Expenses</div>
+                        <div class="text-3xl font-bold text-purple-900">₱{{
+                            number_format($stats['expenses_outstanding'], 2) }}</div>
+                    </div>
                 </div>
 
                 {{-- Events Table --}}
@@ -129,24 +124,48 @@
                                 <th class="text-left py-3 font-semibold text-gray-700">Event Name</th>
                                 <th class="text-left py-3 font-semibold text-gray-700">Event Date</th>
                                 <th class="text-left py-3 font-semibold text-gray-700">Customer</th>
-                                <th class="text-left py-3 font-semibold text-gray-700">Contact</th>
-                                <th class="text-right py-3 font-semibold text-gray-700">Total Amount</th>
+                                <th class="text-right py-3 font-semibold text-gray-700">Package</th>
+                                <th class="text-right py-3 font-semibold text-gray-700">Expenses</th>
                                 <th class="text-right py-3 font-semibold text-gray-700">Paid</th>
                                 <th class="text-right py-3 font-semibold text-gray-700">Balance</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($events as $event)
-                            <tr class="border-b border-gray-200">
-                                <td class="py-3 font-medium">{{ $event->name }}</td>
+                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                <td class="py-3">
+                                    <div class="font-medium">{{ $event->name }}</div>
+                                    @if($event->unpaid_expenses_count > 0)
+                                    <span class="text-xs text-orange-600">{{ $event->unpaid_expenses_count }} unpaid
+                                        expense(s)</span>
+                                    @endif
+                                </td>
                                 <td class="py-3">{{ $event->event_date->format('M d, Y') }}</td>
-                                <td class="py-3">{{ $event->customer->customer_name }}</td>
-                                <td class="py-3">{{ $event->customer->phone ?? $event->customer->email }}</td>
-                                <td class="py-3 text-right">₱{{ number_format($event->billing->total_amount, 2) }}</td>
+                                <td class="py-3">
+                                    <div>{{ $event->customer->customer_name }}</div>
+                                    <div class="text-xs text-gray-500">{{ $event->customer->phone ??
+                                        $event->customer->email }}</div>
+                                </td>
+                                <td class="py-3 text-right">₱{{ number_format($event->package_total, 2) }}</td>
+                                <td class="py-3 text-right">
+                                    @if($event->expenses_total > 0)
+                                    <span class="text-orange-700">₱{{ number_format($event->expenses_total, 2) }}</span>
+                                    @else
+                                    <span class="text-gray-400">-</span>
+                                    @endif
+                                </td>
                                 <td class="py-3 text-right text-green-700">₱{{ number_format($event->total_paid, 2) }}
                                 </td>
-                                <td class="py-3 text-right font-semibold text-red-700">₱{{
-                                    number_format($event->remaining_balance, 2) }}</td>
+                                <td class="py-3 text-right">
+                                    <div class="font-semibold text-red-700">₱{{ number_format($event->remaining_balance,
+                                        2) }}</div>
+                                    @if($event->package_balance > 0 && $event->unpaid_expenses > 0)
+                                    <div class="text-xs text-gray-500">
+                                        Pkg: ₱{{ number_format($event->package_balance, 2) }} |
+                                        Exp: ₱{{ number_format($event->unpaid_expenses, 2) }}
+                                    </div>
+                                    @endif
+                                </td>
                             </tr>
                             @empty
                             <tr>
@@ -161,6 +180,18 @@
                                 <td class="py-4 text-right text-2xl text-red-700">₱{{
                                     number_format($stats['total_outstanding'], 2) }}</td>
                             </tr>
+                            @if($stats['expenses_outstanding'] > 0)
+                            <tr class="bg-gray-50 text-sm">
+                                <td colspan="6" class="py-2 text-right text-gray-600">Package Balance:</td>
+                                <td class="py-2 text-right text-gray-700">₱{{
+                                    number_format($stats['package_outstanding'], 2) }}</td>
+                            </tr>
+                            <tr class="bg-gray-50 text-sm">
+                                <td colspan="6" class="py-2 text-right text-gray-600">Unpaid Expenses:</td>
+                                <td class="py-2 text-right text-orange-700">₱{{
+                                    number_format($stats['expenses_outstanding'], 2) }}</td>
+                            </tr>
+                            @endif
                         </tfoot>
                     </table>
                 </div>

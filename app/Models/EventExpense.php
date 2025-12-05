@@ -5,10 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class EventExpense extends Model
 {
     use HasFactory;
+
+    // Payment Status Constants
+    const STATUS_UNPAID = 'unpaid';
+    const STATUS_PAID = 'paid';
 
     protected $fillable = [
         'event_id',
@@ -19,11 +24,14 @@ class EventExpense extends Model
         'expense_date',
         'notes',
         'receipt_image',
+        'payment_status',
+        'paid_at',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'expense_date' => 'date',
+        'paid_at' => 'datetime',
     ];
 
     /**
@@ -68,11 +76,57 @@ class EventExpense extends Model
     }
 
     /**
+     * Get the payment for this expense (if paid)
+     */
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class, 'expense_id');
+    }
+
+    /**
      * Get category label
      */
     public function getCategoryLabelAttribute(): string
     {
         return self::getCategories()[$this->category] ?? ucfirst($this->category ?? 'Uncategorized');
+    }
+
+    /**
+     * Check if expense is paid
+     */
+    public function isPaid(): bool
+    {
+        return $this->payment_status === self::STATUS_PAID;
+    }
+
+    /**
+     * Check if expense is unpaid
+     */
+    public function isUnpaid(): bool
+    {
+        return $this->payment_status === self::STATUS_UNPAID;
+    }
+
+    /**
+     * Mark expense as paid
+     */
+    public function markAsPaid(): void
+    {
+        $this->update([
+            'payment_status' => self::STATUS_PAID,
+            'paid_at' => now(),
+        ]);
+    }
+
+    /**
+     * Mark expense as unpaid
+     */
+    public function markAsUnpaid(): void
+    {
+        $this->update([
+            'payment_status' => self::STATUS_UNPAID,
+            'paid_at' => null,
+        ]);
     }
 
     /**
@@ -89,5 +143,21 @@ class EventExpense extends Model
     public function scopeDateRange($query, $startDate, $endDate)
     {
         return $query->whereBetween('expense_date', [$startDate, $endDate]);
+    }
+
+    /**
+     * Scope for unpaid expenses
+     */
+    public function scopeUnpaid($query)
+    {
+        return $query->where('payment_status', self::STATUS_UNPAID);
+    }
+
+    /**
+     * Scope for paid expenses
+     */
+    public function scopePaid($query)
+    {
+        return $query->where('payment_status', self::STATUS_PAID);
     }
 }
