@@ -5,12 +5,25 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventExpense;
+use App\Services\NotificationService;
+use App\Services\SmsNotifier;
+use App\Notifications\ExpenseAddedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class EventExpenseController extends Controller
 {
+    protected $notificationService;
+    protected $smsNotifier;
+
+    public function __construct(NotificationService $notificationService, SmsNotifier $smsNotifier)
+    {
+        $this->notificationService = $notificationService;
+        $this->smsNotifier = $smsNotifier;
+    }
+
     /**
      * Display expenses for an event
      */
@@ -57,9 +70,12 @@ class EventExpenseController extends Controller
         $validated['added_by'] = Auth::id();
         $validated['expense_date'] = $validated['expense_date'] ?? now()->toDateString();
 
-        EventExpense::create($validated);
+        $expense = EventExpense::create($validated);
 
-        return back()->with('success', 'Expense added successfully.');
+        // Send notifications to customer
+        $this->notifyCustomerExpenseAdded($event, $expense);
+
+        return back()->with('success', 'Expense added successfully. Customer has been notified.');
     }
 
     /**
@@ -131,5 +147,53 @@ class EventExpenseController extends Controller
                 'total' => $items->sum('amount'),
             ]),
         ]);
+    }
+
+    /**
+     * Send triple notifications to customer when expense is added
+     */
+    protected function notifyCustomerExpenseAdded(Event $event, EventExpense $expense): void
+    {
+        $customer = $event->customer;
+
+        if (!$customer) {
+            Log::warning('No customer found for event expense notification', ['event_id' => $event->id]);
+            return;
+        }
+
+        // 1. In-app notification
+        try {
+            $this->notificationService->notifyCustomerExpenseAdded($event, $expense);
+        } catch (\Exception $e) {
+            Log::error('Failed to send expense in-app notification', [
+                'event_id' => $event->id,
+                'expense_id' => $expense->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        // 2. Email notification
+        if ($customer->user) {
+            try {
+                $customer->user->notify(new ExpenseAddedNotification($event, $expense));
+            } catch (\Exception $e) {
+                Log::error('Failed to send expense email notification', [
+                    'event_id' => $event->id,
+                    'expense_id' => $expense->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
+        // 3. SMS notification
+        try {
+            $this->smsNotifier->notifyExpenseAdded($event, $expense);
+        } catch (\Exception $e) {
+            Log::error('Failed to send expense SMS notification', [
+                'event_id' => $event->id,
+                'expense_id' => $expense->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

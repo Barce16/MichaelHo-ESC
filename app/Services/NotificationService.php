@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\InclusionChangeRequest;
 use App\Models\Payment;
 use App\Models\EventProgress;
+use App\Models\EventExpense;
 
 class NotificationService
 {
@@ -738,5 +739,37 @@ class NotificationService
                 'link' => route('admin.events.show', $event),
             ]);
         }
+    }
+
+    /**
+     * Notify customer when an expense is added to their event
+     */
+    public function notifyCustomerExpenseAdded(Event $event, EventExpense $expense): void
+    {
+        $customer = $event->customer;
+
+        if (!$customer || !$customer->user) {
+            return;
+        }
+
+        $categoryLabel = $expense->category
+            ? \App\Models\EventExpense::getCategories()[$expense->category] ?? ucfirst($expense->category)
+            : 'General';
+
+        $customer->user->notifications()->create([
+            'id' => \Illuminate\Support\Str::uuid(),
+            'type' => 'expense_added',
+            'data' => [
+                'title' => 'New Expense Added',
+                'message' => "A new expense of ₱" . number_format($expense->amount, 2) . " ({$expense->description}) has been added to your event \"{$event->name}\".",
+                'event_id' => $event->id,
+                'event_name' => $event->name,
+                'expense_id' => $expense->id,
+                'expense_description' => $expense->description,
+                'expense_amount' => $expense->amount,
+                'expense_category' => $categoryLabel,
+                'url' => route('customer.events.show', $event),
+            ],
+        ]);
     }
 }

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use App\Models\Payment;
 use App\Models\Event;
+use App\Models\EventExpense;
 use App\Models\InclusionChangeRequest;
 use Carbon\Carbon;
 
@@ -585,6 +586,32 @@ class SmsNotifier
                 $message .= "Log in to view details. - Michael Ho Events";
                 break;
         }
+
+        $this->sendSms($customer->phone, $message);
+    }
+
+    /**
+     * Notify customer via SMS when an expense is added
+     */
+    public function notifyExpenseAdded(Event $event, EventExpense $expense): void
+    {
+        $customer = $event->customer;
+
+        if (!$customer || !$customer->phone) {
+            return;
+        }
+
+        $prefix = $this->getGreeting($customer->gender);
+
+        $categoryLabel = $expense->category
+            ? EventExpense::getCategories()[$expense->category] ?? ucfirst($expense->category)
+            : 'General';
+
+        $message = "{$prefix} {$customer->customer_name}, a new expense has been added to your event \"{$event->name}\".\n\n";
+        $message .= "Expense: {$expense->description}\n";
+        $message .= "Amount: P" . number_format($expense->amount, 2) . "\n";
+        $message .= "Category: {$categoryLabel}\n\n";
+        $message .= "NEXT: Log in to view details and pay through your customer portal. - Michael Ho Events";
 
         $this->sendSms($customer->phone, $message);
     }
