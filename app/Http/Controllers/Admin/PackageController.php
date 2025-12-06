@@ -34,7 +34,9 @@ class PackageController extends Controller
 
     public function create()
     {
-        $inclusions = Inclusion::where('is_active', true)->orderBy('name')->get();
+        $inclusions = Inclusion::where('is_active', true)
+            ->orderBy('name')
+            ->get();
         return view('admin.packages.create', compact('inclusions'));
     }
 
