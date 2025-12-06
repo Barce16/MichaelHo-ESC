@@ -1,5 +1,9 @@
 <x-admin.layouts.management>
     @php
+    // Get the package type value (handle both enum and string)
+    $packageTypeValue = old('type', $package->type instanceof \App\Enums\PackageType ? $package->type->value :
+    ($package->type ?? ''));
+
     $config = [
     'initialInclusions' => old(
     'inclusions',
@@ -15,12 +19,12 @@
     'coordinationPrice' => old('coordination_price', $package->coordination_price ?? 25000),
     'eventStylingPrice' => old('event_styling_price', $package->event_styling_price ?? 55000),
     'packagePrice' => old('price', $package->price ?? 0),
-    'autoCalc' => (bool) old('autoCalc', true),
+    'autoCalc' => (bool) old('autoCalc', false),
     'coordination' => old('coordination', $package->coordination ?? ''),
     'eventStylingText' => old('event_styling_text', is_array($package->event_styling) ? implode("\n",
     $package->event_styling) : ''),
     'isActive' => (bool) old('is_active', $package->is_active),
-    'selectedType' => old('type', $package->type?->value ?? ''),
+    'selectedType' => $packageTypeValue,
     ],
     ];
 
@@ -125,7 +129,8 @@
                             class="w-full px-4 py-3 border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-slate-200 focus:border-slate-400">
                             <option value="">Select package type</option>
                             @foreach(\App\Enums\PackageType::cases() as $type)
-                            <option value="{{ $type->value }}">{{ $type->label() }}</option>
+                            <option value="{{ $type->value }}" @selected($packageTypeValue===$type->value)>{{
+                                $type->label() }}</option>
                             @endforeach
                         </select>
                         <p class="mt-2 text-xs text-gray-500">
@@ -900,9 +905,6 @@
                 this.packageTypes = cfg.packageTypes || {};
                 this.images = cfg.images || {};
 
-                const raw = Array.isArray(cfg.initialInclusions) ? cfg.initialInclusions : Object.values(cfg.initialInclusions || []);
-                this.selected = raw.map(v => typeof v === 'object' && v?.id ? { id: Number(v.id) } : { id: Number(v) }).filter(r => Number.isFinite(r.id));
-
                 const d = cfg.defaults || {};
                 this.coordinationPrice = Number(d.coordinationPrice ?? 25000);
                 this.eventStylingPrice = Number(d.eventStylingPrice ?? 55000);
@@ -911,7 +913,18 @@
                 this.coordination = d.coordination ?? '';
                 this.eventStylingText = d.eventStylingText ?? '';
                 this.isActive = !!d.isActive;
+                
+                // Set selected type BEFORE processing inclusions
                 this.selectedType = d.selectedType ?? '';
+
+                // Now process inclusions - filter out any that don't match the selected type
+                const raw = Array.isArray(cfg.initialInclusions) ? cfg.initialInclusions : Object.values(cfg.initialInclusions || []);
+                this.selected = raw.map(v => typeof v === 'object' && v?.id ? { id: Number(v.id) } : { id: Number(v) }).filter(r => Number.isFinite(r.id));
+                
+                // Filter selected to only include available inclusions for this type
+                if (this.selectedType) {
+                    this.selected = this.selected.filter(row => this.isInclusionAvailable(row.id));
+                }
 
                 this.updateAvailableCount();
 
@@ -919,7 +932,9 @@
                 this.$watch('eventStylingPrice', () => { if (this.autoCalc) this.packagePrice = Number(this.grandTotal().toFixed(2)); });
                 this.$watch('autoCalc', () => { if (this.autoCalc) this.packagePrice = Number(this.grandTotal().toFixed(2)); });
 
-                this.$nextTick(() => { if (this.autoCalc) this.packagePrice = Number(this.grandTotal().toFixed(2)); });
+                this.$nextTick(() => { 
+                    if (this.autoCalc) this.packagePrice = Number(this.grandTotal().toFixed(2)); 
+                });
             },
         }));
 
