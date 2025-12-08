@@ -1030,12 +1030,13 @@ class AdminEventController extends Controller
         $oldInclusionIds = $event->inclusions->pluck('id')->toArray();
         $oldInclusions = $event->inclusions; // Keep the collection
 
-        // Get categories that currently have inclusions - EXTRACT VALUES FROM ENUMS
-        $oldCategoryIds = $oldInclusions->map(function ($inclusion) {
-            return $inclusion->category instanceof \BackedEnum
-                ? $inclusion->category->value
-                : (string)$inclusion->category;
-        })->unique()->values()->toArray();
+        // Get categories that currently have inclusions - CONVERT ENUMS TO STRING VALUES
+        $oldCategoryIds = $oldInclusions->pluck('category')
+            ->map(function ($cat) {
+                return $cat instanceof \BackedEnum ? $cat->value : (string)$cat;
+            })
+            ->unique()
+            ->toArray();
 
         // Get submitted inclusions
         $selectedInclusionIds = $request->input('inclusions', []);
@@ -1050,18 +1051,18 @@ class AdminEventController extends Controller
         // Validate: Each category that had inclusions must still have at least one
         $missingCategories = [];
         foreach ($oldCategoryIds as $category) {
-            // $category is now always a string
+            // $category is now a string value
             $categoryHasInclusion = $newInclusions->contains(function ($inclusion) use ($category) {
-                // Extract value from enum if needed
+                // Convert enum to string value for comparison
                 $inclusionCategory = $inclusion->category instanceof \BackedEnum
                     ? $inclusion->category->value
                     : (string)$inclusion->category;
 
-                // CASE-INSENSITIVE COMPARISON
-                return strtolower($inclusionCategory) === strtolower($category);
+                return $inclusionCategory === $category;
             });
 
             if (!$categoryHasInclusion) {
+                // Category name is already a string, just format it nicely
                 $missingCategories[] = ucwords(str_replace('_', ' ', $category));
             }
         }
@@ -1069,6 +1070,7 @@ class AdminEventController extends Controller
         if (!empty($missingCategories)) {
             return redirect()
                 ->back()
+                ->withInput()
                 ->with('error', 'Each category must have at least one inclusion. Missing: ' . implode(', ', $missingCategories));
         }
 
@@ -1161,6 +1163,8 @@ class AdminEventController extends Controller
             ->route('admin.events.show', $event)
             ->with('success', 'Event inclusions updated successfully. Customer has been notified via email with detailed changes.');
     }
+
+
     /**
      * Recalculate billing based on package and inclusions
      */
