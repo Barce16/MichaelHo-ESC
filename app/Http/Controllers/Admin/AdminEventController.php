@@ -1050,7 +1050,9 @@ class AdminEventController extends Controller
                 // Handle both enum and string category comparison
                 $inclusionCategory = is_object($inclusion->category) ? $inclusion->category->value : $inclusion->category;
                 $checkCategory = is_object($category) ? $category->value : $category;
-                return $inclusionCategory === $checkCategory;
+
+                // CASE-INSENSITIVE COMPARISON
+                return strtolower($inclusionCategory) === strtolower($checkCategory);
             });
 
             if (!$categoryHasInclusion) {
