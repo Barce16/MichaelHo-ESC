@@ -1012,6 +1012,9 @@ class AdminEventController extends Controller
     /**
      * Update event inclusions and recalculate billing
      */
+    /**
+     * Update event inclusions and recalculate billing
+     */
     public function updateInclusions(Request $request, Event $event)
     {
         $request->validate([
@@ -1047,6 +1050,36 @@ class AdminEventController extends Controller
 
         // Get the NEW inclusions with their categories
         $newInclusions = Inclusion::whereIn('id', $selectedInclusionIds)->get();
+
+        // DEBUG: Categories needed vs categories got
+        $newCategoryIds = $newInclusions->pluck('category')
+            ->map(function ($cat) {
+                return $cat instanceof \BackedEnum ? $cat->value : (string)$cat;
+            })
+            ->unique()
+            ->toArray();
+
+        dd([
+            'old_inclusion_ids' => $oldInclusionIds,
+            'selected_inclusion_ids' => $selectedInclusionIds,
+            'locked_inclusion_ids' => $lockedInclusionIds,
+            'categories_needed' => $oldCategoryIds,
+            'categories_got' => $newCategoryIds,
+            'old_inclusions' => $oldInclusions->map(function ($inc) {
+                return [
+                    'id' => $inc->id,
+                    'name' => $inc->name,
+                    'category' => $inc->category instanceof \BackedEnum ? $inc->category->value : (string)$inc->category,
+                ];
+            })->toArray(),
+            'new_inclusions' => $newInclusions->map(function ($inc) {
+                return [
+                    'id' => $inc->id,
+                    'name' => $inc->name,
+                    'category' => $inc->category instanceof \BackedEnum ? $inc->category->value : (string)$inc->category,
+                ];
+            })->toArray(),
+        ]);
 
         // Validate: Each category that had inclusions must still have at least one
         $missingCategories = [];
