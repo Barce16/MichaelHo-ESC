@@ -37,6 +37,11 @@ class Event extends Model
         'notes',
         'status',
         'rejection_reason',
+        'reminder_30days_sent_at',
+        'reminder_7days_sent_at',
+        'reminder_3days_sent_at',
+        'reminder_today_sent_at',
+
     ];
 
     protected $casts = [

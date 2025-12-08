@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Event;
-use App\Models\Billing;
+use App\Models\EventExpense;
 use App\Services\NotificationService;
 use App\Services\SmsNotifier;
 use App\Notifications\IntroPaymentApprovedNotification;
@@ -67,6 +67,45 @@ class CustomerPaymentController extends Controller
                 return back()->with('error', 'Event not found for this payment.');
             }
 
+            // *** ADD EXPENSE PAYMENT HANDLING HERE ***
+            if ($payment->isExpense()) {
+                // Approve the expense payment
+                $payment->update([
+                    'status' => Payment::STATUS_APPROVED,
+                    'payment_date' => now(),
+                ]);
+
+                // Mark the expense as paid
+                if ($payment->expense_id) {
+                    $expense = EventExpense::find($payment->expense_id);
+                    if ($expense) {
+                        $expense->markAsPaid();
+                    }
+                }
+
+                // Send notifications
+                $this->notificationService->notifyCustomerPaymentApproved($payment);
+
+                $customer = $event->customer;
+                if ($customer->user) {
+                    try {
+                        // You can create a specific notification for expense payments if needed
+                        // For now, use generic payment confirmation
+                        $this->smsNotifier->notifyPaymentConfirmed($payment);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send expense payment approval SMS', [
+                            'payment_id' => $payment->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+
+                DB::commit();
+                return redirect()->route('admin.payments.index')
+                    ->with('success', 'Expense payment approved successfully. Customer notified.');
+            }
+
+            // EXISTING CODE FOR REGULAR PAYMENTS (introductory, downpayment, balance)
             $originalPaymentAmount = $payment->amount;
 
             // Check if this is a FULL PAYMENT
@@ -248,7 +287,6 @@ class CustomerPaymentController extends Controller
             return back()->with('error', 'Failed to approve payment: ' . $e->getMessage());
         }
     }
-
     public function reject(Request $request, $paymentId)
     {
         $payment = Payment::findOrFail($paymentId);
