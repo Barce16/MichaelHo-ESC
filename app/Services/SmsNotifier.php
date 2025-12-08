@@ -362,12 +362,47 @@ class SmsNotifier
             $inclusionName = $schedule->inclusion->name ?? 'an item';
             $scheduleDate = Carbon::parse($schedule->scheduled_date)->format('M d, Y');
 
-            $message .= "schedule {$actionText} for '{$event->name}': {$inclusionName} on {$scheduleDate}. ";
+            // Add time if available
+            $timeText = '';
+            if ($schedule->scheduled_time) {
+                $scheduleTime = Carbon::parse($schedule->scheduled_time)->format('g:i A');
+                $timeText = " at {$scheduleTime}";
+            }
+
+            // Add venue if available
+            $venueText = '';
+            if ($schedule->venue) {
+                $venueText = " (Venue: {$schedule->venue})";
+            }
+
+            $message .= "schedule {$actionText} for '{$event->name}': {$inclusionName} on {$scheduleDate}{$timeText}{$venueText}. ";
+
+            // Add remarks if available
+            if ($schedule->remarks) {
+                $message .= "Note: {$schedule->remarks}. ";
+            }
         } else {
-            $message .= "{$scheduleCount} schedules have been {$actionText} for '{$event->name}'. ";
+            $message .= "{$scheduleCount} schedules have been {$actionText} for '{$event->name}': ";
+
+            // List first 3 schedules with dates
+            $scheduleDetails = [];
+            foreach (array_slice($schedules, 0, 3) as $schedule) {
+                $schedule->load('inclusion');
+                $inclusionName = $schedule->inclusion->name ?? 'Item';
+                $scheduleDate = Carbon::parse($schedule->scheduled_date)->format('M d');
+                $scheduleDetails[] = "{$inclusionName} ({$scheduleDate})";
+            }
+
+            $message .= implode(', ', $scheduleDetails);
+
+            if ($scheduleCount > 3) {
+                $remaining = $scheduleCount - 3;
+                $message .= ", and {$remaining} more";
+            }
+            $message .= ". ";
         }
 
-        $message .= "Check your account for full details. - Michael Ho Events";
+        $message .= "Login to view complete schedule details. - Michael Ho Events";
 
         return $this->sendSms($customer->phone, $message);
     }
@@ -614,5 +649,36 @@ class SmsNotifier
         $message .= "NEXT: Log in to view details and pay through your customer portal. - Michael Ho Events";
 
         $this->sendSms($customer->phone, $message);
+    }
+
+    /**
+     * Notify customer about event happening today
+     */
+    public function notifyEventToday(Event $event): bool
+    {
+        try {
+            $customer = $event->customer;
+
+            if (!$customer || !$customer->phone) {
+                Log::warning('Cannot send today reminder SMS - missing customer or phone', [
+                    'event_id' => $event->id
+                ]);
+                return false;
+            }
+
+            $phone = $this->formatPhoneNumber($customer->phone);
+            $greeting = $this->getGreeting($customer->gender);
+
+            $message = "{$greeting} {$customer->customer_name}, TODAY is the day! Your event '{$event->name}' is happening NOW! ";
+            $message .= "Our team is on-site and ready to make your celebration memorable. Enjoy every moment! Contact 0917-306-2531 if you need anything. - Michael Ho Events";
+
+            return $this->sendSms($phone, $message);
+        } catch (\Exception $e) {
+            Log::error('Exception sending today reminder SMS', [
+                'event_id' => $event->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
     }
 }

@@ -45,6 +45,8 @@ class EventScheduleController extends Controller
 
             $savedCount = 0;
             $staffToNotify = [];
+            $changedSchedules = []; // Track only changed/new schedules for customer notification
+            $wasCreated = false;
 
             foreach ($validated['schedules'] as $scheduleData) {
                 // Skip if no date is set
@@ -61,23 +63,35 @@ class EventScheduleController extends Controller
                     ->where('inclusion_id', $scheduleData['inclusion_id'])
                     ->first();
 
+                // Check if schedule details actually changed
+                $scheduleChanged = false;
+                if (!$existingSchedule) {
+                    $scheduleChanged = true;
+                    $wasCreated = true;
+                } else {
+                    // Check if any field changed
+                    $scheduleChanged = $this->scheduleDetailsChanged($existingSchedule, $scheduleData) ||
+                        $existingSchedule->staff_id != (!empty($scheduleData['staff_id']) ? $scheduleData['staff_id'] : null) ||
+                        $existingSchedule->remarks != (!empty($scheduleData['remarks']) ? $scheduleData['remarks'] : null);
+                }
+
                 // Check if we need to notify staff
                 $newStaffId = !empty($scheduleData['staff_id']) ? $scheduleData['staff_id'] : null;
-                $shouldNotify = false;
+                $shouldNotifyStaff = false;
 
                 if ($newStaffId) {
                     if (!$existingSchedule) {
                         // New schedule with staff assigned
-                        $shouldNotify = true;
+                        $shouldNotifyStaff = true;
                     } elseif ($existingSchedule->staff_id != $newStaffId) {
                         // Staff changed
-                        $shouldNotify = true;
+                        $shouldNotifyStaff = true;
                     } elseif (!$existingSchedule->notified_at) {
                         // Staff assigned but never notified
-                        $shouldNotify = true;
+                        $shouldNotifyStaff = true;
                     } elseif ($this->scheduleDetailsChanged($existingSchedule, $scheduleData)) {
                         // Key details changed (date, time, venue)
-                        $shouldNotify = true;
+                        $shouldNotifyStaff = true;
                     }
                 }
 
@@ -95,18 +109,23 @@ class EventScheduleController extends Controller
                         'venue' => !empty($scheduleData['venue']) ? $scheduleData['venue'] : null,
                         'created_by' => $existingSchedule?->created_by ?? Auth::id(),
                         // Reset notified_at if we're going to notify
-                        'notified_at' => $shouldNotify ? null : ($existingSchedule?->notified_at),
+                        'notified_at' => $shouldNotifyStaff ? null : ($existingSchedule?->notified_at),
                     ]
                 );
 
-                if ($shouldNotify && $newStaffId) {
+                if ($shouldNotifyStaff && $newStaffId) {
                     $staffToNotify[] = $schedule;
+                }
+
+                // Only add to changed schedules if something actually changed
+                if ($scheduleChanged) {
+                    $changedSchedules[] = $schedule;
                 }
 
                 $savedCount++;
             }
 
-            // Auto-notify staff members (only staff, not customers)
+            // Auto-notify staff members
             $notifiedStaffCount = 0;
             foreach ($staffToNotify as $schedule) {
                 try {
@@ -120,9 +139,28 @@ class EventScheduleController extends Controller
                 }
             }
 
+            // Only notify customer if schedules actually changed
+            if (!empty($changedSchedules)) {
+                try {
+                    // Determine action based on whether any were newly created
+                    $action = $wasCreated ? 'created' : 'updated';
+
+                    // Send customer notifications (Email + SMS + In-app) - only for changed schedules
+                    $this->sendScheduleNotifications($event, $changedSchedules, $action);
+                } catch (\Exception $e) {
+                    Log::error('Failed to notify customer about schedules', [
+                        'event_id' => $event->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
             $message = "Schedules saved successfully.";
             if ($notifiedStaffCount > 0) {
                 $message .= " {$notifiedStaffCount} staff member(s) notified.";
+            }
+            if (!empty($changedSchedules)) {
+                $message .= " Customer notified.";
             }
 
             return back()->with('success', $message);
