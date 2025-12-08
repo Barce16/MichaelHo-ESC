@@ -1030,8 +1030,12 @@ class AdminEventController extends Controller
         $oldInclusionIds = $event->inclusions->pluck('id')->toArray();
         $oldInclusions = $event->inclusions; // Keep the collection
 
-        // Get categories that currently have inclusions
-        $oldCategoryIds = $oldInclusions->pluck('category')->unique()->toArray();
+        // Get categories that currently have inclusions - EXTRACT VALUES FROM ENUMS
+        $oldCategoryIds = $oldInclusions->map(function ($inclusion) {
+            return $inclusion->category instanceof \BackedEnum
+                ? $inclusion->category->value
+                : (string)$inclusion->category;
+        })->unique()->values()->toArray();
 
         // Get submitted inclusions
         $selectedInclusionIds = $request->input('inclusions', []);
@@ -1046,19 +1050,19 @@ class AdminEventController extends Controller
         // Validate: Each category that had inclusions must still have at least one
         $missingCategories = [];
         foreach ($oldCategoryIds as $category) {
+            // $category is now always a string
             $categoryHasInclusion = $newInclusions->contains(function ($inclusion) use ($category) {
-                // Handle both enum and string category comparison
-                $inclusionCategory = is_object($inclusion->category) ? $inclusion->category->value : $inclusion->category;
-                $checkCategory = is_object($category) ? $category->value : $category;
+                // Extract value from enum if needed
+                $inclusionCategory = $inclusion->category instanceof \BackedEnum
+                    ? $inclusion->category->value
+                    : (string)$inclusion->category;
 
                 // CASE-INSENSITIVE COMPARISON
-                return strtolower($inclusionCategory) === strtolower($checkCategory);
+                return strtolower($inclusionCategory) === strtolower($category);
             });
 
             if (!$categoryHasInclusion) {
-                // Get category name for error message
-                $categoryName = is_object($category) ? $category->value : $category;
-                $missingCategories[] = ucwords(str_replace('_', ' ', $categoryName));
+                $missingCategories[] = ucwords(str_replace('_', ' ', $category));
             }
         }
 
