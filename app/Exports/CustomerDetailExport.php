@@ -53,7 +53,7 @@ class CustomerSummarySheet implements FromCollection, WithHeadings, WithTitle, S
         return new Collection([
             ['Customer Name', $this->customer->customer_name],
             ['Email', $this->customer->email],
-            ['Phone', $this->customer->phone ?? $this->customer->contact_number ?? 'N/A'],
+            ['Phone', $this->customer->phone ?? $this->customer->phone ?? 'N/A'],
             ['Address', $this->customer->address ?? 'N/A'],
             ['Customer Since', $this->customer->created_at->format('M d, Y')],
             ['Account Status', $this->customer->user ? ucfirst($this->customer->user->status) : 'No Account'],

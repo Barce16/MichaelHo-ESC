@@ -577,10 +577,10 @@
                         <span class="info-label">Email:</span>
                         <span class="info-value">{{ $customer->user->email }}</span>
                     </div>
-                    @if($customer->contact_number)
+                    @if($customer->phone)
                     <div class="info-row">
                         <span class="info-label">Phone:</span>
-                        <span class="info-value">{{ $customer->contact_number }}</span>
+                        <span class="info-value">{{ $customer->phone }}</span>
                     </div>
                     @endif
                 </div>

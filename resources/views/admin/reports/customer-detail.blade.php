@@ -313,7 +313,7 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Phone:</span>
-                                <span class="font-semibold">{{ $customer->phone ?? $customer->contact_number ?? 'N/A'
+                                <span class="font-semibold">{{ $customer->phone ?? $customer->phone ?? 'N/A'
                                     }}</span>
                             </div>
                             <div class="flex justify-between">

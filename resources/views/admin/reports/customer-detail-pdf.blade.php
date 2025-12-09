@@ -328,7 +328,7 @@
                 <tr>
                     <td>
                         <div class="label">Phone Number</div>
-                        <div class="value">{{ $customer->phone ?? $customer->contact_number ?? 'N/A' }}</div>
+                        <div class="value">{{ $customer->phone ?? $customer->phone ?? 'N/A' }}</div>
                     </td>
                     <td>
                         <div class="label">Address</div>
