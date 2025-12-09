@@ -1012,9 +1012,6 @@ class AdminEventController extends Controller
     /**
      * Update event inclusions and recalculate billing
      */
-    /**
-     * Update event inclusions and recalculate billing
-     */
     public function updateInclusions(Request $request, Event $event)
     {
         $request->validate([
@@ -1033,13 +1030,8 @@ class AdminEventController extends Controller
         $oldInclusionIds = $event->inclusions->pluck('id')->toArray();
         $oldInclusions = $event->inclusions; // Keep the collection
 
-        // Get categories that currently have inclusions - CONVERT ENUMS TO STRING VALUES
-        $oldCategoryIds = $oldInclusions->pluck('category')
-            ->map(function ($cat) {
-                return $cat instanceof \BackedEnum ? $cat->value : (string)$cat;
-            })
-            ->unique()
-            ->toArray();
+        // Get categories that currently have inclusions
+        $oldCategoryIds = $oldInclusions->pluck('category')->unique()->toArray();
 
         // Get submitted inclusions
         $selectedInclusionIds = $request->input('inclusions', []);
@@ -1051,59 +1043,26 @@ class AdminEventController extends Controller
         // Get the NEW inclusions with their categories
         $newInclusions = Inclusion::whereIn('id', $selectedInclusionIds)->get();
 
-        // DEBUG: Categories needed vs categories got
-        $newCategoryIds = $newInclusions->pluck('category')
-            ->map(function ($cat) {
-                return $cat instanceof \BackedEnum ? $cat->value : (string)$cat;
-            })
-            ->unique()
-            ->toArray();
-
-        dd([
-            'old_inclusion_ids' => $oldInclusionIds,
-            'selected_inclusion_ids' => $selectedInclusionIds,
-            'locked_inclusion_ids' => $lockedInclusionIds,
-            'categories_needed' => $oldCategoryIds,
-            'categories_got' => $newCategoryIds,
-            'old_inclusions' => $oldInclusions->map(function ($inc) {
-                return [
-                    'id' => $inc->id,
-                    'name' => $inc->name,
-                    'category' => $inc->category instanceof \BackedEnum ? $inc->category->value : (string)$inc->category,
-                ];
-            })->toArray(),
-            'new_inclusions' => $newInclusions->map(function ($inc) {
-                return [
-                    'id' => $inc->id,
-                    'name' => $inc->name,
-                    'category' => $inc->category instanceof \BackedEnum ? $inc->category->value : (string)$inc->category,
-                ];
-            })->toArray(),
-        ]);
-
         // Validate: Each category that had inclusions must still have at least one
         $missingCategories = [];
         foreach ($oldCategoryIds as $category) {
-            // $category is now a string value
             $categoryHasInclusion = $newInclusions->contains(function ($inclusion) use ($category) {
-                // Convert enum to string value for comparison
-                $inclusionCategory = $inclusion->category instanceof \BackedEnum
-                    ? $inclusion->category->value
-                    : (string)$inclusion->category;
-
-                return $inclusionCategory === $category;
+                // Handle both enum and string category comparison
+                $inclusionCategory = is_object($inclusion->category) ? $inclusion->category->value : $inclusion->category;
+                $checkCategory = is_object($category) ? $category->value : $category;
+                return $inclusionCategory === $checkCategory;
             });
 
             if (!$categoryHasInclusion) {
-                // Category name is already a string, just format it nicely
-                $missingCategories[] = ucwords(str_replace('_', ' ', $category));
+                // Get category name for error message
+                $categoryName = is_object($category) ? $category->value : $category;
+                $missingCategories[] = ucwords(str_replace('_', ' ', $categoryName));
             }
         }
 
         if (!empty($missingCategories)) {
             return redirect()
                 ->back()
-                ->withInput()
                 ->with('error', 'Each category must have at least one inclusion. Missing: ' . implode(', ', $missingCategories));
         }
 
