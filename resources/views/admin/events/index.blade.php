@@ -23,7 +23,7 @@
                 $approvedCount = \App\Models\Event::where('status', 'approved')->count();
                 $scheduledCount = \App\Models\Event::where('status', 'scheduled')->count();
                 $completedCount = \App\Models\Event::where('status', 'completed')->count();
-                $cancelledCount = \App\Models\Event::where('status', 'cancelled')->count();
+                $rejectedCount = \App\Models\Event::where('status', 'rejected')->count();
                 @endphp
 
                 {{-- Total Events --}}
@@ -106,7 +106,7 @@
                     </div>
                 </div>
 
-                {{-- Cancelled --}}
+                {{-- Rejected --}}
                 <div class="bg-rose-50 rounded-xl shadow-sm border border-rose-200 p-4">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
@@ -117,7 +117,7 @@
                         </div>
                         <div>
                             <div class="text-xs text-rose-700 uppercase tracking-wide">Cancelled</div>
-                            <div class="text-2xl font-bold text-rose-800">{{ $cancelledCount }}</div>
+                            <div class="text-2xl font-bold text-rose-800">{{ $rejectedCount }}</div>
                         </div>
                     </div>
                 </div>
