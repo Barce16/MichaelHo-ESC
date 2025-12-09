@@ -44,4 +44,20 @@ class Customer extends Model
             })
             ->exists();
     }
+
+    /**
+     * Get phone attribute (alias for contact_number)
+     */
+    public function getPhoneAttribute(): ?string
+    {
+        return $this->contact_number;
+    }
+
+    /**
+     * Set phone attribute (alias for contact_number)
+     */
+    public function setPhoneAttribute(?string $value): void
+    {
+        $this->attributes['contact_number'] = $value;
+    }
 }
