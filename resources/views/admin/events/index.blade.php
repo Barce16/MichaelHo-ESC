@@ -116,7 +116,7 @@
                             </svg>
                         </div>
                         <div>
-                            <div class="text-xs text-rose-700 uppercase tracking-wide">Cancelled</div>
+                            <div class="text-xs text-rose-700 uppercase tracking-wide">Rejected</div>
                             <div class="text-2xl font-bold text-rose-800">{{ $rejectedCount }}</div>
                         </div>
                     </div>
