@@ -255,9 +255,9 @@ class CustomerController extends Controller
                 // Create Customer
                 $customer = Customer::create([
                     'user_id' => $user->id,
-                    'phone' => $validated['phone'],
+                    'customer_name' => $validated['customer_name'],
                     'email' => $validated['email'],
-                    'phone' => $validated['phone'], // FIXED: use contact_number
+                    'phone' => $validated['phone'],
                     'gender' => $validated['gender'],
                     'address' => $validated['address'] ?? null,
                 ]);
