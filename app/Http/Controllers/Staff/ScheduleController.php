@@ -31,6 +31,7 @@ class ScheduleController extends Controller
 
         $month = $request->input('month', now()->format('Y-m'));
         $status = $request->input('status', 'all');
+        $eventFilter = $request->input('event_filter', 'all'); // NEW: Get event filter
 
         // Parse month for filtering
         $startOfMonth = \Carbon\Carbon::parse($month)->startOfMonth();
@@ -89,12 +90,17 @@ class ScheduleController extends Controller
                 ->sum('pay_rate'),
         ];
 
-        // ==========================================
-        // ADD THIS: Get inclusion schedules assigned to this staff
-        // ==========================================
-        $inclusionSchedules = EventSchedule::with(['event', 'inclusion'])
+        // Get inclusion schedules assigned to this staff
+        $inclusionSchedulesQuery = EventSchedule::with(['event', 'inclusion'])
             ->where('staff_id', $staff->id)
-            ->whereNotNull('scheduled_date')
+            ->whereNotNull('scheduled_date');
+
+        // NEW: Apply event filter if specified
+        if ($eventFilter !== 'all') {
+            $inclusionSchedulesQuery->where('event_id', $eventFilter);
+        }
+
+        $inclusionSchedules = $inclusionSchedulesQuery
             ->orderBy('scheduled_date', 'asc')
             ->get();
 
@@ -104,7 +110,7 @@ class ScheduleController extends Controller
             'stats',
             'month',
             'status',
-            'inclusionSchedules'  // ADD THIS
+            'inclusionSchedules'
         ));
     }
 

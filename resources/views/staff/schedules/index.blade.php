@@ -95,13 +95,27 @@
                     <x-staff-schedule-calendar :assignments="$allAssignments" />
                 </div>
 
-                {{-- Upcoming & Inclusion Tasks --}}
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                    <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                        <h3 class="font-semibold text-gray-900">Upcoming & Tasks</h3>
-                    </div>
-                    <div class="divide-y divide-gray-100 max-h-[450px] overflow-y-auto">
+                {{-- Replace the "Upcoming & Tasks" card section --}}
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
+                    x-data="{ showEventFilter: false, selectedEventId: '{{ request('event_filter', 'all') }}' }">
 
+                    {{-- Header with Filter Button --}}
+                    <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                        <h3 class="font-semibold text-gray-900">Upcoming & Tasks</h3>
+                        <button type="button" @click="showEventFilter = true"
+                            class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                            </svg>
+                            @if(request('event_filter') && request('event_filter') !== 'all')
+                            <span class="w-2 h-2 bg-amber-500 rounded-full"></span>
+                            @endif
+                            Filter Event
+                        </button>
+                    </div>
+
+                    <div class="divide-y divide-gray-100 max-h-[450px] overflow-y-auto">
                         {{-- Inclusion Schedules (Tasks) --}}
                         @if(isset($inclusionSchedules) && $inclusionSchedules->count() > 0)
                         @foreach($inclusionSchedules as $schedule)
@@ -127,20 +141,21 @@
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-start justify-between gap-2">
                                         <div class="min-w-0">
-                                            <p class="font-medium text-gray-900 truncate text-sm">{{ $schedule->inclusion->name }}</p>
+                                            <p class="font-medium text-gray-900 truncate text-sm">{{
+                                                $schedule->inclusion->name }}</p>
                                             <p class="text-xs text-gray-500 truncate">{{ $schedule->event->name }}</p>
                                             <div class="flex items-center gap-2 mt-1 text-xs text-gray-500">
                                                 <span>{{ $schedule->scheduled_date->format('M d, Y') }}</span>
                                                 @if($schedule->scheduled_time)
-                                                <span>• {{ \Carbon\Carbon::parse($schedule->scheduled_time)->format('g:i A') }}</span>
+                                                <span>• {{ \Carbon\Carbon::parse($schedule->scheduled_time)->format('g:i
+                                                    A') }}</span>
                                                 @endif
                                             </div>
                                         </div>
 
-                                        {{-- Status/Action - Always allow upload --}}
+                                        {{-- Status/Action --}}
                                         <div class="flex-shrink-0">
                                             @if($schedule->proof_image)
-                                            {{-- Proof Uploaded - can re-upload --}}
                                             <div class="flex items-center gap-1">
                                                 <button type="button"
                                                     onclick="viewProof('{{ asset('storage/' . $schedule->proof_image) }}', '{{ addslashes($schedule->inclusion->name) }}')"
@@ -153,19 +168,23 @@
                                                     Done
                                                 </button>
                                                 <button type="button" @click="showUpload = !showUpload"
-                                                    class="p-1 text-gray-400 hover:text-gray-600 transition" title="Re-upload">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    class="p-1 text-gray-400 hover:text-gray-600 transition"
+                                                    title="Re-upload">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
                                                             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                                     </svg>
                                                 </button>
                                             </div>
                                             @else
-                                            {{-- Upload Proof - always available --}}
                                             <button type="button" @click="showUpload = !showUpload"
                                                 class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-amber-600 rounded-full hover:bg-amber-700 transition">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
                                                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                                 </svg>
                                                 Upload
@@ -174,7 +193,7 @@
                                         </div>
                                     </div>
 
-                                    {{-- Upload Form (inline) --}}
+                                    {{-- Upload Form --}}
                                     <div x-show="showUpload" x-cloak x-transition
                                         class="mt-2 p-2 bg-gray-50 rounded-lg border">
                                         <form action="{{ route('staff.schedules.uploadProof', $schedule) }}"
@@ -204,7 +223,7 @@
                         </div>
                         @endforeach
 
-                        {{-- Divider if both sections have items --}}
+                        {{-- Divider --}}
                         @php
                         $upcomingEvents = $allAssignments->filter(function($event) {
                         return \Carbon\Carbon::parse($event->event_date)->gte(today());
@@ -259,6 +278,132 @@
                         </div>
                         @endif
                         @endforelse
+                    </div>
+
+                    {{-- Event Filter Modal --}}
+                    <div x-show="showEventFilter" x-cloak x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                        x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0" class="fixed inset-0 z-50 overflow-y-auto"
+                        @click.self="showEventFilter = false">
+
+                        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+                        <div class="flex min-h-full items-center justify-center p-4">
+                            <div x-show="showEventFilter" x-transition:enter="transition ease-out duration-300"
+                                x-transition:enter-start="opacity-0 scale-95"
+                                x-transition:enter-end="opacity-100 scale-100"
+                                x-transition:leave="transition ease-in duration-200"
+                                x-transition:leave-start="opacity-100 scale-100"
+                                x-transition:leave-end="opacity-0 scale-95"
+                                class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden"
+                                @click.away="showEventFilter = false">
+
+                                {{-- Modal Header --}}
+                                <div
+                                    class="bg-gradient-to-r from-gray-900 to-black px-6 py-4 flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                            </svg>
+                                            Filter by Event
+                                        </h3>
+                                        <p class="text-sm text-gray-400 mt-0.5">Select an event to filter tasks</p>
+                                    </div>
+                                    <button type="button" @click="showEventFilter = false"
+                                        class="text-white/80 hover:text-white transition">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {{-- Event List --}}
+                                <div class="overflow-y-auto max-h-[60vh] p-4">
+                                    <div class="space-y-2">
+                                        {{-- All Events Option --}}
+                                        <button type="button"
+                                            @click="window.location.href = '{{ route('staff.schedules.index') }}'"
+                                            :class="selectedEventId === 'all' 
+                                    ? 'bg-gray-900 text-white' 
+                                    : 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200'"
+                                            class="w-full text-left px-4 py-3 rounded-lg font-medium transition">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0"
+                                                    :class="selectedEventId === 'all' ? 'bg-white/20' : ''">
+                                                    <svg class="w-5 h-5"
+                                                        :class="selectedEventId === 'all' ? 'text-white' : 'text-gray-400'"
+                                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                                                    </svg>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <span class="font-semibold">All Events</span>
+                                                    <p class="text-xs opacity-75">Show all tasks</p>
+                                                </div>
+                                                <svg x-show="selectedEventId === 'all'" class="w-5 h-5 flex-shrink-0"
+                                                    fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            </div>
+                                        </button>
+
+                                        {{-- Individual Events --}}
+                                        @foreach($allAssignments as $event)
+                                        @php
+                                        $taskCount = $inclusionSchedules->where('event_id', $event->id)->count();
+                                        @endphp
+                                        @if($taskCount > 0)
+                                        <button type="button"
+                                            @click="window.location.href = '{{ route('staff.schedules.index', ['event_filter' => $event->id]) }}'"
+                                            :class="selectedEventId === '{{ $event->id }}' 
+                                    ? 'bg-gray-900 text-white' 
+                                    : 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200'"
+                                            class="w-full text-left px-4 py-3 rounded-lg transition">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 bg-gray-100 rounded-lg flex flex-col items-center justify-center flex-shrink-0 text-xs font-bold"
+                                                    :class="selectedEventId === '{{ $event->id }}' ? 'bg-white/20 text-white' : 'text-gray-700'">
+                                                    <div>{{ \Carbon\Carbon::parse($event->event_date)->format('d') }}
+                                                    </div>
+                                                    <div class="text-[10px] uppercase">{{
+                                                        \Carbon\Carbon::parse($event->event_date)->format('M') }}</div>
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="font-semibold truncate">{{ $event->name }}</div>
+                                                    <div class="text-xs opacity-75 truncate">{{
+                                                        $event->customer->customer_name }}</div>
+                                                    <div class="text-xs opacity-60 mt-0.5">{{ $taskCount }} {{
+                                                        Str::plural('task', $taskCount) }}</div>
+                                                </div>
+                                                <svg x-show="selectedEventId === '{{ $event->id }}'"
+                                                    class="w-5 h-5 flex-shrink-0" fill="currentColor"
+                                                    viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                        clip-rule="evenodd" />
+                                                </svg>
+                                            </div>
+                                        </button>
+                                        @endif
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                {{-- Modal Footer --}}
+                                <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                                    <button type="button" @click="showEventFilter = false"
+                                        class="w-full px-4 py-2.5 bg-gray-900 text-white font-medium rounded-lg hover:bg-black transition">
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

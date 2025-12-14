@@ -154,8 +154,8 @@
             this.selectedDate = initialValue || '';
             
             const today = new Date();
-            // this.minAllowedDate = new Date(today.getFullYear(), today.getMonth() + 3, 1);
-            this.minAllowedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            this.minAllowedDate = new Date(today.getFullYear(), today.getMonth() + 3, 1);
+            // this.minAllowedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
             
             if (!this.selectedDate) {
                 this.currentDate = new Date(this.minAllowedDate);
